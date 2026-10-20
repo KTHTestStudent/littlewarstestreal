@@ -13,8 +13,12 @@ START HERE
       Countries' pieces, Hook's Farm's map and set-up, the level table of
       eleven battles, the bots, the story contract, the targets for battle
       length and balance, and the code layout - plus disclosure.jsonc set
-      to that layout, and this file.
-  Next: NEXT 2, the skeleton. Its starter prompt is just below.
+      to that layout, and this file. Then the author's answer on Knotwork
+      (decision 9): it comes in before the skeleton, and the disclosure
+      names it and inkjs.
+  Next: NEXT 2, Knotwork in (a short session). Its starter prompt is just
+  below. Then NEXT 3, the skeleton (Opus 5.5 high; the same prompt with
+  "high" and "NEXT 3").
   Before it starts: the author merges working-claude into working (OPEN
   ITEMS). He may first want to change any of Claude's proposals (GDD
   section 10): each is a GDD line now, and a data change later.
@@ -22,11 +26,42 @@ START HERE
 
 STARTER PROMPT (the author pastes it into a new cloud session)
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
-  (Opus 5.5, high). Start from origin/working-claude (merge origin/working
+  (Opus 5.5, medium). Start from origin/working-claude (merge origin/working
   into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 2.
 
 NEXT
-  2 The skeleton (cloud, Opus 5.5 high), as GDD section 9 step 3 says.
+  2 Knotwork in (cloud, Opus 5.5 medium), as GDD section 9 step 3 says:
+    before the skeleton, so the skeleton reads the kit's real files.
+    a The source: KTHTestStudent/knotworkprivateprealpha (add it to the
+      session read-only), at Knotwork 3.8-alpha: its tag if there is one,
+      otherwise ask the author which commit. Note the commit's short hash
+      in THE FILES, as for dev/disclosure.js.
+    b Copy the kit's own files unedited, as Knotwork's
+      docs/ADDING-TO-A-GAME.txt lists them: in Amontillado these are
+      ink/ink.js, ink/dialogue.js, tools/ (knotcheck, viewer and pack, .html
+      and .js) and LICENSE-INKJS.txt. Check each copy is byte for byte the
+      source (sha1sum both). Not ink/config.js or story/story.ink: those
+      are this game's contract, written in NEXT 3.
+    c The disclosure (decision 9), in the author's words, word for word:
+        AI Disclosure: code by Claude Opus 5.5. Design and decisions by
+        Kenton Howard. Includes Knotwork (see its own AI disclosure) and
+        inkjs (inkle, MIT).
+      On one line in README.md (only the line: README.md otherwise changes
+      only when he asks), CLAUDE.md and a new CREDITS.txt; in
+      disclosure.jsonc, the "human" sentence and CREDITS.txt added to
+      line.files (README.md stays first). CREDITS.txt also gives
+      Knotwork's version and repository (Amontillado's CREDITS.txt has the
+      form) and inkjs's licence.
+    d The words point at Knotwork's own AI disclosure: check that its
+      README at that commit has one. If it doesn't, tell the author before
+      pushing.
+    e Commit the copies apart from the rest, with a subject that says they
+      are unedited Knotwork 3.8-alpha copies. They are outside
+      disclosure.jsonc's "code", so no model is credited for them here.
+    f End: node dev/disclosure.js (exit 0); GDD section 11 if a file
+      differs from its table; START HERE, NEXT and a HISTORY line here;
+      push to working-claude; the pull request steps for the author.
+  3 The skeleton (cloud, Opus 5.5 high), as GDD section 9 step 4 says.
     a The first target: the tutorial, Hook's Farm, plays end to end in the
       browser and headless (6.3), with bots on both sides.
     b game.html (skeleton: red banner, STATE AND HELPERS, GAME FLOW) and
@@ -41,31 +76,34 @@ NEXT
       whole block.
     d The story contract's other three copies (GDD 7): story/story.ink's
       header and empty knots with summaries (no prose, no placeholder
-      lines), ink/config.js, story/CONTRACT.txt. Copy Knotwork
-      3.8-alpha's ink/ink.js, ink/dialogue.js and tools/ unedited (the
-      same copies are on amontillado-test's working branch).
-    e Ask the author, before the first commit with ink.js in it: should
-      the disclosure's human sentence name inkjs and Knotwork (GDD 10,
-      still open)? His words only.
+      lines), ink/config.js, story/CONTRACT.txt. Wire game.html to the
+      kit's ink/dialogue.js as it is in the repo since NEXT 2 (read its
+      header for the API; never edit it).
+    e The title screen shows the disclosure line (decision 9's words):
+      add game.html to disclosure.jsonc's line.files.
     f End: node dev/selftest.js and node dev/disclosure.js; update START
       HERE and NEXT, with the runner's plan lines exactly as the self-test
-      prints them and the commands for NEXT 3; a HISTORY line; push to
+      prints them and the commands for NEXT 4; a HISTORY line; push to
       working-claude; the pull request steps for the author.
-  3 The runner on the laptop (no Claude session): the builder writes the
-    PHASE blocks. NEXT 2 leaves the branch command, the plan lines and the
+  4 The runner on the laptop (no Claude session): the builder writes the
+    PHASE blocks. NEXT 3 leaves the branch command, the plan lines and the
     commands here.
-  4 The cloud check (Opus 5.5 medium), then bot runs for balance and battle
+  5 The cloud check (Opus 5.5 medium), then bot runs for balance and battle
     length against GDD section 5 (dev/bots.js, dev/outcomes.js), reshaping
     the maps and numbers; then the design freeze.
-  5 The author writes the story in Inky. A cloud session may review it with
+  6 The author writes the story in Inky. A cloud session may review it with
     knotcheck and play runs.
-  6 The author: playtests, the release.
+  7 The author: playtests, the release.
   Later, if it goes well: the Appendix (GDD 6.5).
 
 WHAT TO READ (keep it cheap)
-  Here: CLAUDE.md, this file down to HISTORY, GDD.md (about 46 KB; for
-    NEXT 2, sections 3, 4, 6, 7 and 11 above all), LOCAL-SUBAGENTS.md
-    (what the runner needs from a skeleton).
+  For NEXT 2 (Knotwork in): CLAUDE.md, this file down to HISTORY, GDD
+    sections 10 and 11 only, disclosure.jsonc; in Knotwork, only
+    docs/ADDING-TO-A-GAME.txt and its README's disclosure; Amontillado's
+    CREDITS.txt (grep -n -i knotwork) for the credit's form.
+  For NEXT 3 (the skeleton): CLAUDE.md, this file down to HISTORY, GDD.md
+    (about 47 KB; sections 3, 4, 6, 7 and 11 above all), LOCAL-SUBAGENTS.md
+    (what the runner needs from a skeleton), ink/dialogue.js's header.
   Wells's Little Wars (1913): only to check a rule. GDD section 3 restates
     the rules with their numbers (W1-W29). If needed, read chapter III (The
     Rules) only:
@@ -102,7 +140,7 @@ THE AUTHOR'S DECISIONS (2026-10-20)
     decisions by Kenton Howard." (the tool's own pattern), in README.md and
     CLAUDE.md, checked by node dev/disclosure.js. --apply may add a Claude
     model. The local models (Qwen 3.6 builder, Qwen 3.8 fixer) go in only
-    on his word.
+    on his word. Decision 9 adds a sentence, applied in NEXT 2.
   7 README.md: Claude's draft, added at his request. He may rewrite it.
     Change it only when he asks.
   8 The design session's answers (GDD section 10): fixed units with their
@@ -111,6 +149,11 @@ THE AUTHOR'S DECISIONS (2026-10-20)
     score is a score only, with one ending; the balance bar eases to even
     (90 / 75 / 65 / 55 / 50%). Board sizes and round limits are starting
     numbers for the bot runs.
+  9 Knotwork comes in before the skeleton (NEXT 2), and the disclosure
+    names Knotwork and inkjs. The line, in his words: "AI Disclosure: code
+    by Claude Opus 5.5. Design and decisions by Kenton Howard. Includes
+    Knotwork (see its own AI disclosure) and inkjs (inkle, MIT)." No
+    version in the line; CREDITS.txt gives it.
 
 THE FILES
   CLAUDE.md          rules for Claude sessions (line 1 is the runner's
@@ -159,3 +202,6 @@ HISTORY
               story contract (scene_1-10 with sceneDone; intro, tutorial and
               ending send nothing), targets and the code layout - and
               disclosure.jsonc's "code" set to it (check: exit 0). No code.
+              Later that day the author chose Knotwork before the skeleton
+              and the disclosure's new sentence (decision 9): NEXT 2 added,
+              the later items moved down one, GDD sections 9-11 to match.

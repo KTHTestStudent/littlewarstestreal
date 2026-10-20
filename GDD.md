@@ -1,10 +1,11 @@
 # Little Wars (working title) - Game Design Document, v0.4
 
-Status: v0.4, 2026-10-20, after the design session (HANDOFF NEXT 1). The
+Status: v0.4, 2026-10-20, after the design session (section 9, step 2),
+with the author's later answer on Knotwork (step 3, section 10). The
 rules, the tables, the story contract and the targets are written. Every
-number is a starting value for the bot runs (HANDOFF NEXT 4) to tune; the
-design freeze comes after them. What the author decided and what Claude
-proposed are in section 10.
+number is a starting value for the bot runs (step 6) to tune; the design
+freeze comes after them. What the author decided and what Claude proposed
+are in section 10.
 
 ## 1 Pitch
 
@@ -353,7 +354,8 @@ counts as half a win.
 
 ### 5.3 How it is checked
 
-Bot runs (dev/bots.js, from NEXT 4 on; about 1,000 seeded runs per row)
+Bot runs (dev/bots.js, from section 9's step 6 on; about 1,000 seeded runs
+per row)
 report for every row of the level table:
 
 - the win, draw and loss rates of your side;
@@ -418,8 +420,8 @@ knot: who moves first, the curtain, the set-up zone, a unit more, a horse
 gun, the round limit, the raid's half, their bot's style, or one of the
 row's switchable pieces.
 
-The Countries, to be drawn as data.js maps (NEXT 2 draws them roughly from
-this table; NEXT 4's bot runs reshape them):
+The Countries, to be drawn as data.js maps (the skeleton session draws them
+roughly from this table; the bot runs reshape them):
 
 | # | Country | Pieces | What it is for |
 |---|---|---|---|
@@ -555,7 +557,7 @@ Its rules are restated without the appendix's British Army framing
 ## 7 Story (Knotwork): the contract
 
 The game and the story agree on this contract. The skeleton session
-(NEXT 2) writes it in three more places that must then stay in step: the
+(section 9, step 4) writes it in three more places that must then stay in step: the
 CONTRACT at the top of story/story.ink, ink/config.js (what knotcheck
 checks), and story/CONTRACT.txt (one page for the writer, as in
 Amontillado). Amontillado's contract is the model.
@@ -603,8 +605,8 @@ they fit any frame the author picks.
 | `scene_10` | 10, the finale | *"extra_troop" → you have a cavalry troop more; "extra_gun" → you have a gun section more | extra_troop |
 | `ending` | the end screen | none | - |
 
-- The pairs are proposals for the bot runs to even out (5.2): NEXT 4 may
-  change a number (two rounds more, a troop more) or swap an outcome's
+- The pairs are proposals for the bot runs to even out (5.2): the bot runs
+  may change a number (two rounds more, a troop more) or swap an outcome's
   effect, and the author writes the knots to fit what is settled.
 - In data.js, each outcome is a list of steps (EFFECTS, with DEFAULTS),
   as in Amontillado: `["first", "you"]`, `["scout"]`, `["rear", "west"]`,
@@ -718,20 +720,23 @@ As in Amontillado, the design is settled before the story.
 2. Cloud, Opus 5.5: the design session. Section 10 settled; the rules, the
    tables, the story contract and the targets written (this version).
    Done 2026-10-20.
-3. Cloud, Opus 5.5 high: the runner-ready skeleton (PHASE blocks, data.js
+3. Cloud, Opus 5.5 medium: Knotwork in, before the skeleton (the author's
+   decision, 2026-10-20). Knotwork 3.8-alpha's own files, copied unedited
+   (section 11), CREDITS.txt, and the disclosure's new sentence in the
+   author's words (section 10).
+4. Cloud, Opus 5.5 high: the runner-ready skeleton (PHASE blocks, data.js
    with all eleven rows and rough maps, self-test, spec, reference, stub
    commit), the story contract's other three copies (section 7), and
    HANDOFF.txt. The first target is the tutorial battle playing end to
    end; the other ten battles are then mostly table rows.
-4. Runner on the laptop, no Claude session: the builder writes the PHASE
+5. Runner on the laptop, no Claude session: the builder writes the PHASE
    blocks. A Sonnet 5.5 laptop session is used only to plan, approve and
    read reports.
-5. Cloud, Opus 5.5 medium: the cloud check, then bot runs for balance and
-   battle length (section 5), then a design freeze.
-6. Author, by hand: the story in Inky. A cloud session may review it.
-7. Author: playtests (including minutes per battle), the disclosure wording
-   and the release.
-8. Later, if it goes well: the Appendix, through the same chain.
+6. Cloud, Opus 5.5 medium: the cloud check, then the bot runs for balance
+   and battle length (section 5), then a design freeze.
+7. Author, by hand: the story in Inky. A cloud session may review it.
+8. Author: playtests (including minutes per battle) and the release.
+9. Later, if it goes well: the Appendix, through the same chain.
 
 ## 10 Decisions
 
@@ -766,7 +771,17 @@ taken):
 - **The balance bar:** easing to even: about 90% for the tutorial, 75%
   Act I, 65% Act II, 55% Act III, 50% the finale (5.2).
 - **Board sizes and round limits:** starting numbers in the level table,
-  for the bot runs (NEXT 4) to tune.
+  for the bot runs to tune.
+
+Decided by the author after the design session, 2026-10-20:
+
+- **Knotwork comes in before the skeleton** (section 9, step 3), so the
+  skeleton reads the kit's real files.
+- **The disclosure names Knotwork and inkjs.** The line becomes, in his
+  words: "AI Disclosure: code by Claude Opus 5.5. Design and decisions by
+  Kenton Howard. Includes Knotwork (see its own AI disclosure) and inkjs
+  (inkle, MIT)." No version in the line, so a Knotwork renumbering leaves
+  it alone; CREDITS.txt gives the version. The Knotwork step applies it.
 
 Claude's proposals in v0.4 (the author may change any of them; each is a
 data change or a GDD line until the skeleton is built):
@@ -789,11 +804,9 @@ Still open (later):
 
 - The author: the title, the story's frame and speakers, the Country
   names if he wants his own, the licence.
-- The author, when the skeleton brings in inkjs (inkle, MIT) and the
-  Knotwork copies: whether the disclosure's human sentence names them, as
-  Amontillado's "Includes inkjs (inkle, MIT)." does (his wording).
-- NEXT 2: the maps of battles 1-10, the exact phase split (section 11).
-- NEXT 4: every number, by bot runs.
+- The skeleton session: the maps of battles 1-10, the exact phase split
+  (section 11).
+- The bot runs: every number.
 
 ## 11 Code layout
 
@@ -806,17 +819,18 @@ tables a person can hand-edit.
 | `data.js` | tables and their comments only, last line `DATA_OK`: RULES, LOSS_ORDER, ARMS, PIECES, COUNTRIES (the maps), COUNTRY_NAMES, LEVELS (the eleven rows), EFFECTS and DEFAULTS (the story's outcomes), BOT_STYLES, the words (SCREEN_WORDS, TIPS, LOG_WORDS, UNIT_NAMES), THEME (colours, hats, base marks) | Claude; the author's hand edits |
 | `ink/config.js` | this game's contract, for the kit and knotcheck | Claude |
 | `ink/story.js` | the compiled story (Inky's export) | the author |
-| `ink/ink.js` | inkjs, unedited | inkle (MIT) |
-| `ink/dialogue.js`, `tools/` (knotcheck, viewer, pack) | unedited copies from Knotwork 3.8-alpha | Knotwork |
+| `ink/ink.js`, `LICENSE-INKJS.txt` | inkjs and its licence, unedited, as Knotwork ships them | inkle (MIT) |
+| `ink/dialogue.js`, `tools/` (knotcheck, viewer, pack) | unedited copies from Knotwork 3.8-alpha, brought in before the skeleton (section 9, step 3) | Knotwork (its own AI disclosure) |
 | `story/story.ink` | the story. The skeleton writes only the contract header and empty knots with their summaries | the author |
 | `story/CONTRACT.txt` | the contract on one page, for the writer | Claude |
 | `dev/` | headless checks: `selftest.js` (prints the SELF-TEST line), `bots.js`, `outcomes.js`, `knotcheck.js`, `playruns.js`, `README.txt`; and `disclosure.js`, the Auto-Disclosure-Tool's unedited copy | Claude |
 | `specs/LITTLEWARS-SPEC.txt` | the builder's spec: steps per phase, EXPECTED self-test lines, CHECK walks, FIXER PROMPT, LINE MAP | Claude |
-| `hand-edits.txt`, `CREDITS.txt`, `LICENSE-INKJS.txt` | the author's hand-edit guide; who made what; inkjs's licence | Claude (the author's words where he gives them) |
+| `CREDITS.txt` | who made what, the disclosure line, Knotwork's version and repository, inkjs's licence (from the Knotwork step on) | Claude (the author's words where he gives them) |
+| `hand-edits.txt` | the author's hand-edit guide to data.js (from the skeleton on) | Claude |
 
 - The reference branch holds `dev-reference/` (Claude's answer code). It
   never reaches the laptop's clone or a builder's prompt.
-- A proposed phase split, for NEXT 2 to fix: PHASE 2 the board (pieces,
+- A proposed phase split, for the skeleton session to fix: PHASE 2 the board (pieces,
   steps, reachable squares, line of fire); PHASE 3 the armies (units from
   the row, set-up zones, the in-action count, isolation); PHASE 4 gunfire;
   PHASE 5 melee, prisoners and escorts; PHASE 6 the turn (guns first,
@@ -826,5 +840,7 @@ tables a person can hand-edit.
 - The AI disclosure check (`node dev/disclosure.js`) counts as code:
   game.html, data.js, ink/ (less story.js, ink.js and dialogue.js) and dev/
   (less disclosure.js); the story is story/story.ink and ink/story.js
-  (disclosure.jsonc). When game.html and CREDITS.txt exist, they join the
-  files that hold the line.
+  (disclosure.jsonc). Knotwork's and inkjs's files are left out of that
+  count; the line's last sentence names them instead (section 10).
+  CREDITS.txt joins the files that hold the line in the Knotwork step,
+  and game.html (the title screen) with the skeleton.
