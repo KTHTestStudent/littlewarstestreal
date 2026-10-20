@@ -1,0 +1,54 @@
+// Little Wars's AI disclosure settings, read by dev/disclosure.js.
+// dev/disclosure.js is an unedited copy of disclosure.js from
+// KTHTestStudent/Auto-Disclosure-Tool (branch working, af06b0f). That is its
+// master copy: change the code there, then copy it here.
+// Run: node dev/disclosure.js (it finds this file).
+// Comments (// and /* */) and trailing commas are fine in this file.
+// Set up 2026-10-20 with the author's wording, before any game code. The
+// design session sets "code" and "story" to the skeleton's real layout.
+{
+  // The code the line's model list covers (git pathspecs, forward slashes).
+  // Amontillado's layout, for now. Not counted:
+  //   - dev/disclosure.js: the tool's copy, credited in its own repository;
+  //   - run-local.sh, run-phases.js, LOCAL-SUBAGENTS.md: the runner's copies
+  //     (master copy: KTHTestStudent/localsubagentresults main);
+  //   - ink/story.js: the compiled story, counted with the story below.
+  "code": ["game.html", "data.js", "ink", ":(exclude)ink/story.js", "dev", ":(exclude)dev/disclosure.js"],
+
+  // Code files where a commit with no model named is the author's own hand
+  // edit (the words and numbers in data.js's tables): listed, never a failure.
+  "handEdits": ["data.js"],
+
+  // The story: the author's, counted apart and never credited.
+  "story": ["story/story.ink", "ink/story.js"],
+
+  "line": {
+    // The words right before the model list. The list runs to the first "."
+    // after a version number.
+    "prefix": "AI Disclosure: code by",
+    // The files that hold the line, each with the model list on ONE line.
+    // The first is the one --apply makes the others match. The title screen
+    // (game.html) and CREDITS.txt join here once they exist.
+    "files": ["README.md", "CLAUDE.md"],
+    // Names --apply may add on its own: Claude models only. Any other name
+    // goes in only on the author's word.
+    "autoAdd": "^Claude ",
+    "autoAddWhy": "Claude models only, the author's choice 2026-10-20",
+    "afterApply": "Next: note the new model in HANDOFF.txt (THE AUTHOR'S DECISIONS, 6)."
+  },
+
+  // The author's sentence, word for word (2026-10-20).
+  "human": {
+    "lines": ["Design and decisions by Kenton Howard."]
+  },
+
+  // The laptop's local models (LOCAL-SUBAGENTS.md), the same builds as in
+  // Amontillado. "ids": the ID column of `ollama list`, each in double quotes.
+  // run-phases.js stamps each commit with Local-Model:, credited by its id
+  // ahead of the subject. A new id goes in only on the author's word.
+  // askFirst: --apply adds the fixer only with --with-fixer.
+  "local": [
+    { "role": "fixer", "name": "Qwen 3.8", "subject": "^phase \\d+: fixer|fixer try", "askFirst": true, "ids": ["3237d5585563"] },
+    { "role": "builder", "name": "Qwen 3.6", "subject": "^phase \\d+: builder|written by the local builder", "ids": ["2167ff73fd1a"] }
+  ]
+}

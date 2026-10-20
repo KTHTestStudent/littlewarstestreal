@@ -3,8 +3,9 @@ Local builder/fixer runs: follow LOCAL-SUBAGENTS.md.
 # Little Wars (working title)
 
 A grid-tactics campaign after H. G. Wells's Little Wars (1913), made as a
-Knotwork example. The design is in GDD.md. The current state and next item
-will be in HANDOFF.txt once a cloud session starts one.
+Knotwork example. The design is in GDD.md. **Start with HANDOFF.txt** (START
+HERE down to the HISTORY line): where things stand, what to read, and what's
+next.
 
 ## Git
 
@@ -12,6 +13,23 @@ Cloud sessions make working-claude from origin/working and push only there.
 Laptop sessions work on a local throwaway branch made from working and never
 push. Nobody pushes to main. Merges, pull requests, tags and branch deletions
 are the author's.
+
+## AI disclosure
+
+- The line, in the author's words (2026-10-20), on one line in README.md and
+  here:
+  AI Disclosure: code by Claude Opus 5.5. Design and decisions by Kenton Howard.
+- `node dev/disclosure.js` checks it against the stamps in the commits
+  (exit 0 = OK). Run it at the end of every session that commits code. If it
+  names a missing Claude model, run it with `--apply`. A local model's name
+  (Qwen 3.6, Qwen 3.8) goes in only on the author's word. Change no other
+  words unless he asks.
+- Every commit ends with a `Co-Authored-By:` line naming the model that is
+  actually running. run-phases.js stamps local-model commits itself
+  (`Local-Model:`).
+- dev/disclosure.js is an unedited copy of KTHTestStudent/Auto-Disclosure-Tool's
+  disclosure.js: change the code there, then copy it here. This project's
+  facts are in disclosure.jsonc.
 
 ## Who does what
 
@@ -44,8 +62,8 @@ are the author's.
   clone or a builder's prompt.
 - Nothing from Garden Defense and none of the Louis cast: this game has its
   own toy soldiers.
-- At the end of a session that committed code, run the project's disclosure
-  check (once it has one).
+- At the end of a session that committed code: `node dev/disclosure.js`
+  (AI disclosure, above).
 
 ## Content rules
 

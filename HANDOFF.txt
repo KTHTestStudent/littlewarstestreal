@@ -1,0 +1,142 @@
+LITTLE WARS (working title) - HANDOFF
+KTHTestStudent/littlewarstestreal. For Claude sessions: read START HERE down
+to the HISTORY line, and open HISTORY only for what the task needs. Keep this
+file short: when a NEXT item is done, move its notes into HISTORY in a line
+or two.
+
+START HERE
+  Where things stand (2026-10-20): design only, no game code yet.
+    * On main and working (the author's setup, FULL-GUIDE steps 1-4):
+      CLAUDE.md, GDD.md (v0.3), .gitattributes, .gitignore and the runner's
+      copies.
+    * On working-claude (the first cloud session, for the author to merge):
+      this file, README.md, the AI disclosure check (dev/disclosure.js and
+      disclosure.jsonc, with the line in README.md and CLAUDE.md), one
+      .gitignore line, and GDD step 2's pointer to WHAT TO READ below.
+  Next: NEXT 1, the design session. Its starter prompt is just below.
+  Before it starts (the author's call when): Amontillado's PHASE 2-6 rebuild
+  and its cloud check come first. There is one runner and one Pro allowance.
+  Open for the author, by hand: OPEN ITEMS below.
+
+STARTER PROMPT (the author pastes it into a new cloud session)
+  Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
+  (Opus 5.5, high). Start from origin/working-claude (merge origin/working
+  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 1.
+
+NEXT
+  1 The design session (cloud, Opus 5.5 high). No game code in it.
+    a Settle GDD section 10's open questions with the author, one short
+      AskUserQuestion round with the GDD's leans as the first options:
+      unit size and splitting, gun crews, board size and round limits, and
+      what the campaign score does at the end (his call, since it touches
+      the story).
+    b Write into GDD.md:
+      - the arms table: unit types, figures per unit, moves and crews;
+      - the Countries: terrain pieces, and the tutorial's Hook's Farm map;
+      - the level table for the 11 battles (GDD section 6's columns);
+      - the story contract: which knot comes before which battle, each
+        knot's outcomes, what each outcome does to the next battle's row,
+        and a default for an unwritten knot. The tutorial's knots send
+        none. Amontillado's contract is the model (WHAT TO READ);
+      - the targets for battle length (GDD section 5) and balance. The
+        balance bar is the author's to pick: propose options;
+      - the code layout (which files). Then set disclosure.jsonc's "code"
+        and "story" to match, and run node dev/disclosure.js.
+    c End: update START HERE and NEXT, add a HISTORY line, push to
+      working-claude, and give the author the pull request steps.
+  2 The skeleton (cloud, Opus 5.5 high): a runner-ready skeleton (PHASE
+    blocks, data.js tables, self-test, spec with CHECK walks, reference
+    branch, stub commit), as GDD section 9 step 3 says. The first target is
+    the tutorial battle playing end to end.
+  3 The runner on the laptop (no Claude session): the builder writes the
+    PHASE blocks. The skeleton session leaves the plan lines and commands
+    here.
+  4 The cloud check (Opus 5.5 medium), bot runs for balance and battle
+    length, then the design freeze.
+  5 The author writes the story in Inky. A cloud session may review it with
+    knotcheck and play runs.
+  6 The author: playtests, the release.
+  Later, if it goes well: the Appendix (GDD section 6).
+
+WHAT TO READ (keep it cheap)
+  Here: CLAUDE.md, this file down to HISTORY, and GDD.md (about 15 KB).
+  Wells's Little Wars (1913): only to check a rule. GDD section 3 already
+    restates the rules. If needed, read chapter III (The Rules) only:
+    https://www.gutenberg.org/cache/epub/3691/pg3691-images.html
+    Its prose never goes into this repository (CLAUDE.md, content rules).
+  Amontillado (KTHTestStudent/amontillado-test, branch working; read-only
+    from here; a shallow clone is enough: git clone --depth 1 --branch
+    working). It is the model for the story contract, knotcheck and the
+    disclosure check. Read only these, about 30 KB together:
+      story/CONTRACT.txt   (6 KB) the author's one-page story contract
+      GDD.md section 8     (about 11 KB, near line 253; find it with
+                           grep -n '^## 8' GDD.md) knots, hooks, outcomes
+                           and VARs
+      ink/config.js        (4 KB) what knotcheck checks the story against
+      CLAUDE.md, "Checks"  the knotcheck and playruns commands
+      disclosure.jsonc     (4 KB) the settings this repo's were made from
+    Don't read its HANDOFF.txt (about 208 KB) or game.html (about 150 KB)
+    for this. If one fact is needed, grep for it.
+
+THE AUTHOR'S DECISIONS (2026-10-20)
+  1 The game: a grid-tactics campaign after H. G. Wells's Little Wars, with
+    Red and Blue toy soldiers. Nothing from Garden Defense and none of the
+    Louis cast.
+  2 Content: nothing of Wells's sexism, colonialism or national rivalry
+    (GDD "Look and content"; CLAUDE.md, content rules).
+  3 Design: GDD section 10 (11 battles; seeded gunfire around an aimed
+    square; squad-sized units; no timed moves; the player picks a side, and
+    the sides are symmetrical; points carry over only; no Phaser; the
+    tutorial's knots send no outcome).
+  4 Branches: working is his; Claude pushes only to working-claude; main is
+    the front page.
+  5 His calls: the title, the repository name, the story frame and the
+    story itself.
+  6 AI disclosure: "AI Disclosure: code by Claude Opus 5.5. Design and
+    decisions by Kenton Howard." (the tool's own pattern), in README.md and
+    CLAUDE.md, checked by node dev/disclosure.js. --apply may add a Claude
+    model. The local models (Qwen 3.6 builder, Qwen 3.8 fixer) go in only
+    on his word.
+  7 README.md: Claude's draft, added at his request. He may rewrite it.
+    Change it only when he asks.
+
+THE FILES
+  CLAUDE.md          rules for Claude sessions (line 1 is the runner's
+                     pointer line; keep it first)
+  GDD.md             the design (v0.3)
+  HANDOFF.txt        this file
+  README.md          the front page, with the disclosure line
+  disclosure.jsonc   the disclosure check's settings for this project
+  dev/disclosure.js  an unedited copy of Auto-Disclosure-Tool's disclosure.js
+                     (branch working, af06b0f)
+  run-local.sh, run-phases.js, LOCAL-SUBAGENTS.md, phase-plan.example.txt
+                     the runner's copies: the same files as
+                     Auto-Disclosure-Tool's, from localsubagentresults main
+                     bccc45c
+  .gitattributes     LF line endings for run-local.sh on Windows
+  .gitignore         the runner's output folders, node_modules and Claude
+                     Code's laptop settings
+
+OPEN ITEMS (the author, by hand)
+  * littlewarstest/ is a nested-repository link (git mode 160000, no
+    .gitmodules): a "git add ." picked up a folder with its own .git inside
+    the project. A clone gets an empty folder. To remove it, in Git Bash:
+      cd /c/Git/littlewarstestreal
+      git checkout working
+      git pull
+      mv littlewarstest ../littlewarstest-nested   # keeps it, out of the repo
+      git rm --cached littlewarstest
+      git commit -m "Remove the nested littlewarstest link"
+      git push
+  * Merge working-claude into working (a pull request on GitHub), and later
+    working into main when the front page should show README.md.
+
+HISTORY
+  2026-10-20  A chat session (Opus 5.5) read Little Wars, drafted CLAUDE.md,
+              GDD.md and README.md, and revised the GDD twice with the
+              author (scope, battle length, his answers). He made the repo
+              and set it up (FULL-GUIDE steps 1-4).
+  2026-10-20  The first cloud session (Opus 5.5) made working-claude from
+              working, added this file, README.md, the disclosure check
+              (exit 0) and the .gitignore line, and pointed GDD step 2 at
+              WHAT TO READ.

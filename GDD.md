@@ -220,8 +220,8 @@ As in Amontillado, the design is settled before the story.
 2. Cloud, Opus 5.5 high: the design session. Settle section 10, and write
    the tables (arms, Countries, the eleven battles), the story contract and
    the targets for balance and battle length. Amontillado's story contract
-   and knotcheck setup are the model; read its HANDOFF.txt from START HERE
-   only.
+   and knotcheck setup are the model. HANDOFF.txt (WHAT TO READ) lists the
+   few files to read there; its own HANDOFF.txt isn't one of them.
 3. Cloud, Opus 5.5 high: the runner-ready skeleton (PHASE blocks, data.js,
    self-test, spec, reference, stub commit) and HANDOFF.txt. The first
    target is the tutorial battle playing end to end; the other ten battles
