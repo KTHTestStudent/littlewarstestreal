@@ -1,0 +1,9 @@
+# A plan for run-phases.js - copy it to prompts/plan.txt (untracked) and edit.
+# One line per phase, in the order to build: the phase number, then the
+# self-test line the spec expects after that phase, exactly as printed.
+# This one is Amontillado's NEXT 4c rebuild of PHASE 7, 8 and 9 (2026-10-17).
+7  SELF-TEST 14/26 FAIL: map map2 path
+8  SELF-TEST 18/26 FAIL: ask nerve cards
+9  SELF-TEST 26/26 PASS
+# Optional: at the end the self-test's replay lines must match this branch's.
+replay-same-as  origin/working
