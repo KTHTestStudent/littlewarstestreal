@@ -5,62 +5,28 @@ file short: when a NEXT item is done, move its notes into HISTORY in a line
 or two.
 
 START HERE
-  Where things stand (2026-10-20): the design is written, no game code yet.
-    * On working: the author's setup, and the first cloud session's work
-      (this file, README.md, the AI disclosure check).
-    * On working-claude (the design session, for the author to merge):
-      GDD.md v0.4 - the rules on the grid with their numbers, the arms, the
-      Countries' pieces, Hook's Farm's map and set-up, the level table of
-      eleven battles, the bots, the story contract, the targets for battle
-      length and balance, and the code layout - plus disclosure.jsonc set
-      to that layout, and this file. Then the author's answer on Knotwork
-      (decision 9): it comes in before the skeleton, and the disclosure
-      names it and inkjs.
-  Next: NEXT 2, Knotwork in (a short session). Its starter prompt is just
-  below. Then NEXT 3, the skeleton (Opus 5.5 high; the same prompt with
-  "high" and "NEXT 3").
+  Where things stand (2026-10-20): the design is written and settled for
+  the skeleton, Knotwork's files are in, no game code yet.
+    * On working: the author's setup, the first cloud session's work (this
+      file, README.md, the AI disclosure check) and the design session's
+      (GDD.md v0.4, disclosure.jsonc set to its layout).
+    * On working-claude (NEXT 2, for the author to merge): Knotwork
+      3.8-alpha's files copied unedited (THE FILES), CREDITS.txt, the
+      disclosure's new sentence (decision 9) in README.md, CLAUDE.md and
+      CREDITS.txt, and the author's yes to all of Claude's proposals
+      (decision 10) written into GDD.md.
+  Next: NEXT 3, the skeleton (Opus 5.5 high). Its starter prompt is just
+  below.
   Before it starts: the author merges working-claude into working (OPEN
-  ITEMS). He may first want to change any of Claude's proposals (GDD
-  section 10): each is a GDD line now, and a data change later.
+  ITEMS).
   Open for the author, by hand: OPEN ITEMS below.
 
 STARTER PROMPT (the author pastes it into a new cloud session)
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
-  (Opus 5.5, medium). Start from origin/working-claude (merge origin/working
-  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 2.
+  (Opus 5.5, high). Start from origin/working-claude (merge origin/working
+  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 3.
 
 NEXT
-  2 Knotwork in (cloud, Opus 5.5 medium), as GDD section 9 step 3 says:
-    before the skeleton, so the skeleton reads the kit's real files.
-    a The source: KTHTestStudent/knotworkprivateprealpha (add it to the
-      session read-only), at Knotwork 3.8-alpha: its tag if there is one,
-      otherwise ask the author which commit. Note the commit's short hash
-      in THE FILES, as for dev/disclosure.js.
-    b Copy the kit's own files unedited, as Knotwork's
-      docs/ADDING-TO-A-GAME.txt lists them: in Amontillado these are
-      ink/ink.js, ink/dialogue.js, tools/ (knotcheck, viewer and pack, .html
-      and .js) and LICENSE-INKJS.txt. Check each copy is byte for byte the
-      source (sha1sum both). Not ink/config.js or story/story.ink: those
-      are this game's contract, written in NEXT 3.
-    c The disclosure (decision 9), in the author's words, word for word:
-        AI Disclosure: code by Claude Opus 5.5. Design and decisions by
-        Kenton Howard. Includes Knotwork (see its own AI disclosure) and
-        inkjs (inkle, MIT).
-      On one line in README.md (only the line: README.md otherwise changes
-      only when he asks), CLAUDE.md and a new CREDITS.txt; in
-      disclosure.jsonc, the "human" sentence and CREDITS.txt added to
-      line.files (README.md stays first). CREDITS.txt also gives
-      Knotwork's version and repository (Amontillado's CREDITS.txt has the
-      form) and inkjs's licence.
-    d The words point at Knotwork's own AI disclosure: check that its
-      README at that commit has one. If it doesn't, tell the author before
-      pushing.
-    e Commit the copies apart from the rest, with a subject that says they
-      are unedited Knotwork 3.8-alpha copies. They are outside
-      disclosure.jsonc's "code", so no model is credited for them here.
-    f End: node dev/disclosure.js (exit 0); GDD section 11 if a file
-      differs from its table; START HERE, NEXT and a HISTORY line here;
-      push to working-claude; the pull request steps for the author.
   3 The skeleton (cloud, Opus 5.5 high), as GDD section 9 step 4 says.
     a The first target: the tutorial, Hook's Farm, plays end to end in the
       browser and headless (6.3), with bots on both sides.
@@ -77,8 +43,12 @@ NEXT
     d The story contract's other three copies (GDD 7): story/story.ink's
       header and empty knots with summaries (no prose, no placeholder
       lines), ink/config.js, story/CONTRACT.txt. Wire game.html to the
-      kit's ink/dialogue.js as it is in the repo since NEXT 2 (read its
-      header for the API; never edit it).
+      kit's ink/dialogue.js as it is in the repo (Knotwork 3.8-alpha; read
+      its header and Knotwork's docs/ADDING-TO-A-GAME.txt sections 1-4d
+      for the API and the scene_ content type; never edit it). Its
+      knotcheck is the kit's: Amontillado's copy has three checks the kit
+      lacks (Amontillado CREDITS.txt, THE KIT). If the skeleton needs one,
+      it goes into Knotwork first, then is copied here.
     e The title screen shows the disclosure line (decision 9's words):
       add game.html to disclosure.jsonc's line.files.
     f End: node dev/selftest.js and node dev/disclosure.js; update START
@@ -97,13 +67,13 @@ NEXT
   Later, if it goes well: the Appendix (GDD 6.5).
 
 WHAT TO READ (keep it cheap)
-  For NEXT 2 (Knotwork in): CLAUDE.md, this file down to HISTORY, GDD
-    sections 10 and 11 only, disclosure.jsonc; in Knotwork, only
-    docs/ADDING-TO-A-GAME.txt and its README's disclosure; Amontillado's
-    CREDITS.txt (grep -n -i knotwork) for the credit's form.
   For NEXT 3 (the skeleton): CLAUDE.md, this file down to HISTORY, GDD.md
     (about 47 KB; sections 3, 4, 6, 7 and 11 above all), LOCAL-SUBAGENTS.md
     (what the runner needs from a skeleton), ink/dialogue.js's header.
+    In Knotwork (KTHTestStudent/knotworkprivateprealpha, read-only, branch
+    working): docs/ADDING-TO-A-GAME.txt (25 KB; sections 1-4d, 5, 7) and
+    template/game-canvas.html's wiring - the canvas page, as Little Wars
+    is plain canvas.
   Wells's Little Wars (1913): only to check a rule. GDD section 3 restates
     the rules with their numbers (W1-W29). If needed, read chapter III (The
     Rules) only:
@@ -153,7 +123,14 @@ THE AUTHOR'S DECISIONS (2026-10-20)
     names Knotwork and inkjs. The line, in his words: "AI Disclosure: code
     by Claude Opus 5.5. Design and decisions by Kenton Howard. Includes
     Knotwork (see its own AI disclosure) and inkjs (inkle, MIT)." No
-    version in the line; CREDITS.txt gives it.
+    version in the line; CREDITS.txt gives it. Applied in NEXT 2.
+  10 Claude's proposals in GDD v0.4 (section 10): yes to all of them
+    (2026-10-20) - the 8-direction steps, line of fire and cover, the
+    scatter numbers, the melee loss order, escorts and withdrawal, the
+    eleven rows, the Countries and Hook's Farm's map, the bot styles, the
+    story's scene_ prefix, sceneDone, sidegrade outcome pairs, defaults
+    and VARs, and the hats and base marks. Their numbers stay starting
+    values for the bot runs; the words and numbers stay his to hand-edit.
 
 THE FILES
   CLAUDE.md          rules for Claude sessions (line 1 is the runner's
@@ -161,8 +138,16 @@ THE FILES
   GDD.md             the design (v0.4)
   HANDOFF.txt        this file
   README.md          the front page, with the disclosure line
+  CREDITS.txt        who does what, the disclosure line, Knotwork's version
+                     and commit, inkjs's licence
   disclosure.jsonc   the disclosure check's settings, set to GDD section
                      11's layout
+  ink/ink.js, ink/dialogue.js, tools/ (knotcheck.html and .js, pack.html
+  and .js, viewer.html), LICENSE-INKJS.txt
+                     unedited copies of Knotwork 3.8-alpha: KTHTestStudent/
+                     knotworkprivateprealpha, branch working, 67688c3 (no
+                     3.8-alpha tag); byte for byte checked. Never edit them
+                     here (CLAUDE.md)
   dev/disclosure.js  an unedited copy of Auto-Disclosure-Tool's disclosure.js
                      (branch working, af06b0f)
   run-local.sh, run-phases.js, LOCAL-SUBAGENTS.md, phase-plan.example.txt
@@ -186,6 +171,13 @@ OPEN ITEMS (the author, by hand)
       git push
   * Merge working-claude into working (a pull request on GitHub), and later
     working into main when the front page should show README.md.
+  * In Knotwork, not here (his choice, 2026-10-20: push now, note it): its
+    README.txt has no AI disclosure - the disclosure the line points at is
+    in its CREDITS.txt (HOW IT WAS MADE) - and the README's banner still
+    says 3.7-ALPHA at 3.8-alpha. Adding a disclosure line to Knotwork's
+    README is his (its words are his). README.txt is not one of the copied
+    files, so Little Wars changes only if he wants CREDITS.txt to point at
+    the README instead.
 
 HISTORY
   2026-10-20  A chat session (Opus 5.5) read Little Wars, drafted CLAUDE.md,
@@ -205,3 +197,12 @@ HISTORY
               Later that day the author chose Knotwork before the skeleton
               and the disclosure's new sentence (decision 9): NEXT 2 added,
               the later items moved down one, GDD sections 9-11 to match.
+  2026-10-20  The Knotwork session (cloud, Opus 5.5, Extra; NEXT 2):
+              Knotwork 3.8-alpha's files copied unedited from its branch
+              working at 67688c3 (no tag) and checked byte for byte, in a
+              commit of their own; CREDITS.txt; decision 9's sentence in
+              the three files and disclosure.jsonc (check: exit 0). The
+              author's yes to all of GDD 10's proposals (decision 10)
+              written into the GDD. Found: Knotwork's README has no AI
+              disclosure; its CREDITS.txt holds it. The author chose
+              67688c3 and to push now, with a note (OPEN ITEMS).

@@ -1,11 +1,11 @@
 # Little Wars (working title) - Game Design Document, v0.4
 
 Status: v0.4, 2026-10-20, after the design session (section 9, step 2),
-with the author's later answer on Knotwork (step 3, section 10). The
-rules, the tables, the story contract and the targets are written. Every
-number is a starting value for the bot runs (step 6) to tune; the design
-freeze comes after them. What the author decided and what Claude proposed
-are in section 10.
+with the author's later answer on Knotwork (step 3, section 10) and his
+yes to all of Claude's proposals. The rules, the tables, the story
+contract and the targets are written. Every number is a starting value
+for the bot runs (step 6) to tune; the design freeze comes after them.
+What the author decided, and when, is in section 10.
 
 ## 1 Pitch
 
@@ -347,7 +347,7 @@ counts as half a win.
 | Finale | about 50% |
 
 - Each battle within about 5 points of its part's figure.
-- **Story outcomes are sidegrades** (Amontillado's rule, proposed for this
+- **Story outcomes are sidegrades** (Amontillado's rule, taken for this
   game too): each `scene_` knot's two outcomes give different kinds of
   help, and in bot runs the next battle's win rate with each is within
   about 5 points of the other.
@@ -605,7 +605,8 @@ they fit any frame the author picks.
 | `scene_10` | 10, the finale | *"extra_troop" → you have a cavalry troop more; "extra_gun" → you have a gun section more | extra_troop |
 | `ending` | the end screen | none | - |
 
-- The pairs are proposals for the bot runs to even out (5.2): the bot runs
+- The pairs are starting pairs (the author's yes, section 10) for the bot
+  runs to even out (5.2): the bot runs
   may change a number (two rounds more, a troop more) or swap an outcome's
   effect, and the author writes the knots to fit what is settled.
 - In data.js, each outcome is a list of steps (EFFECTS, with DEFAULTS),
@@ -687,11 +688,11 @@ walk to the back line with their escort.
 
 **Telling the sides apart.** Red and Blue are Wells's own sides (Hook's Farm,
 and the examples in his rules). Each side also gets its own hat silhouette
-and base marking, so the board reads without colour. Proposed (the
-skeleton's THEME table; the author may change it): Red figures wear a tall
-flat-topped hat and stand on a plain ring; Blue figures wear a round-domed
-hat and stand on a base with a bar across it. Neither copies a real army's
-headgear. Both sides' units get the same kinds of names (data.js).
+and base marking, so the board reads without colour. Taken (the author's
+yes, section 10; the skeleton's THEME table, his to hand-edit): Red
+figures wear a tall flat-topped hat and stand on a plain ring; Blue
+figures wear a round-domed hat and stand on a base with a bar across it.
+Neither copies a real army's headgear. Both sides' units get the same kinds of names (data.js).
 
 **Left out of Wells.** None of this goes into the game, its words or its art:
 
@@ -720,10 +721,10 @@ As in Amontillado, the design is settled before the story.
 2. Cloud, Opus 5.5: the design session. Section 10 settled; the rules, the
    tables, the story contract and the targets written (this version).
    Done 2026-10-20.
-3. Cloud, Opus 5.5 medium: Knotwork in, before the skeleton (the author's
+3. Cloud, Opus 5.5: Knotwork in, before the skeleton (the author's
    decision, 2026-10-20). Knotwork 3.8-alpha's own files, copied unedited
    (section 11), CREDITS.txt, and the disclosure's new sentence in the
-   author's words (section 10).
+   author's words (section 10). Done 2026-10-20.
 4. Cloud, Opus 5.5 high: the runner-ready skeleton (PHASE blocks, data.js
    with all eleven rows and rough maps, self-test, spec, reference, stub
    commit), the story contract's other three copies (section 7), and
@@ -783,8 +784,10 @@ Decided by the author after the design session, 2026-10-20:
   (inkle, MIT)." No version in the line, so a Knotwork renumbering leaves
   it alone; CREDITS.txt gives the version. The Knotwork step applies it.
 
-Claude's proposals in v0.4 (the author may change any of them; each is a
-data change or a GDD line until the skeleton is built):
+Decided by the author after reviewing Claude's proposals in v0.4,
+2026-10-20: yes to all of them. They are design now, not proposals; the
+numbers among them stay starting values for the bot runs, and the words
+and numbers stay his to hand-edit in data.js.
 
 - Steps in 8 directions; contact stops a move; no squeezing past corners.
 - Line of fire blocked by houses, walls, rocks and hills, with a gun on a
@@ -842,5 +845,5 @@ tables a person can hand-edit.
   (less disclosure.js); the story is story/story.ink and ink/story.js
   (disclosure.jsonc). Knotwork's and inkjs's files are left out of that
   count; the line's last sentence names them instead (section 10).
-  CREDITS.txt joins the files that hold the line in the Knotwork step,
-  and game.html (the title screen) with the skeleton.
+  CREDITS.txt joined the files that hold the line in the Knotwork step;
+  game.html (the title screen) joins with the skeleton.

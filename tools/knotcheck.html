@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>knotcheck</title>
+<style>
+  body { margin: 0; padding: 16px; background: #15151c; color: #ddd; font: 14px/1.5 monospace; }
+  h1 { font-size: 18px; color: #ffcc33; margin: 0 0 4px; }
+  p { color: #999; margin: 0 0 12px; }
+  #head { font-size: 16px; font-weight: bold; margin: 12px 0; }
+  .FAIL { color: #ff7a7a; } .WARN { color: #ffd479; } .OK { color: #8fdc8f; }
+  pre { white-space: pre-wrap; word-break: break-word; margin: 0; }
+</style>
+</head>
+<body>
+<h1>knotcheck - is story.js right for this game?</h1>
+<p>Run it after every Inky export (File &gt; Export story.js only... saved over ink/story.js - or js/story.js in a
+multi-file game). Press F5 here to check again. Knotwork 3.8-alpha.</p>
+<div id="head">Checking...</div>
+<pre id="out"></pre>
+<script>
+  window.LOADERR = [];
+  window.addEventListener("error", function (e) { if (e.filename) LOADERR.push(e.filename.split("/").slice(-2).join("/") + ": " + e.message); });
+</script>
+<script src="knotcheck.js"></script>
+<script>
+  (function () {
+    // Loads the first of the paths that exists; resolves with the path or null.
+    const load = function (paths) {
+      return new Promise(function (res) {
+        const next = function (i) {
+          if (i >= paths.length) return res(null);
+          const s = document.createElement("script");
+          s.src = paths[i];
+          s.onload = function () { res(paths[i]); };
+          s.onerror = function () { s.remove(); next(i + 1); };
+          document.body.appendChild(s);
+        };
+        next(0);
+      });
+    };
+    const g = function (n) {
+      try {
+        return (0, eval)("typeof " + n + " === 'undefined' ? undefined : " + n);
+      } catch (e) {
+        return undefined;
+      }
+    };
+    (async function () {
+      const confPath = await load(["../ink/config.js", "../js/data.js"]);
+      const sub = confPath === "../js/data.js" ? "js" : "ink";
+      const inkPath = await load(["../" + sub + "/ink.js"]);
+      const storyPath = await load(["../" + sub + "/story.js"]);
+      const files = { ink: sub + "/ink.js", story: sub + "/story.js", conf: confPath ? confPath.slice(3) : "ink/config.js (missing)" };
+      let out;
+      try {
+        out = knotcheck({ inkjs: inkPath ? g("inkjs") : null, storyContent: storyPath ? g("storyContent") : undefined, conf: knotcheckConf(g), files: files });
+      } catch (e) {
+        out = [["FAIL", "knotcheck crashed: " + e.message]];
+      }
+      if (!confPath) out.unshift(["WARN", "no ink/config.js (or js/data.js) next to tools/ - hooks, knots, VARs and names were not checked against the game."]);
+      // A page opened from disk isn't told about a mistake in another file
+      // (the browser hides it), so a config.js that loaded but defines
+      // nothing usable is the sign of one.
+      const confName = confPath ? confPath.slice(3) : "";
+      if (confPath && g("INK_CONFIG") === undefined && g("DLG_HOOKS") === undefined && g("DLG_KNOTS") === undefined && !LOADERR.some(function (m) { return m.indexOf(confName) === 0; })) {
+        out.unshift(["FAIL", confName + " defines no INK_CONFIG, so knotcheck checked the story alone - a mistake in it (a missing comma or bracket?) stops it from running. Press F12 on this page: the browser's console names the line."]);
+      }
+      for (const m of LOADERR) out.unshift(["FAIL", "a file did not load - " + m]);
+      const text = knotcheckReport(out).split("\n");
+      const head = document.getElementById("head");
+      head.textContent = text[0];
+      head.className = text[0].indexOf("FAIL") >= 0 ? "FAIL" : "OK";
+      const pre = document.getElementById("out");
+      for (const r of out) {
+        const d = document.createElement("div");
+        d.className = r[0];
+        d.textContent = r[0] + "  " + r[1];
+        pre.appendChild(d);
+      }
+      window.KNOTCHECK = text.join("\n");
+    })();
+  })();
+</script>
+</body>
+</html>

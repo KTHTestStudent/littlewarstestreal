@@ -16,9 +16,10 @@ are the author's.
 
 ## AI disclosure
 
-- The line, in the author's words (2026-10-20), on one line in README.md and
-  here:
-  AI Disclosure: code by Claude Opus 5.5. Design and decisions by Kenton Howard.
+- The line, in the author's words (2026-10-20; the last sentence is his
+  decision 9), on one line in README.md, CREDITS.txt and here (and on the
+  title screen once game.html exists):
+  AI Disclosure: code by Claude Opus 5.5. Design and decisions by Kenton Howard. Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT).
 - `node dev/disclosure.js` checks it against the stamps in the commits
   (exit 0 = OK). Run it at the end of every session that commits code. If it
   names a missing Claude model, run it with `--apply`. A local model's name
@@ -30,6 +31,11 @@ are the author's.
 - dev/disclosure.js is an unedited copy of KTHTestStudent/Auto-Disclosure-Tool's
   disclosure.js: change the code there, then copy it here. This project's
   facts are in disclosure.jsonc.
+- Knotwork's files - ink/ink.js, ink/dialogue.js, tools/ and
+  LICENSE-INKJS.txt - are unedited copies of Knotwork 3.8-alpha
+  (CREDITS.txt gives the commit). Never edit them here: change them in
+  Knotwork, then copy them again. They are outside "code", and the line's
+  last sentence names them.
 
 ## Who does what
 

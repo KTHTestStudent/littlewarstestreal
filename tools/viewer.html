@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Story and Game Viewer</title>
+<!--
+  STORY AND GAME VIEWER - Knotwork 3.8-alpha (MIT licence)
+  For the programmer: play the story WITHOUT the game, and see everything
+  the game can't show - every variable, every hook call, every outcome,
+  visit counts, tags and where the story is. Nothing here edits the story.
+  It reads the same files as the game: ink/ink.js, ink/story.js and
+  ink/config.js (or js/ in a multi-file game). After a new export, press F5.
+  ANY OTHER INK PROJECT (no game, or Inky's "Export for web" folder): put
+  this file in a folder next to (or inside) the project and open it. If it
+  can't find the files by itself, press "Open files" and pick ink.js and
+  the story's .js together (or drop them on the page).
+  You play the GAME's part by hand: set the game VARs, and say what each
+  asking hook answers (e.g. hasItem: key = true).
+  IMPORT SAVE: load a saved game (paste, open or drop it) and play on by hand.
+  GAME TAB: plays the real game (../game.html) in a frame and shows its
+  story live - lines, game VARs, hook calls, outcomes - through the bridge
+  at the end of ink/dialogue.js. Open it directly: viewer.html?game=game.html
+  A PACKED release (one file, from tools/pack.js) needs no folder: "Open
+  packed game" plays it in the frame, and picking it with Open files also
+  gives the Story tab its story and config. This is the way on a phone.
+  The idea comes from inkle's Ink Player window for Unity (MIT licence).
+  The game never loads this page, and the packer ignores it. This page
+  never writes to the browser's storage (the game's saves live there).
+-->
+<style>
+  :root { --bg: #15151c; --panel: #1e1e28; --line: #33334a; --text: #e6e6e6; --dim: #9a9aa8;
+          --accent: #ffcc33; --ok: #8fdc8f; --warn: #ffd479; --bad: #ff7a7a; --call: #8fc8ff; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.45 monospace; }
+  header { padding: 10px 14px; border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  h1 { font-size: 16px; color: var(--accent); margin: 0 12px 0 0; }
+  main { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 12px; padding: 12px 14px; }
+  @media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; }
+  h2 { font-size: 13px; color: var(--accent); margin: 0 0 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  button, select, input, textarea { font: inherit; background: #26263a; color: var(--text); border: 1px solid #44445a; border-radius: 4px; padding: 4px 8px; }
+  button { cursor: pointer; color: var(--accent); }
+  button:hover, button:focus-visible { background: #3a3220; }
+  button:disabled { color: #555; cursor: default; background: #26263a; }
+  textarea { width: 100%; min-height: 3.2em; resize: vertical; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { text-align: left; padding: 2px 6px; border-bottom: 1px solid #2a2a3a; vertical-align: top; }
+  #gamevars input { width: 100%; min-width: 5em; }
+  select { max-width: 100%; }
+  #knot { max-width: calc(100vw - 100px); } /* long knot names: the header fits a 320px phone */
+  #vars, #knots, #calls, #gamevars, #asks { overflow-x: auto; } /* a table too wide for a phone scrolls in its box, not the page */
+  th { color: var(--dim); font-weight: normal; }
+  .dim { color: var(--dim); }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); } .call { color: var(--call); }
+  .changed td { background: #3a3220; }
+  #log div { padding: 2px 0; white-space: pre-wrap; }
+  #log .picked { color: var(--accent); }
+  #log .start { color: var(--dim); border-top: 1px dashed var(--line); margin-top: 6px; padding-top: 6px; }
+  .tag { display: inline-block; font-size: 12px; border: 1px solid #555; border-radius: 3px; padding: 0 4px; margin-left: 6px; color: var(--dim); }
+  .tag.game { border-color: var(--call); color: var(--call); }
+  #choices button { display: block; width: 100%; text-align: left; margin: 4px 0; }
+  #choices button.over { border-style: dashed; color: var(--warn); }
+  #errors:empty { display: none; }
+  #errors { background: #4a1020; color: #fff; padding: 6px 14px; white-space: pre-wrap; }
+  .tabs button { border-radius: 0; margin-right: -1px; }
+  .tabs button.on { background: #3a3220; color: #fff; }
+  body.game .storyonly, body:not(.game) .gameonly { display: none !important; }
+  .storyonly, .gameonly { display: contents; }
+  section.gameonly, section.storyonly { display: block; }
+  #importbox { margin: 12px 14px 0; }
+  #framewrap { position: relative; }
+  #frame { width: 100%; height: 62vh; min-height: 320px; border: 1px solid var(--line); background: #000; display: block; }
+  #pausedmark { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.45); color: var(--accent); font-size: 28px; pointer-events: none; }
+  #pausedmark[hidden], #importbox[hidden] { display: none; }
+  #gamedesc div { white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Story and Game Viewer</h1>
+  <span class="tabs"><button id="tab-story" class="on" title="Play the story by hand, without the game">Story</button><button id="tab-game" title="Play the real game here and watch its story">Game</button></span>
+  <span class="storyonly">
+  <label>Start <select id="knot"></select></label>
+  <button id="start" title="Open this knot, like startTalk(): the game VARs are set first">Start knot</button>
+  <button id="back" title="Undo the last start, choice or import">Back</button>
+  <button id="newgame" title="Forget everything: all VARs and visit counts back to the start">New game</button>
+  <label>seed <input id="seed" type="number" value="1" style="width: 6em"></label>
+  <button id="importbtn" title="Load a saved game and play on from there">Import save</button>
+  </span>
+  <button id="copy" title="Copy what happened as text, e.g. for a bug report or an AI">Copy report</button>
+  <label id="pick" hidden><button type="button" onclick="document.getElementById('pickfiles').click()">Open files</button><input id="pickfiles" type="file" accept=".js,text/javascript,application/javascript,application/x-javascript,application/ecmascript,.html,.htm,text/html,text/plain,application/octet-stream" multiple hidden></label>
+  <span id="status" class="dim">Loading...</span>
+</header>
+<div id="errors"></div>
+<section id="importbox" class="storyonly" hidden>
+  <h2>Import a saved game</h2>
+  <p class="dim">A page save ({game, story} - what the game's Continue loads) or a bare dlgSave() string.
+  Paste it, open or drop the file, or read this browser's saves. The viewer only reads them.</p>
+  <textarea id="importtext" placeholder="Paste a save here"></textarea>
+  <p><button id="importpaste">Load pasted</button>
+  <button type="button" onclick="document.getElementById('importfile').click()">Open save file</button><input id="importfile" type="file" hidden>
+  <button id="importls" title="Pages opened from disk often share one storage (Chromium, Edge)">Read this browser's saves</button></p>
+  <div id="importmsg"></div>
+  <div id="importlist"></div>
+</section>
+<main>
+  <div>
+    <section id="gamebox" class="gameonly">
+      <h2>The game</h2>
+      <p style="margin-top: 0"><label>Page <select id="page"><option>game.html</option><option>game-canvas.html</option><option value="?">another page...</option></select></label>
+      <button type="button" id="openpacked" title="Play a packed release (one .html file made by pack) - works on a phone, with no game folder">Open packed game</button><input id="packfile" type="file" accept=".html,.htm,text/html,text/plain,application/octet-stream" hidden>
+      <button id="restart" title="Reload the game page. Its save stays: use the game's own New game for a fresh start.">Restart</button>
+      <button id="pause" title="Keys and clicks stop reaching the game (and its clock, if it has dlgPause)">Pause</button>
+      <span id="attach" class="dim">Not attached.</span></p>
+      <div id="framewrap"><iframe id="frame" title="the game"></iframe><div id="pausedmark" hidden>PAUSED</div></div>
+    </section>
+    <section>
+      <h2>What the story says</h2>
+      <div id="log"></div>
+    </section>
+    <section>
+      <h2>Choices</h2>
+      <div id="choices" class="dim">Start a knot.</div>
+    </section>
+  </div>
+  <div>
+    <section>
+      <h2 id="gameh2">Game -> story (you play the game's part)</h2>
+      <div id="gamevars"></div>
+      <div id="asks"></div>
+    </section>
+    <section class="gameonly">
+      <h2>The game's own state (its describeGame())</h2>
+      <div id="gamedesc" class="dim">Nothing yet.</div>
+    </section>
+    <section>
+      <h2>Story -> game (outcomes and hook calls)</h2>
+      <div id="calls" class="dim">None yet.</div>
+    </section>
+    <section>
+      <h2>Variables</h2>
+      <div id="vars"></div>
+    </section>
+    <section>
+      <h2>Knots</h2>
+      <div id="knots"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+  window.LOADERR = [];
+  window.addEventListener("error", function (e) { if (e.filename) LOADERR.push(e.filename.split("/").slice(-2).join("/") + ": " + e.message); });
+</script>
+<script>
+(function () {
+  // ---------------------------------------------------------------------
+  // LOADING: the same files the game uses (ink/ or js/)
+  // ---------------------------------------------------------------------
+  function load(paths) {
+    return new Promise(function (res) {
+      const next = function (i) {
+        if (i >= paths.length) return res(null);
+        const s = document.createElement("script");
+        s.src = paths[i];
+        s.onload = function () { res(paths[i]); };
+        s.onerror = function () { s.remove(); next(i + 1); };
+        document.body.appendChild(s);
+      };
+      next(0);
+    });
+  }
+  function global(name) {
+    try {
+      return (0, eval)("typeof " + name + " === 'undefined' ? undefined : " + name);
+    } catch (e) {
+      return undefined;
+    }
+  }
+  // Lets long ink names (room_blue_outcome) wrap after an underscore on a
+  // phone, instead of mid-word. Takes text that is already escaped.
+  function brk(html) {
+    return String(html).replace(/_/g, "_<wbr>");
+  }
+  function $(id) {
+    return document.getElementById(id);
+  }
+
+  // ---------------------------------------------------------------------
+  // WHAT THE VIEWER KNOWS (everything resets on New game)
+  // ---------------------------------------------------------------------
+  let content = null;      // the compiled story (storyContent)
+  let story = null;        // the inkjs story being played
+  let conf = {};           // INK_CONFIG
+  let knots = [];          // every knot name (not functions)
+  let tunnels = [];        // knots only entered as -> tunnel ->
+  let varNames = [];       // every VAR the story declares
+  let externals = [];      // every EXTERNAL the story calls
+  let standIns = [];       // EXTERNALs that have an ink stand-in function
+  let log = [];            // what happened: {kind, text, tags}
+  let calls = [];          // hook calls: {hook, args, result, kind, note}
+  let openKnot = "";       // the knot started last
+  let history = [];        // snapshots for Back
+  let lastVars = {};       // variable values before the last step
+  let starts = {};         // knot -> how many times it was started here
+  let errors = [];
+
+  const START = "(the story's start)";
+
+  // Reads the story's JSON once: functions, EXTERNALs, VARs, tunnel-only knots.
+  function scan(json) {
+    const fcalls = new Set();
+    const ext = new Set();
+    const vars = [];
+    (function walk(v) {
+      if (Array.isArray(v)) {
+        v.forEach(walk);
+      } else if (v && typeof v === "object") {
+        if (v["x()"]) ext.add(v["x()"]);
+        if (v["f()"]) fcalls.add(v["f()"]);
+        if (v["VAR="] && v.re !== true && vars.indexOf(v["VAR="]) < 0) vars.push(v["VAR="]);
+        for (const k in v) walk(v[k]);
+      }
+    })(json);
+    const top = json.root[json.root.length - 1] || {};
+    const names = Object.keys(top).filter(function (k) { return k.charAt(0) !== "#" && k !== "global decl"; });
+    const viaTunnel = new Set();
+    const viaDivert = new Set();
+    for (const k of names) {
+      (function walk(v) {
+        if (Array.isArray(v)) {
+          v.forEach(walk);
+        } else if (v && typeof v === "object") {
+          const t = v["->t->"];
+          const d = v["->"];
+          if (typeof t === "string" && t.charAt(0) !== "." && t.split(".")[0] !== k) viaTunnel.add(t.split(".")[0]);
+          if (typeof d === "string" && !v["var"] && d.charAt(0) !== "." && d.split(".")[0] !== k) viaDivert.add(d.split(".")[0]);
+          for (const key in v) walk(v[key]);
+        }
+      })(top[k]);
+    }
+    knots = names.filter(function (k) { return !fcalls.has(k) && !ext.has(k); });
+    tunnels = knots.filter(function (k) { return viaTunnel.has(k) && !viaDivert.has(k); });
+    varNames = vars;
+    externals = Array.from(ext);
+    standIns = externals.filter(function (e) { return names.indexOf(e) >= 0; });
+  }
+
+  // The game's settings: INK_CONFIG, or the kit 1.0 globals DLG_HOOKS,
+  // DLG_ASKS, DLG_KNOTS, DLG_VARS ... (a DLG_ global wins, as in dialogue.js).
+  function readConf() {
+    const keys = { DLG_HOOKS: "hooks", DLG_ASKS: "asks", DLG_KNOTS: "knots", DLG_VARS: "vars", DLG_TAGS: "tags", DLG_NAMES: "names", DLG_MAXCH: "maxChoices" };
+    const c = global("INK_CONFIG");
+    const out = Object.assign({}, c || {});
+    let found = !!c;
+    for (const k in keys) {
+      const v = global(k);
+      if (v !== undefined) {
+        out[keys[k]] = v;
+        found = true;
+      }
+    }
+    return found ? out : null;
+  }
+
+  // With no config.js there is no game: hooks with an ink stand-in run it.
+  function useStandIn(hook) {
+    return !hasConfig && standIns.indexOf(hook) >= 0;
+  }
+  let hasConfig = false;
+
+  // ---------------------------------------------------------------------
+  // THE GAME'S PART: game VARs and asking hooks, set by hand
+  // ---------------------------------------------------------------------
+  function outcomeHooks() {
+    const o = conf.outcomes || {};
+    return Object.keys(o).map(function (k) { return o[k]; });
+  }
+
+  // "key = true" lines -> the answer for hasItem("key"). "* = ..." for any other.
+  function parseValue(t) {
+    t = t.trim();
+    if (t === "true") return true;
+    if (t === "false") return false;
+    if (t !== "" && !isNaN(Number(t))) return Number(t);
+    return t.replace(/^"(.*)"$/, "$1");
+  }
+  function answer(hook, args) {
+    const box = $("ask-" + hook);
+    const rules = box ? box.value.split("\n") : [];
+    let dflt = false;
+    for (const line of rules) {
+      const i = line.indexOf("=");
+      if (i < 0) continue;
+      const key = line.slice(0, i).trim().replace(/^"(.*)"$/, "$1");
+      const val = parseValue(line.slice(i + 1));
+      if (key === "*") dflt = val;
+      else if (args.length && String(args[0]) === key) return val;
+    }
+    return dflt;
+  }
+
+  function buildGamePanel() {
+    const vars = conf.vars || [];
+    let html = vars.length ? "<table><tr><th>game VAR</th><th>value set before each start</th></tr>" : "<p class='dim'>The game sets no VARs (vars in config.js).</p>";
+    for (const v of vars) {
+      const now = story.variablesState[v];
+      html += "<tr><td>" + brk(v) + "</td><td><input id='gv-" + v + "' value='" + esc(now) + "'></td></tr>";
+    }
+    if (vars.length) html += "</table>";
+    $("gamevars").innerHTML = html;
+    const asking = externals.filter(function (e) { return outcomeHooks().indexOf(e) < 0 && !useStandIn(e); });
+    let a = "";
+    const own = externals.filter(useStandIn);
+    if (own.length) a += "<p class='dim'>No config.js, so these run the story's own stand-in functions: " + own.join(", ") + "</p>";
+    for (const h of asking) {
+      const note = (conf.hooks || []).indexOf(h) < 0 ? " <span class='bad'>(not in hooks in config.js)</span>" : "";
+      a += "<p style='margin: 8px 0 2px'>" + h + "() answers" + note + " <span class='dim'>- one per line: first value = answer, * = any other</span></p>" +
+           "<textarea id='ask-" + h + "'>* = false</textarea>";
+    }
+    $("asks").innerHTML = a;
+  }
+
+  // ---------------------------------------------------------------------
+  // PLAYING
+  // ---------------------------------------------------------------------
+  function newStory() {
+    story = new inkjs.Story(content);
+    story.onError = function (m, type) {
+      if (type !== 1) errors.push(m);
+    };
+    const asks = conf.asks || [];
+    story.allowExternalFunctionFallbacks = true;
+    for (const h of externals) {
+      if (useStandIn(h)) continue;
+      const isOutcome = outcomeHooks().indexOf(h) >= 0;
+      story.BindExternalFunction(h, function () {
+        const args = Array.prototype.slice.call(arguments);
+        if (isOutcome) {
+          calls.push({ hook: h, args: args, result: true, kind: "outcome", note: checkOutcome(h, args) });
+          return true;
+        }
+        const r = answer(h, args);
+        calls.push({ hook: h, args: args, result: r, kind: "ask" });
+        return r;
+      }, asks.indexOf(h) >= 0);
+    }
+    story.state.storySeed = Number($("seed").value) || 1;
+  }
+
+  // The same checks as the game page: right knot, a value the game handles.
+  function checkOutcome(hook, args, knot) {
+    const name = args[0];
+    const outcome = args[1];
+    if (knot === undefined) knot = openKnot;
+    if (knot && name !== knot) return "sent with the name " + name + " from the knot " + knot + " - the game would ignore it";
+    const lists = conf.outcomeValues;
+    if (lists && lists[name] && lists[name].indexOf(outcome) < 0) return "the game doesn't handle this value yet (outcomeValues)";
+    return "";
+  }
+
+  function snapshot() {
+    history.push({ state: story.state.toJson(), log: log.slice(), calls: calls.slice(), openKnot: openKnot, lastVars: Object.assign({}, lastVars), starts: Object.assign({}, starts) });
+  }
+
+  function rememberVars() {
+    lastVars = {};
+    for (const v of varNames) lastVars[v] = show(story.variablesState[v]);
+  }
+
+  function startKnot() {
+    const k = $("knot").value;
+    snapshot();
+    rememberVars();
+    openKnot = k === START ? "" : k;
+    if (!openKnot) story.ResetState(); // the very top: a fresh story, then the game VARs
+    for (const v of conf.vars || []) {
+      const box = $("gv-" + v);
+      if (box) {
+        try {
+          story.variablesState[v] = parseValue(box.value);
+        } catch (e) {
+          errors.push("could not set " + v + ": " + e.message);
+        }
+      }
+    }
+    if (openKnot) starts[openKnot] = (starts[openKnot] || 0) + 1;
+    log.push({ kind: "start", text: "START " + (openKnot || START) });
+    try {
+      if (openKnot) story.ChoosePathString(openKnot);
+    } catch (e) {
+      errors.push(e.message);
+    }
+    play();
+  }
+
+  function choose(i) {
+    snapshot();
+    rememberVars();
+    log.push({ kind: "picked", text: "> " + story.currentChoices[i].text });
+    try {
+      story.ChooseChoiceIndex(i);
+    } catch (e) {
+      errors.push(e.message);
+    }
+    play();
+  }
+
+  // Plays until a choice or the end, writing every line and tag to the log.
+  function play() {
+    let steps = 0;
+    try {
+      while (story.canContinue && steps < 500) {
+        const text = story.Continue().trim();
+        steps++;
+        log.push({ kind: "line", text: text, tags: story.currentTags.slice() });
+      }
+      if (steps >= 500) errors.push("more than 500 lines without a choice - a loop?");
+    } catch (e) {
+      errors.push(e.message);
+    }
+    if (!story.currentChoices.length) log.push({ kind: "start", text: "END of " + (openKnot || "the story") + " - the conversation closes" });
+    render();
+  }
+
+  function back() {
+    const h = history.pop();
+    if (!h) return;
+    story.state.LoadJson(h.state);
+    log = h.log;
+    calls = h.calls;
+    openKnot = h.openKnot;
+    lastVars = h.lastVars;
+    starts = h.starts;
+    render();
+  }
+
+  function newGame() {
+    log = [];
+    calls = [];
+    history = [];
+    starts = {};
+    openKnot = "";
+    errors = [];
+    newStory();
+    rememberVars();
+    buildGamePanel();
+    render();
+  }
+
+  // ---------------------------------------------------------------------
+  // SHOWING
+  // ---------------------------------------------------------------------
+  // Text for HTML, inside a tag or inside an attribute's quotes.
+  function esc(t) {
+    return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function show(v) {
+    if (v === null || v === undefined) return String(v);
+    if (typeof v === "string") return JSON.stringify(v);
+    return String(v);
+  }
+  function tagHtml(t) {
+    const key = t.split(":")[0].trim().toLowerCase();
+    const kit = ["speaker", "portrait", "end"].indexOf(key) >= 0;
+    return "<span class='tag" + (kit ? "" : " game") + "' title='" + (kit ? "a kit tag" : "goes to the game's dlgTag()") + "'>#" + esc(t) + "</span>";
+  }
+
+  function render() {
+    // the log
+    $("log").innerHTML = log.map(function (l) {
+      if (l.kind === "line") return "<div>" + (l.text ? esc(l.text) : "<span class='dim'>(empty line)</span>") + (l.tags || []).map(tagHtml).join("") + "</div>";
+      return "<div class='" + l.kind + "'>" + esc(l.text) + "</div>";
+    }).join("") || "<span class='dim'>Pick a knot and press Start knot.</span>";
+
+    if (mode === "game") renderLive();
+    // the choices, as the game would get them
+    const cs = mode === "game" ? [] : story.currentChoices;
+    const max = Math.max(1, Math.min(9, Number(conf.maxChoices) || 4));
+    const box = $("choices");
+    box.textContent = "";
+    if (mode === "game") liveChoices(box);
+    else if (!cs.length) box.innerHTML = "<span class='dim'>No choices - the conversation has ended. Start a knot.</span>";
+    cs.forEach(function (c, i) {
+      const b = document.createElement("button");
+      const over = i >= max;
+      b.textContent = (i + 1) + ". " + c.text + (over ? "   (the game hides this: over maxChoices " + max + ")" : "") + (c.text.length > 80 ? "   (" + c.text.length + " letters: a canvas box cuts it)" : "");
+      if (over) b.className = "over";
+      b.onclick = function () { choose(i); };
+      box.appendChild(b);
+    });
+    if (cs.length) {
+      const where = String(cs[0].sourcePath || "").split(".").filter(function (p) { return !/^\d+$|^[cgs]-\d+$/.test(p); }).join(".");
+      const p = document.createElement("p");
+      p.className = "dim";
+      p.textContent = "at: " + where;
+      box.appendChild(p);
+    }
+
+    // hook calls
+    $("calls").innerHTML = calls.length ? "<table><tr><th>call</th><th>returned</th><th></th></tr>" + calls.map(function (c) {
+      const call = c.hook + "(" + c.args.map(show).join(", ") + ")";
+      const cls = c.kind === "outcome" ? (c.note ? "bad" : "ok") : "call";
+      return "<tr><td class='" + cls + "'>" + brk(esc(call)) + "</td><td>" + esc(show(c.result)) + "</td><td class='" + (c.note ? "bad" : "dim") + "'>" + esc(c.note || c.kind) + "</td></tr>";
+    }).join("") + "</table>" : "<span class='dim'>None yet.</span>";
+
+    // variables: game VARs, outcomes, helpers
+    const gameVars = conf.vars || [];
+    const group = function (v) {
+      if (gameVars.indexOf(v) >= 0) return "game VAR";
+      if (/_outcome$/.test(v)) return "outcome";
+      return "helper";
+    };
+    const rows = varNames.slice().sort(function (a, b) {
+      const order = { "game VAR": 0, outcome: 1, helper: 2 };
+      return order[group(a)] - order[group(b)];
+    }).map(function (v) {
+      const now = show(story.variablesState[v]);
+      const changed = v in lastVars && lastVars[v] !== now;
+      return "<tr" + (changed ? " class='changed' title='changed by the last step (was " + esc(lastVars[v]) + ")'" : "") + "><td>" + brk(v) + "</td><td>" + brk(esc(now)) + "</td><td class='dim'>" + group(v) + "</td></tr>";
+    });
+    $("vars").innerHTML = rows.length ? "<table><tr><th>VAR</th><th>value</th><th>kind</th></tr>" + rows.join("") + "</table><p class='dim'>Highlighted: changed by the last step. The game reads outcomes, never helpers.</p>" : "<span class='dim'>The story has no VARs.</span>";
+
+    // knots: kind and visit counts
+    const started = conf.knots || [];
+    $("knots").innerHTML = "<table><tr><th>knot</th><th>started</th><th></th></tr>" + knots.map(function (k) {
+      const visits = starts[k] || 0;
+      const kind = tunnels.indexOf(k) >= 0 ? "tunnel" : started.indexOf(k) >= 0 ? "the game starts it" : "";
+      return "<tr><td>" + brk(k) + "</td><td>" + visits + "</td><td class='dim'>" + kind + "</td></tr>";
+    }).join("") + "</table><p class='dim'>" + (mode === "game" ? "started = times the game started it since its New game." : "started = times you started it here since New game.") + "</p>";
+
+    $("back").disabled = !history.length;
+    const banner = mode === "game" && lastStep ? lastStep.errors.map(function (e) { return "the game's banner: " + e; }) : [];
+    $("errors").textContent = errors.concat(LOADERR).concat(banner).join("\n");
+  }
+
+  // A plain-text account of the run, for a bug report or an AI.
+  function report() {
+    const lines = ["STORY AND GAME VIEWER REPORT (seed " + $("seed").value + ")"];
+    for (const l of log) lines.push(l.kind === "line" ? "  " + l.text + (l.tags && l.tags.length ? "   #" + l.tags.join(" #") : "") : l.text);
+    lines.push("", "CHOICES NOW: " + (story.currentChoices.map(function (c, i) { return (i + 1) + ". " + c.text; }).join(" | ") || "none"));
+    lines.push("", "HOOK CALLS:");
+    for (const c of calls) lines.push("  " + c.hook + "(" + c.args.map(show).join(", ") + ") -> " + show(c.result) + (c.note ? "   PROBLEM: " + c.note : ""));
+    lines.push("", "VARIABLES:");
+    for (const v of varNames) lines.push("  " + v + " = " + show(story.variablesState[v]));
+    if (errors.length) lines.push("", "ERRORS:", "  " + errors.join("\n  "));
+    return lines.join("\n");
+  }
+
+
+  // ---------------------------------------------------------------------
+  // IMPORT A SAVED GAME (Story tab): load it, then play on by hand
+  // ---------------------------------------------------------------------
+  // A page save {game, story} or a bare dlgSave() string -> {ink, ui, game}.
+  function parseSave(text) {
+    let o;
+    let t = String(text).trim();
+    if (/^'[\s\S]*'$/.test(t)) t = t.slice(1, -1).replace(/\\'/g, "'"); // copied from a console, quotes and all
+    try {
+      o = JSON.parse(t);
+      if (typeof o === "string") o = JSON.parse(o);
+    } catch (e) {
+      throw new Error("this isn't a save: it isn't JSON text.");
+    }
+    let game;
+    if (o && typeof o === "object" && "story" in o && typeof o.story === "string") {
+      game = o.game;
+      if (o.story === "") throw new Error("this page save has an empty story part (the story never loaded when it was saved).");
+      try {
+        o = JSON.parse(o.story);
+      } catch (e) {
+        throw new Error("the save's story part isn't a dlgSave() string.");
+      }
+    }
+    if (!o || typeof o !== "object" || typeof o.ink !== "string" || !o.ui || typeof o.ui !== "object") {
+      throw new Error("this isn't a kit save: it needs a story part ({game, story}) or a dlgSave() string ({kit: 2, ink, ui}).");
+    }
+    return { ink: o.ink, ui: o.ui, game: game };
+  }
+
+  function importMsg(cls, text) {
+    $("importmsg").innerHTML = "<p class='" + cls + "'>" + esc(text) + "</p>";
+  }
+
+  function importSave(text, from) {
+    let s;
+    try {
+      s = parseSave(text);
+    } catch (e) {
+      importMsg("bad", "Could not import " + from + ": " + e.message);
+      return false;
+    }
+    snapshot();
+    rememberVars();
+    try {
+      story.state.LoadJson(s.ink);
+    } catch (e) {
+      back();
+      importMsg("bad", "Could not import " + from + ": it doesn't fit this story (" + (e.message || e) + "). Renamed knots, or a save from another game?");
+      return false;
+    }
+    openKnot = s.ui.knot || "";
+    log.push({ kind: "start", text: "IMPORTED " + from + (s.ui.active ? " - mid-conversation in " + (openKnot || START) : " - between conversations") });
+    if (s.game !== undefined) log.push({ kind: "start", text: "the game's part of the save: " + JSON.stringify(s.game) });
+    for (const t of s.ui.shown || []) log.push(t.indexOf("> ") === 0 ? { kind: "picked", text: t } : { kind: "line", text: t, tags: [] });
+    for (const v of conf.vars || []) {
+      const box = $("gv-" + v);
+      if (box) box.value = String(story.variablesState[v]);
+    }
+    importMsg("ok", "Imported " + from + ". Play on from here (Back undoes it). The game VARs above now hold the save's values.");
+    if (s.ui.active && story.canContinue) play();
+    else render();
+    return true;
+  }
+
+  // Lists the kit saves this browser keeps (READ ONLY). Pages opened from
+  // disk share one storage in Chromium and Edge; Firefox may not.
+  function listSaves() {
+    const box = $("importlist");
+    box.textContent = "";
+    const keys = [];
+    try {
+      for (let i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
+    } catch (e) {
+      box.innerHTML = "<p class='warn'>This browser won't let a page opened from disk read saved games (" + esc(e.message) + "). Paste or drop the save instead.</p>";
+      return;
+    }
+    const found = keys.sort().filter(function (k) {
+      try {
+        parseSave(localStorage.getItem(k));
+        return true;
+      } catch (e) {
+        return false;
+      }
+    });
+    if (!found.length) {
+      box.innerHTML = "<p class='warn'>No kit saves in this browser's storage for pages opened from disk. Play the game in this browser first, or paste the save (in the game's console, F12: copy(localStorage.getItem(SAVE_KEY)) puts it on the clipboard).</p>";
+      return;
+    }
+    for (const k of found) {
+      const s = parseSave(localStorage.getItem(k));
+      const b = document.createElement("button");
+      b.textContent = "Load " + k;
+      b.onclick = function () { importSave(localStorage.getItem(k), "the save " + k); };
+      const p = document.createElement("p");
+      p.appendChild(b);
+      p.appendChild(document.createTextNode("  " + (s.ui.active ? "mid-conversation in " + (s.ui.knot || START) : "between conversations")));
+      box.appendChild(p);
+    }
+  }
+
+  function readFileThen(file, fn) {
+    const r = new FileReader();
+    r.onload = function () { fn(String(r.result)); };
+    r.readAsText(file);
+  }
+
+  // ---------------------------------------------------------------------
+  // GAME TAB: the real game in a frame, watched through the bridge at the
+  // end of ink/dialogue.js. The game plays its own part, so the game VARs
+  // and asking hooks are read only here. (Like inkle's Ink Player window.)
+  // ---------------------------------------------------------------------
+  let mode = "story";
+  let pageName = "game.html";
+  let attached = false;
+  let paused = false;
+  let lastStep = null;        // the last step the game posted
+  let pending = { hooks: [], start: null }; // posted since that step
+  let steps = [];             // every step, oldest first (for the report)
+  let shownSeen = 0;          // lines of the open conversation already in the log
+  let lastStart = null;       // {knot, vars}: the game VARs at the last start
+  let answers = {};           // "hasItem(\"key\")" -> the game's last answer
+  let helloTimer = 0;
+  let loadFailed = false;
+
+  function setMode(m) {
+    mode = m;
+    document.body.classList.toggle("game", m === "game");
+    $("tab-story").classList.toggle("on", m === "story");
+    $("tab-game").classList.toggle("on", m === "game");
+    $("gameh2").textContent = m === "game" ? "Game -> story (the game plays its part: read only)" : "Game -> story (you play the game's part)";
+    if (m === "game") {
+      attach();
+    } else {
+      clearTimeout(helloTimer);
+      $("frame").removeAttribute("srcdoc"); // (a packed game would outrank src)
+      $("frame").src = "about:blank"; // the game stops
+      attached = false;
+      newGame();
+    }
+  }
+
+  // Forgets the live run and loads the page fresh.
+  function attach() {
+    log = [];
+    calls = [];
+    history = [];
+    starts = {};
+    openKnot = "";
+    errors = [];
+    steps = [];
+    lastStep = null;
+    pending = { hooks: [], start: null };
+    shownSeen = 0;
+    lastStart = null;
+    answers = {};
+    loadFailed = false;
+    newStory();
+    rememberVars();
+    reloadFrame();
+    render();
+  }
+
+  function reloadFrame() {
+    attached = false;
+    paused = false;
+    $("pausedmark").hidden = true;
+    $("pause").textContent = "Pause";
+    const f = $("frame");
+    f.removeAttribute("srcdoc");
+    if (packed && pageName === packed.name) {
+      // A packed release is one file: it runs from its own text, with no
+      // folder around it (so it works from a phone's files).
+      $("attach").textContent = "Loading " + pageName + " (packed)...";
+      f.removeAttribute("src");
+      f.srcdoc = packed.html;
+    } else {
+      $("attach").textContent = "Loading ../" + pageName + "...";
+      f.src = "../" + pageName;
+    }
+  }
+
+  // ---------------------------------------------------------------------
+  // PACKED RELEASES: one .html file from tools/pack.js. Its INK blocks hold
+  // the runtime, the story and the config as inline scripts, so the viewer
+  // can read the story from it as well as play it in the frame.
+  // ---------------------------------------------------------------------
+  let packed = null;          // {name, html}: the packed game picked last
+
+  // The inline script of each INK block: {RUNTIME: "...", STORY: "...", ...}.
+  // Null if the file isn't a packed kit game (no blocks, or dev-mode blocks).
+  function packedBlocks(html) {
+    const out = {};
+    const rx = /<!--\s*INK:([A-Z][A-Z0-9_]*)\s*-->([\s\S]*?)<!--\s*\/INK:\1\s*-->/g;
+    let m;
+    while ((m = rx.exec(html))) {
+      const s = /^\s*<script>([\s\S]*)<\/script>\s*$/i.exec(m[2]);
+      if (!s) return null; // a <script src> block: a dev page, not a release
+      out[m[1]] = s[1].replace(/^\s*\/\*! ink-pack [\s\S]*?\*\/\n?/, ""); // minus pack's header comment
+    }
+    return out.KIT && out.STORY ? out : null;
+  }
+
+  // Keeps a picked packed game for the Game tab and puts it in the Page list.
+  function usePacked(name, html) {
+    packed = { name: name, html: html };
+    let o = Array.prototype.find.call($("page").options, function (x) { return x.value === name; });
+    if (!o) {
+      o = document.createElement("option");
+      o.textContent = name;
+      $("page").insertBefore(o, $("page").lastChild);
+    }
+    $("page").value = name;
+    pageName = name;
+  }
+
+  // A packed game picked with Open files (a phone): the story, runtime and
+  // config come out of it. Returns an error text, or "".
+  function takePackedStory(name, html) {
+    const b = packedBlocks(html);
+    if (!b) return name + ": not a packed Knotwork game (pack it with tools/pack.js first).";
+    try {
+      if (b.RUNTIME && !(typeof inkjs !== "undefined" && inkjs.Story)) (0, eval)(b.RUNTIME);
+      const a = b.STORY.indexOf("{");
+      const z = b.STORY.lastIndexOf("}");
+      content = JSON.parse(b.STORY.slice(a, z + 1));
+      storyFile = name;
+      if (b.CONFIG) {
+        (0, eval)(b.CONFIG);
+        conf = readConf() || {};
+        hasConfig = !!readConf();
+        confName = "config from " + name;
+      }
+    } catch (e) {
+      return name + ": " + e.message;
+    }
+    usePacked(name, html);
+    return "";
+  }
+
+  // Says hello until the bridge answers (it is silent until then).
+  function sayHello(tries) {
+    clearTimeout(helloTimer);
+    if (attached || mode !== "game") return;
+    $("frame").contentWindow.postMessage({ inkKit: "attach" }, "*");
+    helloTimer = setTimeout(function () {
+      if (attached || mode !== "game") return;
+      if (tries < 5) sayHello(tries + 1);
+      else if (packed && pageName === packed.name) $("attach").innerHTML = "<span class='bad'>No answer from " + esc(pageName) + " (packed). Was it packed from a Knotwork game (or Ink Kit 3.4 or later)? Repack it with this kit's tools/pack.js.</span>";
+      else $("attach").innerHTML = "<span class='bad'>No answer from ../" + esc(pageName) + ". Is the page there, and does its " + kitDir + "/dialogue.js have the bridge (Knotwork, or Ink Kit 3.4 or later)? An older one: copy kit/ink/dialogue.js over it.</span>";
+    }, 400);
+  }
+
+  function takeHook(d) {
+    const outcome = outcomeHooks().indexOf(d.name) >= 0;
+    const c = { hook: d.name, args: d.args, result: d.result, kind: outcome ? "outcome" : d.ask ? "ask" : "hook" };
+    if (outcome) c.note = checkOutcome(d.name, d.args, d.knot);
+    else answers[d.name + "(" + d.args.map(show).join(", ") + ")"] = d.result;
+    calls.push(c);
+    pending.hooks.push(c);
+  }
+
+  function takeStart(d) {
+    openKnot = d.knot;
+    if (d.knot) starts[d.knot] = (starts[d.knot] || 0) + 1;
+    lastStart = { knot: d.knot, vars: d.vars || {} };
+    pending.start = lastStart;
+    shownSeen = 0;
+    const vs = Object.keys(lastStart.vars).map(function (k) { return k + " = " + show(lastStart.vars[k]); });
+    log.push({ kind: "start", text: "START " + (d.knot || START) + (vs.length ? "   (game VARs: " + vs.join(", ") + ")" : "") });
+  }
+
+  function takeStep(d) {
+    const v = d.view || { shown: [], choices: [] };
+    if (d.kind === "hello") {
+      attached = true;
+      clearTimeout(helloTimer);
+      $("attach").textContent = "Attached to " + (packed && pageName === packed.name ? pageName + " (packed)" : "../" + pageName) + " (" + d.kit + ").";
+      log.push({ kind: "start", text: "ATTACHED to " + pageName + (v.active ? " - mid-conversation in " + (v.knot || START) : "") });
+      shownSeen = 0;
+    } else if (d.kind === "reset") {
+      log.push({ kind: "start", text: "NEW GAME (the game called dlgReset)" });
+      calls = [];
+      starts = {};
+      answers = {};
+    } else if (d.kind === "load") {
+      log.push({ kind: "start", text: "LOADED a save" + (v.active ? " - mid-conversation in " + (v.knot || START) : "") });
+      openKnot = v.knot;
+      shownSeen = 0;
+    }
+    rememberVars();
+    if (d.state) {
+      try {
+        story.state.LoadJson(JSON.parse(d.state).ink);
+      } catch (e) {
+        if (!loadFailed) errors.push("Could not read the game's story state: " + (e.message || e) + " - the game page and this viewer must use the same ink/story.js (F5 after a new export).");
+        loadFailed = true;
+      }
+    }
+    const changes = [];
+    for (const name of varNames) {
+      const now = show(story.variablesState[name]);
+      if (name in lastVars && lastVars[name] !== now) changes.push(name + ": " + lastVars[name] + " -> " + now);
+    }
+    const shown = v.shown || [];
+    if (shown.length < shownSeen) shownSeen = 0;
+    for (const t of shown.slice(shownSeen)) log.push(t.indexOf("> ") === 0 ? { kind: "picked", text: t } : { kind: "line", text: t, tags: [] });
+    shownSeen = shown.length;
+    const tags = d.tags || [];
+    if (tags.length) {
+      const last = log[log.length - 1];
+      if (last && last.kind === "line" && !last.tags.length) last.tags = tags.slice();
+      else log.push({ kind: "line", text: "", tags: tags.slice() });
+    }
+    if (d.kind === "close") log.push({ kind: "start", text: "END of " + (v.knot || "the story") + " - the conversation closes" });
+    steps.push({
+      n: steps.length + 1, kind: d.kind, knot: v.knot, active: v.active, text: v.text, choices: v.choices || [],
+      start: pending.start, hooks: pending.hooks, changes: changes, tags: tags, game: d.game, errors: d.errors || []
+    });
+    pending = { hooks: [], start: null };
+    d.errors = d.errors || [];
+    lastStep = d;
+    render();
+  }
+
+  window.addEventListener("message", function (e) {
+    if (mode !== "game" || e.source !== $("frame").contentWindow) return;
+    const d = e.data;
+    if (!d || typeof d !== "object") return;
+    if (d.inkKit === "hook") takeHook(d);
+    else if (d.inkKit === "start") takeStart(d);
+    else if (d.inkKit === "step") takeStep(d);
+  });
+
+  function togglePause() {
+    if (!attached) return;
+    paused = !paused;
+    $("frame").contentWindow.postMessage({ inkKit: paused ? "pause" : "resume" }, "*");
+    $("pausedmark").hidden = !paused;
+    $("pause").textContent = paused ? "Resume" : "Pause";
+    log.push({ kind: "start", text: paused ? "PAUSED (keys and clicks stop at the game's door)" : "RESUMED" });
+    render();
+  }
+
+  // The game's part, read only: VARs at the last start, the hooks' answers.
+  function renderLive() {
+    const vars = conf.vars || [];
+    let html = "";
+    if (!vars.length) html = "<p class='dim'>The game sets no VARs (vars in config.js).</p>";
+    else {
+      html = "<table><tr><th>game VAR</th><th>at the last start" + (lastStart ? " (" + esc(lastStart.knot || START) + ")" : "") + "</th></tr>";
+      for (const name of vars) {
+        const val = lastStart && name in lastStart.vars ? show(lastStart.vars[name]) : "-";
+        html += "<tr><td>" + name + "</td><td><input value='" + esc(val) + "' readonly title='the game sets this'></td></tr>";
+      }
+      html += "</table>";
+      const unset = lastStart ? vars.filter(function (n) { return !(n in lastStart.vars); }) : [];
+      if (unset.length) html += "<p class='warn'>Not set by the game before that start: " + unset.join(", ") + " (startTalk should dlgSet every VAR in config.vars).</p>";
+    }
+    $("gamevars").innerHTML = html;
+    const keys = Object.keys(answers);
+    $("asks").innerHTML = keys.length ? "<table><tr><th>hook call</th><th>the game answered</th></tr>" + keys.map(function (k) {
+      return "<tr><td class='call'>" + esc(k) + "</td><td>" + esc(show(answers[k])) + "</td></tr>";
+    }).join("") + "</table>" : "<p class='dim'>No asking-hook calls yet.</p>";
+    const g = lastStep && lastStep.game;
+    $("gamedesc").innerHTML = !lastStep ? "<span class='dim'>Not attached yet.</span>" : g ? g.map(function (l) { return "<div>" + esc(l) + "</div>"; }).join("") :
+      "<span class='dim'>This page has no describeGame(). Add one (it returns lines of text) to see the game's own state here.</span>";
+  }
+
+  function liveChoices(box) {
+    const v = lastStep && lastStep.view;
+    if (!v || !v.active) {
+      box.innerHTML = "<span class='dim'>No conversation open in the game.</span>";
+      return;
+    }
+    if (!v.choices.length) {
+      box.innerHTML = "<span class='dim'>No choices showing (the game waits for Enter or a click).</span>";
+      return;
+    }
+    box.innerHTML = v.choices.map(function (c, i) { return "<div>" + (i + 1) + ". " + esc(c) + "</div>"; }).join("") +
+      "<p class='dim'>The game shows these. Pick them in the game.</p>";
+  }
+
+  // The live run as text for a bug report or the fixer model: everything,
+  // the newest step first.
+  function liveReport() {
+    const L = ["STORY AND GAME VIEWER REPORT - live view of " + pageName + (lastStep ? " (" + lastStep.kit + ")" : "") + ", newest step first"];
+    if (!lastStep) {
+      L.push("Not attached to the game yet.");
+      return L.join("\n");
+    }
+    const v = lastStep.view;
+    L.push("", "NOW: " + (v.active ? "in " + (v.knot || START) + ": " + JSON.stringify(v.text) : "no conversation open") + (paused ? " (paused)" : ""));
+    if (v.active && v.choices.length) L.push("  choices: " + v.choices.map(function (c, i) { return (i + 1) + ". " + c; }).join(" | "));
+    if (lastStep.errors.length) L.push("", "THE GAME'S RED BANNER:", "  " + lastStep.errors.join("\n  "));
+    if (errors.length) L.push("", "VIEWER ERRORS:", "  " + errors.join("\n  "));
+    if (lastStep.game) L.push("", "THE GAME'S OWN STATE (describeGame):", "  " + lastStep.game.join("\n  "));
+    if (lastStart) L.push("", "GAME VARS AT THE LAST START (" + (lastStart.knot || START) + "):", "  " + ((conf.vars || []).map(function (n) { return n + " = " + (n in lastStart.vars ? show(lastStart.vars[n]) : "NOT SET"); }).join("\n  ") || "none"));
+    const outs = calls.filter(function (c) { return c.kind === "outcome"; });
+    L.push("", "OUTCOMES SINCE THE GAME'S NEW GAME:");
+    for (const c of outs) L.push("  " + c.hook + "(" + c.args.map(show).join(", ") + ")" + (c.note ? "   PROBLEM: " + c.note : ""));
+    if (!outs.length) L.push("  none");
+    L.push("", "STEPS (newest first):");
+    for (let i = steps.length - 1; i >= 0; i--) {
+      const s = steps[i];
+      L.push("  #" + s.n + " " + s.kind + (s.knot ? " in " + s.knot : "") + (s.active ? ": " + JSON.stringify(s.text) : " (no conversation open)"));
+      if (s.start) L.push("      started " + (s.start.knot || START) + " with " + (Object.keys(s.start.vars).map(function (k) { return k + " = " + show(s.start.vars[k]); }).join(", ") || "no game VARs"));
+      if (s.active && s.choices.length) L.push("      choices: " + s.choices.map(function (c, j) { return (j + 1) + ". " + c; }).join(" | "));
+      for (const c of s.hooks) L.push("      " + c.hook + "(" + c.args.map(show).join(", ") + ") -> " + show(c.result) + (c.note ? "   PROBLEM: " + c.note : ""));
+      if (s.changes.length) L.push("      changed: " + s.changes.join(", "));
+      if (s.tags.length) L.push("      tags: #" + s.tags.join(" #"));
+      if (s.errors.length) L.push("      banner: " + s.errors.join(" | "));
+    }
+    L.push("", "VARIABLES NOW:");
+    for (const name of varNames) L.push("  " + name + " = " + show(story.variablesState[name]));
+    L.push("", "KNOTS STARTED SINCE THE GAME'S NEW GAME: " + (Object.keys(starts).map(function (k) { return k + " " + starts[k]; }).join(", ") || "none"));
+    return L.join("\n");
+  }
+
+  // ---------------------------------------------------------------------
+  // START
+  // ---------------------------------------------------------------------
+  // Files picked or dropped by hand: ink.js (the runtime) and a story .js.
+  function takeFiles(list) {
+    const files = Array.prototype.slice.call(list);
+    let left = files.length;
+    files.forEach(function (f) {
+      const r = new FileReader();
+      r.onload = function () {
+        const text = String(r.result);
+        try {
+          if (/<!--\s*INK:[A-Z]/.test(text)) {
+            const err = takePackedStory(f.name, text); // a packed release: everything in one
+            if (err) errors.push(err);
+          } else if (/inkVersionCurrent/.test(text) && !/storyContent\s*=/.test(text)) {
+            (0, eval)(text); // the ink runtime: defines inkjs
+          } else {
+            const a = text.indexOf("{");
+            const b = text.lastIndexOf("}");
+            content = JSON.parse(text.slice(a, b + 1)); // var storyContent = {...};
+            storyFile = f.name;
+          }
+        } catch (e) {
+          errors.push(f.name + ": " + e.message);
+        }
+        if (--left === 0) begin();
+      };
+      r.readAsText(f);
+    });
+  }
+  let storyFile = "";
+  let kitDir = "ink";      // where the game keeps dialogue.js (ink/, or js/ in a multi-file game)
+  let confName = "";
+
+  function begin() {
+    const haveInk = typeof inkjs !== "undefined" && inkjs.Story;
+    if (!haveInk || !content) {
+      $("status").textContent = (haveInk ? "" : "ink.js not found. ") + (content ? "" : "story .js not found. ") + "Press Open files and pick ink.js and the story's .js (or drop them here).";
+      $("pick").hidden = false;
+      $("errors").textContent = errors.join("\n");
+      return;
+    }
+    $("pick").hidden = true;
+    if (typeof content === "string") content = JSON.parse(content);
+    scan(content);
+    const started = conf.knots || [];
+    const others = knots.filter(function (k) { return started.indexOf(k) < 0; });
+    const sel = $("knot");
+    for (const k of started.concat([START]).concat(others)) {
+      const o = document.createElement("option");
+      o.value = k;
+      o.textContent = k + (tunnels.indexOf(k) >= 0 ? " (tunnel)" : started.indexOf(k) >= 0 ? "" : k === START ? "" : " (not started by the game)");
+      sel.appendChild(o);
+    }
+    $("start").onclick = startKnot;
+    $("back").onclick = back;
+    $("newgame").onclick = newGame;
+    $("tab-story").onclick = function () { if (mode !== "story") setMode("story"); };
+    $("tab-game").onclick = function () { if (mode !== "game") setMode("game"); };
+    $("importbtn").onclick = function () { $("importbox").hidden = !$("importbox").hidden; };
+    $("importpaste").onclick = function () { importSave($("importtext").value, "a pasted save"); };
+    $("importfile").onchange = function (e) {
+      const f = e.target.files[0];
+      if (f) readFileThen(f, function (t) { importSave(t, f.name); });
+      e.target.value = "";
+    };
+    $("importls").onclick = listSaves;
+    $("frame").onload = function () {
+      if (mode === "game" && $("frame").getAttribute("src") !== "about:blank") sayHello(0);
+    };
+    $("restart").onclick = function () {
+      log.push({ kind: "start", text: "RESTART (the page reloads; its save stays)" });
+      reloadFrame();
+      render();
+    };
+    $("pause").onclick = togglePause;
+    $("openpacked").onclick = function () { $("packfile").click(); };
+    $("packfile").onchange = function (e) {
+      const f = e.target.files[0];
+      e.target.value = "";
+      if (!f) return;
+      readFileThen(f, function (t) {
+        if (!packedBlocks(t)) {
+          $("attach").innerHTML = "<span class='bad'>" + esc(f.name) + " isn't a packed Knotwork game. Pack it first: node tools/pack.js pack game.html out.html (or tools/pack.html).</span>";
+          return;
+        }
+        usePacked(f.name, t);
+        attach();
+      });
+    };
+    $("page").onchange = function () {
+      let name = $("page").value;
+      if (name === "?") {
+        name = (window.prompt("A page in the game's folder (next to ink/):", pageName) || "").trim();
+        if (!name) {
+          $("page").value = pageName;
+          return;
+        }
+        const o = document.createElement("option");
+        o.textContent = name;
+        $("page").insertBefore(o, $("page").lastChild);
+        $("page").value = name;
+      }
+      pageName = name;
+      attach();
+    };
+    $("copy").onclick = function () {
+      const t = mode === "game" ? liveReport() : report();
+      if (navigator.clipboard) navigator.clipboard.writeText(t).catch(function () { window.prompt("Copy this:", t); });
+      else window.prompt("Copy this:", t);
+    };
+    $("status").textContent = "ink format " + content.inkVersion + " - " + knots.length + " knots - " + (storyFile ? storyFile + " - " : "") + (confName || "no config.js (story only)") + (storyFile ? ". After a new export: F5, then Open files again." : ". F5 after a new export.");
+    newGame();
+    const want = new URLSearchParams(location.search).get("game");
+    if (want) {
+      pageName = want;
+      if (want !== "game.html" && want !== "game-canvas.html") {
+        const o = document.createElement("option");
+        o.textContent = want;
+        $("page").insertBefore(o, $("page").lastChild);
+      }
+      $("page").value = want;
+      setMode("game");
+    }
+  }
+
+  (async function () {
+    const confPath = await load(["../ink/config.js", "../js/data.js"]);
+    const sub = confPath === "../js/data.js" ? "js" : "ink";
+    kitDir = sub;
+    await load(["../" + sub + "/ink.js", "../ink.js", "ink.js"]);
+    await load(["../" + sub + "/story.js", "../story.js", "story.js"]);
+    conf = readConf() || {};
+    hasConfig = !!readConf();
+    confName = confPath ? confPath.slice(3) : "";
+    content = global("storyContent");
+    $("pickfiles").onchange = function (e) { takeFiles(e.target.files); };
+    document.addEventListener("dragover", function (e) { e.preventDefault(); });
+    document.addEventListener("drop", function (e) {
+      e.preventDefault();
+      if (!story) takeFiles(e.dataTransfer.files);
+      else if (mode === "story" && e.dataTransfer.files.length) {
+        const f = e.dataTransfer.files[0];
+        $("importbox").hidden = false;
+        readFileThen(f, function (t) { importSave(t, f.name); });
+      }
+    });
+    begin();
+  })();
+})();
+</script>
+</body>
+</html>
