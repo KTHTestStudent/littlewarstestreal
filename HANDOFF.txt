@@ -5,78 +5,84 @@ file short: when a NEXT item is done, move its notes into HISTORY in a line
 or two.
 
 START HERE
-  Where things stand (2026-10-20): design only, no game code yet.
-    * On main and working (the author's setup, FULL-GUIDE steps 1-4):
-      CLAUDE.md, GDD.md (v0.3), .gitattributes, .gitignore and the runner's
-      copies.
-    * On working-claude (the first cloud session, for the author to merge):
-      this file, README.md, the AI disclosure check (dev/disclosure.js and
-      disclosure.jsonc, with the line in README.md and CLAUDE.md), one
-      .gitignore line, and GDD step 2's pointer to WHAT TO READ below.
-  Next: NEXT 1, the design session. Its starter prompt is just below.
-  Before it starts (the author's call when): Amontillado's PHASE 2-6 rebuild
-  and its cloud check come first. There is one runner and one Pro allowance.
+  Where things stand (2026-10-20): the design is written, no game code yet.
+    * On working: the author's setup, and the first cloud session's work
+      (this file, README.md, the AI disclosure check).
+    * On working-claude (the design session, for the author to merge):
+      GDD.md v0.4 - the rules on the grid with their numbers, the arms, the
+      Countries' pieces, Hook's Farm's map and set-up, the level table of
+      eleven battles, the bots, the story contract, the targets for battle
+      length and balance, and the code layout - plus disclosure.jsonc set
+      to that layout, and this file.
+  Next: NEXT 2, the skeleton. Its starter prompt is just below.
+  Before it starts: the author merges working-claude into working (OPEN
+  ITEMS). He may first want to change any of Claude's proposals (GDD
+  section 10): each is a GDD line now, and a data change later.
   Open for the author, by hand: OPEN ITEMS below.
 
 STARTER PROMPT (the author pastes it into a new cloud session)
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
   (Opus 5.5, high). Start from origin/working-claude (merge origin/working
-  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 1.
+  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 2.
 
 NEXT
-  1 The design session (cloud, Opus 5.5 high). No game code in it.
-    a Settle GDD section 10's open questions with the author, one short
-      AskUserQuestion round with the GDD's leans as the first options:
-      unit size and splitting, gun crews, board size and round limits, and
-      what the campaign score does at the end (his call, since it touches
-      the story).
-    b Write into GDD.md:
-      - the arms table: unit types, figures per unit, moves and crews;
-      - the Countries: terrain pieces, and the tutorial's Hook's Farm map;
-      - the level table for the 11 battles (GDD section 6's columns);
-      - the story contract: which knot comes before which battle, each
-        knot's outcomes, what each outcome does to the next battle's row,
-        and a default for an unwritten knot. The tutorial's knots send
-        none. Amontillado's contract is the model (WHAT TO READ);
-      - the targets for battle length (GDD section 5) and balance. The
-        balance bar is the author's to pick: propose options;
-      - the code layout (which files). Then set disclosure.jsonc's "code"
-        and "story" to match, and run node dev/disclosure.js.
-    c End: update START HERE and NEXT, add a HISTORY line, push to
-      working-claude, and give the author the pull request steps.
-  2 The skeleton (cloud, Opus 5.5 high): a runner-ready skeleton (PHASE
-    blocks, data.js tables, self-test, spec with CHECK walks, reference
-    branch, stub commit), as GDD section 9 step 3 says. The first target is
-    the tutorial battle playing end to end.
+  2 The skeleton (cloud, Opus 5.5 high), as GDD section 9 step 3 says.
+    a The first target: the tutorial, Hook's Farm, plays end to end in the
+      browser and headless (6.3), with bots on both sides.
+    b game.html (skeleton: red banner, STATE AND HELPERS, GAME FLOW) and
+      data.js (all of GDD 11's tables: the eleven LEVELS rows, and rough
+      COUNTRIES maps for battles 1-10 from GDD 6.1's table; Hook's Farm
+      exactly as 6.3). Fix the phase split (GDD 11 proposes PHASE 2-8).
+    c Runner-ready, per LOCAL-SUBAGENTS.md: PHASE blocks ending in
+      PHASE_OK[N] = true; dev/selftest.js printing a SELF-TEST line with an
+      EXPECTED line per phase; specs/LITTLEWARS-SPEC.txt with steps, CHECK
+      walks, a FIXER PROMPT and a LINE MAP; the reference branch
+      (dev-reference/) and a stub commit, so the builder's diff is each
+      whole block.
+    d The story contract's other three copies (GDD 7): story/story.ink's
+      header and empty knots with summaries (no prose, no placeholder
+      lines), ink/config.js, story/CONTRACT.txt. Copy Knotwork
+      3.8-alpha's ink/ink.js, ink/dialogue.js and tools/ unedited (the
+      same copies are on amontillado-test's working branch).
+    e Ask the author, before the first commit with ink.js in it: should
+      the disclosure's human sentence name inkjs and Knotwork (GDD 10,
+      still open)? His words only.
+    f End: node dev/selftest.js and node dev/disclosure.js; update START
+      HERE and NEXT, with the runner's plan lines exactly as the self-test
+      prints them and the commands for NEXT 3; a HISTORY line; push to
+      working-claude; the pull request steps for the author.
   3 The runner on the laptop (no Claude session): the builder writes the
-    PHASE blocks. The skeleton session leaves the plan lines and commands
-    here.
-  4 The cloud check (Opus 5.5 medium), bot runs for balance and battle
-    length, then the design freeze.
+    PHASE blocks. NEXT 2 leaves the branch command, the plan lines and the
+    commands here.
+  4 The cloud check (Opus 5.5 medium), then bot runs for balance and battle
+    length against GDD section 5 (dev/bots.js, dev/outcomes.js), reshaping
+    the maps and numbers; then the design freeze.
   5 The author writes the story in Inky. A cloud session may review it with
     knotcheck and play runs.
   6 The author: playtests, the release.
-  Later, if it goes well: the Appendix (GDD section 6).
+  Later, if it goes well: the Appendix (GDD 6.5).
 
 WHAT TO READ (keep it cheap)
-  Here: CLAUDE.md, this file down to HISTORY, and GDD.md (about 15 KB).
-  Wells's Little Wars (1913): only to check a rule. GDD section 3 already
-    restates the rules. If needed, read chapter III (The Rules) only:
+  Here: CLAUDE.md, this file down to HISTORY, GDD.md (about 46 KB; for
+    NEXT 2, sections 3, 4, 6, 7 and 11 above all), LOCAL-SUBAGENTS.md
+    (what the runner needs from a skeleton).
+  Wells's Little Wars (1913): only to check a rule. GDD section 3 restates
+    the rules with their numbers (W1-W29). If needed, read chapter III (The
+    Rules) only:
     https://www.gutenberg.org/cache/epub/3691/pg3691-images.html
     Its prose never goes into this repository (CLAUDE.md, content rules).
   Amontillado (KTHTestStudent/amontillado-test, branch working; read-only
-    from here; a shallow clone is enough: git clone --depth 1 --branch
-    working). It is the model for the story contract, knotcheck and the
-    disclosure check. Read only these, about 30 KB together:
-      story/CONTRACT.txt   (6 KB) the author's one-page story contract
-      GDD.md section 8     (about 11 KB, near line 253; find it with
-                           grep -n '^## 8' GDD.md) knots, hooks, outcomes
-                           and VARs
-      ink/config.js        (4 KB) what knotcheck checks the story against
-      CLAUDE.md, "Checks"  the knotcheck and playruns commands
-      disclosure.jsonc     (4 KB) the settings this repo's were made from
-    Don't read its HANDOFF.txt (about 208 KB) or game.html (about 150 KB)
-    for this. If one fact is needed, grep for it.
+    from here; git clone --depth 1 --branch working). The model for the
+    skeleton's shape. Read parts, not whole files:
+      specs/AMONTILLADO-SPEC.txt  (87 KB) its first 20 lines (LINE MAP),
+                                  one phase's section, the FIXER PROMPT
+                                  (grep -n 'FIXER PROMPT')
+      game.html                   (150 KB) only the red-banner script at
+                                  the top and STATE AND HELPERS; grep for
+                                  the rest (GDD section 11 there maps it)
+      dev/selftest.js (2 KB), dev/README.txt (19 KB, the checks' list)
+      story/CONTRACT.txt (6 KB), ink/config.js (4 KB), story.ink's header
+    Don't read its HANDOFF.txt (about 208 KB) for this.
 
 THE AUTHOR'S DECISIONS (2026-10-20)
   1 The game: a grid-tactics campaign after H. G. Wells's Little Wars, with
@@ -99,14 +105,21 @@ THE AUTHOR'S DECISIONS (2026-10-20)
     on his word.
   7 README.md: Claude's draft, added at his request. He may rewrite it.
     Change it only when he asks.
+  8 The design session's answers (GDD section 10): fixed units with their
+    own gun crews, neighbours counting toward a gun's 4; the colour is
+    paint only, so the level table says "you" and "them"; the campaign
+    score is a score only, with one ending; the balance bar eases to even
+    (90 / 75 / 65 / 55 / 50%). Board sizes and round limits are starting
+    numbers for the bot runs.
 
 THE FILES
   CLAUDE.md          rules for Claude sessions (line 1 is the runner's
                      pointer line; keep it first)
-  GDD.md             the design (v0.3)
+  GDD.md             the design (v0.4)
   HANDOFF.txt        this file
   README.md          the front page, with the disclosure line
-  disclosure.jsonc   the disclosure check's settings for this project
+  disclosure.jsonc   the disclosure check's settings, set to GDD section
+                     11's layout
   dev/disclosure.js  an unedited copy of Auto-Disclosure-Tool's disclosure.js
                      (branch working, af06b0f)
   run-local.sh, run-phases.js, LOCAL-SUBAGENTS.md, phase-plan.example.txt
@@ -140,3 +153,9 @@ HISTORY
               working, added this file, README.md, the disclosure check
               (exit 0) and the .gitignore line, and pointed GDD step 2 at
               WHAT TO READ.
+  2026-10-20  The design session (cloud, Opus 5.5; NEXT 1): one question
+              round with the author (decision 8), then GDD v0.4 - rules,
+              numbers, arms, pieces, Hook's Farm, the level table, bots, the
+              story contract (scene_1-10 with sceneDone; intro, tutorial and
+              ending send nothing), targets and the code layout - and
+              disclosure.jsonc's "code" set to it (check: exit 0). No code.
