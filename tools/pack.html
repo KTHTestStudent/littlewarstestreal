@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ink packer</title>
+<style>
+  body { margin: 0; padding: 16px; background: #15151c; color: #ddd; font: 14px/1.5 monospace; }
+  h1 { font-size: 18px; color: #ffcc33; margin: 0 0 4px; }
+  p { color: #aaa; margin: 4px 0 10px; max-width: 760px; }
+  #drop { border: 2px dashed #555; border-radius: 6px; padding: 26px 12px; text-align: center; color: #bbb; max-width: 760px; }
+  #drop.over { border-color: #ffcc33; color: #ffcc33; background: #221f12; }
+  label.pick { display: inline-block; margin: 6px 6px 0 0; padding: 4px 10px; border: 1px solid #ffcc33; color: #ffcc33; cursor: pointer; border-radius: 4px; }
+  label.pick input { display: none; }
+  button { font: inherit; margin: 8px 8px 0 0; padding: 6px 12px; background: #2b2b33; color: #ffcc33; border: 1px solid #ffcc33; border-radius: 4px; cursor: pointer; }
+  button:disabled { color: #666; border-color: #444; cursor: default; }
+  .OK { color: #8fdc8f; } .WARN { color: #ffd479; } .FAIL { color: #ff7a7a; }
+  pre { white-space: pre-wrap; word-break: break-word; margin: 10px 0 0; max-width: 760px; }
+  .opt { margin-top: 10px; color: #aaa; }
+</style>
+</head>
+<body>
+<h1>Ink packer - one HTML file for release, and back</h1>
+<p>PACK: drop your game's FOLDER here (the one with game.html and its ink/ folder). You get ONE html
+file with ink.js, story.js and the kit inside it - upload that to itch.io. Nothing is sent anywhere:
+it all happens in this page.</p>
+<p>UNPACK: drop a released (packed) html file here to get the dev files back (a zip with the html and
+its ink/ folder).</p>
+<div id="drop">Drop the game folder (or a released .html) here<br>
+  <label class="pick">choose folder<input id="pickDir" type="file" webkitdirectory multiple></label>
+  <label class="pick">choose files<input id="pickFiles" type="file" multiple></label>
+</div>
+<div class="opt">Optional, for packing - use a newer file than the folder's:
+  <label class="pick">newer story.js<input id="newStory" type="file" accept=".js"></label>
+  <label class="pick">newer ink.js<input id="newInk" type="file" accept=".js"></label>
+  <span id="overrides"></span>
+</div>
+<div class="opt" id="whichRow" hidden>This folder has more than one game page - pack:
+  <select id="which"></select>
+</div>
+<div>
+  <button id="bPack" disabled>Pack: download one .html</button>
+  <button id="bItch" disabled>Pack: download itch.io .zip</button>
+  <button id="bUnpack" disabled>Unpack: download dev .zip</button>
+</div>
+<pre id="out">Waiting for files...</pre>
+<script src="pack.js"></script>
+<script>
+  (function () {
+    let FILES = {};
+    let GAME = null;
+    const OVER = {};
+    const out = document.getElementById("out");
+    const show = function (lines) {
+      out.textContent = "";
+      for (const l of lines) {
+        const d = document.createElement("div");
+        const cls = /^(ERROR|FAIL)/.test(l) ? "FAIL" : /^WARNING/.test(l) ? "WARN" : /^(PACKED|UNPACKED|OK)/.test(l) ? "OK" : "";
+        d.className = cls;
+        d.textContent = l;
+        out.appendChild(d);
+      }
+    };
+    const readText = function (file) {
+      return new Promise(function (res) {
+        const r = new FileReader();
+        r.onload = function () { res(r.result); };
+        r.onerror = function () { res(null); };
+        r.readAsText(file);
+      });
+    };
+    const norm = function (p) {
+      return p.replace(/\\/g, "/").replace(/^\/+/, "");
+    };
+    // The game htmls: the ones with INK blocks (game.html or index.html first).
+    const findGames = function () {
+      const htmls = Object.keys(FILES).filter(function (p) { return /\.html?$/i.test(p) && inkPack.mode(FILES[p]) !== "none"; });
+      htmls.sort(function (a, b) {
+        const s = function (p) { return (/(^|\/)(game|index)\.html$/i.test(p) ? 0 : 1) * 100 + p.split("/").length; };
+        return s(a) - s(b);
+      });
+      return htmls;
+    };
+    // Which game to pack: the one picked in the list, else the first.
+    const findGame = function () {
+      const games = findGames();
+      const sel = document.getElementById("which");
+      const keep = games.indexOf(sel.value) >= 0 ? sel.value : games[0];
+      sel.textContent = "";
+      for (const g of games) {
+        const o = document.createElement("option");
+        o.value = o.textContent = g;
+        sel.appendChild(o);
+      }
+      sel.value = keep || "";
+      document.getElementById("whichRow").hidden = games.length < 2;
+      return keep || null;
+    };
+    const lookup = function (src) {
+      const dir = GAME.lastIndexOf("/") >= 0 ? GAME.slice(0, GAME.lastIndexOf("/") + 1) : "";
+      const want = norm(dir + src).split("/").reduce(function (a, part) {
+        if (part === "..") a.pop(); else if (part !== ".") a.push(part);
+        return a;
+      }, []).join("/");
+      if (FILES[want] !== undefined) return FILES[want];
+      const base = src.split("/").pop();
+      const hits = Object.keys(FILES).filter(function (p) { return p.split("/").pop() === base; });
+      return hits.length === 1 ? FILES[hits[0]] : null;
+    };
+    const refresh = function () {
+      GAME = findGame();
+      const lines = [];
+      document.getElementById("bPack").disabled = true;
+      document.getElementById("bItch").disabled = true;
+      document.getElementById("bUnpack").disabled = true;
+      if (!GAME) {
+        lines.push("ERROR: no html with <!-- INK:... --> blocks among the " + Object.keys(FILES).length + " file(s) you gave.");
+        show(lines);
+        return;
+      }
+      const m = inkPack.mode(FILES[GAME]);
+      lines.push("Game: " + GAME + " (" + m + " mode)");
+      if (m === "dev") {
+        const r = inkPack.pack(FILES[GAME], lookup, { override: OVER });
+        for (const l of r.report) lines.push("  " + l);
+        for (const e of r.errors) lines.push("ERROR: " + e);
+        if (r.html) {
+          lines.push("OK: ready - " + Math.round(r.bytes / 1024) + " KB as one file. Press Pack.");
+          document.getElementById("bPack").disabled = false;
+          document.getElementById("bItch").disabled = false;
+        }
+      } else if (m === "packed") {
+        const r = inkPack.unpack(FILES[GAME]);
+        for (const l of r.report) lines.push("  " + l);
+        for (const e of r.errors) lines.push("ERROR: " + e);
+        if (r.html) {
+          lines.push("OK: ready to unpack. Press Unpack.");
+          document.getElementById("bUnpack").disabled = false;
+        }
+      } else {
+        lines.push("ERROR: some INK blocks are packed and some are not - fix the file by hand or start from the dev folder.");
+      }
+      show(lines);
+    };
+    const save = function (name, data, type) {
+      const blob = new Blob([data], { type: type });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    };
+    const gameName = function () {
+      return GAME.split("/").pop().replace(/\.html?$/i, "");
+    };
+    document.getElementById("bPack").onclick = function () {
+      const r = inkPack.pack(FILES[GAME], lookup, { override: OVER });
+      if (!r.html) return refresh();
+      save(gameName() + "-release.html", r.html, "text/html");
+      show(r.report.concat(["PACKED: " + gameName() + "-release.html (" + Math.round(r.bytes / 1024) + " KB). Open it from your Downloads to try it - it needs no other file."]));
+    };
+    document.getElementById("bItch").onclick = function () {
+      const r = inkPack.pack(FILES[GAME], lookup, { override: OVER });
+      if (!r.html) return refresh();
+      save(gameName() + "-itch.zip", inkPack.zip([{ path: "index.html", text: r.html }]), "application/zip");
+      show(r.report.concat(["PACKED: " + gameName() + "-itch.zip (index.html inside). On itch.io: Kind of project = HTML, upload this zip, tick 'This file will be played in the browser'."]));
+    };
+    document.getElementById("bUnpack").onclick = function () {
+      const r = inkPack.unpack(FILES[GAME]);
+      if (!r.html) return refresh();
+      const name = gameName().replace(/-release$/, "");
+      const entries = [{ path: name + "/" + name + ".html", text: r.html }];
+      for (const f in r.files) entries.push({ path: name + "/" + f, text: r.files[f] });
+      save(name + "-dev.zip", inkPack.zip(entries), "application/zip");
+      show(r.report.concat(["UNPACKED: " + name + "-dev.zip - unzip it to get " + name + ".html and its ink/ folder."]));
+    };
+    const take = async function (list) {
+      FILES = {};
+      for (const it of list) {
+        const t = await readText(it.file);
+        if (t !== null) FILES[norm(it.path)] = t;
+      }
+      refresh();
+    };
+    const fromInput = function (inp) {
+      take(Array.from(inp.files).map(function (f) { return { file: f, path: f.webkitRelativePath || f.name }; }));
+      inp.value = "";
+    };
+    document.getElementById("which").onchange = function () { refresh(); };
+    document.getElementById("pickDir").onchange = function () { fromInput(this); };
+    document.getElementById("pickFiles").onchange = function () { fromInput(this); };
+    const overInput = function (inp, block, label) {
+      inp.onchange = async function () {
+        if (!inp.files[0]) return;
+        OVER[block] = await readText(inp.files[0]);
+        const o = document.getElementById("overrides");
+        o.textContent = Object.keys(OVER).map(function (k) { return k === "STORY" ? "newer story.js" : "newer ink.js"; }).join(" + ") + " will be used";
+        inp.value = "";
+        if (GAME) refresh();
+      };
+    };
+    overInput(document.getElementById("newStory"), "STORY");
+    overInput(document.getElementById("newInk"), "RUNTIME");
+    // drag and drop, folders included
+    const walk = function (entry, prefix, acc) {
+      return new Promise(function (res) {
+        if (entry.isFile) {
+          entry.file(function (f) { acc.push({ file: f, path: prefix + f.name }); res(); }, function () { res(); });
+        } else if (entry.isDirectory) {
+          const rd = entry.createReader();
+          const all = [];
+          const more = function () {
+            rd.readEntries(async function (es) {
+              if (!es.length) {
+                for (const e of all) await walk(e, prefix + entry.name + "/", acc);
+                res();
+                return;
+              }
+              for (const e of es) all.push(e);
+              more();
+            }, function () { res(); });
+          };
+          more();
+        } else res();
+      });
+    };
+    const drop = document.getElementById("drop");
+    drop.addEventListener("dragover", function (e) { e.preventDefault(); drop.className = "over"; });
+    drop.addEventListener("dragleave", function () { drop.className = ""; });
+    drop.addEventListener("drop", async function (e) {
+      e.preventDefault();
+      drop.className = "";
+      const acc = [];
+      const items = e.dataTransfer.items;
+      if (items && items.length && items[0].webkitGetAsEntry) {
+        const entries = Array.from(items).map(function (i) { return i.webkitGetAsEntry(); }).filter(Boolean);
+        for (const en of entries) await walk(en, "", acc);
+      } else {
+        for (const f of e.dataTransfer.files) acc.push({ file: f, path: f.name });
+      }
+      take(acc);
+    });
+    window.PACKER = { take: take, files: function () { return FILES; }, game: function () { return GAME; }, over: OVER };
+  })();
+</script>
+</body>
+</html>
