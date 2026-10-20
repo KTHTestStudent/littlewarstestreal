@@ -1,0 +1,71 @@
+============================================================================
+ LITTLE WARS (working title) - CREDITS
+============================================================================
+
+RULES SOURCE
+  H. G. Wells, Little Wars (1913). Public domain in the United States.
+  The game restates and changes its rules for a grid (GDD.md section 3);
+  it includes none of Wells's text.
+
+WHO DOES WHAT (as CLAUDE.md has it; the author may reword this)
+  Kenton Howard (the author): creative direction and the design
+  decisions, the story and its ink, the AI disclosure's wording,
+  playtesting and releases.
+  Claude (Opus 5.5): the design document from the author's direction,
+  the data tables, the specs, game.html's skeleton, the headless checks
+  and the docs.
+  The local builder: the code inside game.html's PHASE blocks, written
+  from Claude's step-by-step spec.
+  There is no game code yet (2026-10-20).
+
+AI DISCLOSURE
+  AI Disclosure: code by Claude Opus 5.5. Design and decisions by Kenton Howard. Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT).
+  (The line above is kept on one line so dev/disclosure.js can check and
+  update it; README.md and CLAUDE.md hold the same line, and the title
+  screen will. The author's words, 2026-10-20: the last sentence is his
+  decision of that day. "Code" means game.html, data.js, ink/config.js
+  and the checks in dev/; disclosure.jsonc lists them. The model list
+  does not cover the story (story/story.ink, compiled to ink/story.js),
+  which is the author's; the words he edits by hand in data.js's tables;
+  Knotwork's and inkjs's files (THE KIT and INK, below), which the
+  line's last sentence names; or the copies of the author's other tools
+  (THE DISCLOSURE CHECK and THE RUNNER, below).)
+
+STORY (story/story.ink)
+  To be written by the author in Inky. Not in the repository yet.
+
+THE KIT
+  Knotwork 3.8-alpha (branching conversations for browser games) by
+  Kenton Howard - github.com/KTHTestStudent/knotworkprivateprealpha (MIT).
+  ink/dialogue.js and tools/ (knotcheck.html and .js, pack.html and .js,
+  viewer.html) are unedited copies of the kit's files, from its branch
+  working at commit 67688c3 (2026-10-19; the repository has no
+  3.8-alpha tag), copied 2026-10-20. Knotwork's own AI disclosure is in
+  its CREDITS.txt (HOW IT WAS MADE). To change these files, change them
+  in Knotwork, then copy them here again.
+
+THE DISCLOSURE CHECK
+  dev/disclosure.js is an unedited copy of disclosure.js from the
+  author's Auto-Disclosure-Tool
+  (github.com/KTHTestStudent/Auto-Disclosure-Tool, branch working,
+  af06b0f), credited by that repository's own AI disclosure. Its
+  settings for this game are disclosure.jsonc. It is a dev check, not
+  game code.
+
+THE RUNNER
+  run-local.sh, run-phases.js, LOCAL-SUBAGENTS.md and
+  phase-plan.example.txt are copies of the author's local-model runner
+  (KTHTestStudent/localsubagentresults, main, bccc45c). They are tools
+  for making the game, not part of it.
+
+INK
+  ink and Inky by inkle. inkjs 2.4.0 (ink/ink.js): inkle Ltd and the
+  inkjs contributors (https://github.com/y-lohse/inkjs), MIT licence -
+  see LICENSE-INKJS.txt. Unedited, as Knotwork ships it. A release keeps
+  the notice: tools/pack.html puts it inside a packed file, and a zipped
+  release includes LICENSE-INKJS.txt.
+
+LICENCE
+  The game's own licence: to be decided by the author. Knotwork and
+  inkjs: MIT.
+============================================================================

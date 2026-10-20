@@ -6,14 +6,15 @@
 // Comments (// and /* */) and trailing commas are fine in this file.
 // Set up 2026-10-20 with the author's wording, before any game code. The
 // design session (2026-10-20) set "code" and "story" to the layout in
-// GDD.md section 11.
+// GDD.md section 11. The Knotwork step (2026-10-20) added the author's
+// sentence naming Knotwork and inkjs (decision 9) and CREDITS.txt.
 {
   // The code the line's model list covers (git pathspecs, forward slashes):
   // game.html, data.js, ink/ (this game's config.js) and dev/. Not counted:
   //   - dev/disclosure.js: the tool's copy, credited in its own repository;
-  //   - ink/dialogue.js and tools/: unedited copies from Knotwork, credited
-  //     there;
-  //   - ink/ink.js: inkjs (inkle, MIT);
+  //   - ink/dialogue.js and tools/: unedited copies from Knotwork 3.8-alpha
+  //     (CREDITS.txt gives the commit), credited there;
+  //   - ink/ink.js and LICENSE-INKJS.txt: inkjs (inkle, MIT);
   //   - run-local.sh, run-phases.js, LOCAL-SUBAGENTS.md: the runner's copies
   //     (master copy: KTHTestStudent/localsubagentresults main);
   //   - ink/story.js: the compiled story, counted with the story below.
@@ -34,8 +35,8 @@
     "prefix": "AI Disclosure: code by",
     // The files that hold the line, each with the model list on ONE line.
     // The first is the one --apply makes the others match. The title screen
-    // (game.html) and CREDITS.txt join here once they exist.
-    "files": ["README.md", "CLAUDE.md"],
+    // (game.html) joins here with the skeleton.
+    "files": ["README.md", "CLAUDE.md", "CREDITS.txt"],
     // Names --apply may add on its own: Claude models only. Any other name
     // goes in only on the author's word.
     "autoAdd": "^Claude ",
@@ -43,9 +44,11 @@
     "afterApply": "Next: note the new model in HANDOFF.txt (THE AUTHOR'S DECISIONS, 6)."
   },
 
-  // The author's sentence, word for word (2026-10-20).
+  // The author's sentences, word for word (2026-10-20; the second is his
+  // decision 9). Each file holds them together, in this order.
   "human": {
-    "lines": ["Design and decisions by Kenton Howard."]
+    "lines": ["Design and decisions by Kenton Howard.",
+              "Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT)."]
   },
 
   // The laptop's local models (LOCAL-SUBAGENTS.md), the same builds as in
