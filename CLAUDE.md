@@ -91,3 +91,24 @@ out and why. In short:
   shape and base marking.
 - No Team Fortress 2 echoes: no "BLU" spelling, class archetypes, company
   names, logos or its art style.
+
+## Checks
+
+- After any change: `node dev/selftest.js`. With the skeleton's stubs it
+  says SELF-TEST 1/42 FAIL: army extra armed; after each phase, the spec's
+  EXPECTED line; the finished game SELF-TEST 42/42 PASS.
+- After a spec edit: `python3 dev/linemap.py specs/LITTLEWARS-SPEC.txt`
+  (the LINE MAP the builder and fixer read by).
+- After a rule, map, army or bot change in data.js: `node dev/bots.js .
+  200` (win rates, rounds and actions against GDD section 5), and bring the
+  probes and replay lines in step.
+- When the skeleton or a PHASE block's steps change: the phase builds and
+  the planted bugs on the reference branch (dev-reference/README.txt),
+  and the reference game there. Only a cloud session touches that branch.
+- After a story export: `node tools/knotcheck.js .` (Knotwork's).
+- Keep the documents that quote the code in step with it: the spec's
+  steps, CHECK lines and EXPECTED lines; GDD.md (sections 3, 6.4, 11);
+  hand-edits.txt; the story contract in story/story.ink, ink/config.js
+  and story/CONTRACT.txt.
+- In Claude's cloud workspace, run node with
+  `NODE_PATH=/opt/npm-tools/node_modules`.

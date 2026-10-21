@@ -1,0 +1,100 @@
+============================================================================
+ LITTLE WARS - HAND EDITS: the guide to data.js (from the skeleton,
+ 2026-10-20)
+ Every word the player sees and every number worth tuning is in data.js,
+ in plain tables; game.html only reads them. Open data.js in VS Code, change
+ the words or numbers inside the quotes or after the colons, save, and
+ press F5 in the browser.
+============================================================================
+
+TWO KINDS OF EDIT
+  SAFE  words (names, log lines, screen text, tips, colours). The game
+        changes; the self-test stays green (node dev/selftest.js still says
+        SELF-TEST 42/42 PASS), because its probes read the words from the
+        tables.
+  RULE  numbers, maps, armies, battles, outcomes, bot styles. The game
+        plays differently, so the self-test notices ON PURPOSE: probes that
+        write the old numbers fail, and the replay lines change. That is
+        not a bug - it tells a Claude session to bring the probes, the
+        spec's CHECK lines and the GDD in step (cloud work), or you can try
+        values first and let the next cloud session catch up.
+
+IF THE PAGE GOES WRONG AFTER AN EDIT
+  A plain screen saying "data.js did not load all the way" means a slip in
+  data.js: a missing comma, quote or bracket. Press F12, then Console: the
+  red line names data.js and the line (the slip is on it or the line
+  above). A red banner at the top that starts "data.js" names the table and
+  what it needs (for example "LEVELS line 3: type must be finish, rear or
+  defend.").
+  Keep to the shape of each table: one record per line, the same keys in
+  the same order, double quotes, a comma after every line but the last.
+  Inside quotes, a quote mark needs a \ in front: \".
+
+THE TABLES, IN FILE ORDER
+  RULES  (RULE)  the rules' numbers (GDD 3.10): gun range, shots, crew,
+         cover %, isolation distance, prisoners per escort, escort walk,
+         raid size, withdrawal turns, the Defensive Game's throughSize and
+         quarter %, and the points (win, draw, a gun, a prisoner). Whole
+         numbers of 1 or more, except cover and quarter (percents, 0-100)
+         and prisonerPts (0 or more).
+  ON_TARGET  (RULE)  how often a shot lands on the aimed square, by range:
+         {upTo, pct}, nearest band first; each upTo bigger than the last.
+  ARMS  (RULE)  each arm's figures, move and points per figure. Keep the
+         five keys (inf, cav, gun, hgun, esc) and gun: true / false as
+         they are.
+  LOSS_ORDER  (RULE)  the order a melee takes losses in (GDD 3.6): own for
+         the side whose turn it is, other for the other side. Each list
+         keeps all five arms, once each.
+  PIECES  (name SAFE; the rest RULE)  the map letters. name is shown when
+         a square is pointed at (about 16 letters). look is how it is drawn
+         (floor, wood, hill, house, church, wall, rock, river, ford,
+         bridge); cost, enter, blocks, cover, hill, ford are the rules. A
+         new named house (a new letter) is a new line.
+  COUNTRIES  (RULE)  the maps: rows of PIECES letters with a space between
+         them, their back line at the top, yours at the bottom; every row
+         as long as the others; at most 18 columns and 12 rows. Keep each
+         battle's set-up rows clear for its ARMIES (the red banner names a
+         unit on a square it can't stand on). Battles 1-10 are rough first
+         drafts for the bot runs to reshape.
+  COUNTRY_NAMES  (SAFE)  the battles' names (about 22 letters). Working
+         names: rename any.
+  SWITCHES  (RULE)  the squares a story outcome's ["piece", key] changes:
+         {country, key, at, piece}. at is a square name ("C4").
+  LEVELS  (RULE)  the eleven battles, in order: type, country, who moves
+         first, the curtain, each side's set-up rows, the round limit, the
+         draw line, their bot's style, a raid's half, the defender, the
+         knot before it, and the target win rate. Keep lv in order (0-10).
+  ARMIES  (RULE)  every unit of every battle with its square (and the
+         gentle bot's goal square). A side's units of one arm get their
+         names in this order.
+  EFFECTS, DEFAULTS  (RULE)  what each scene_ knot's outcomes do to the
+         next battle, and the default used while a knot is unwritten. The
+         outcome NAMES are also in story/story.ink, ink/config.js and
+         story/CONTRACT.txt: rename one in all four places (a cloud session
+         can do it).
+  BOT_STYLES  (RULE)  the bots: how a gun aims, when a unit charges, and
+         the points a bot gives a square (advance, cover, together, groups,
+         hunt, hold, guard, slip). The comment above the table says what
+         each does. Tuning a bot is a data change.
+  UNIT_NAMES  (SAFE)  the units' names (about 12 letters). Keep at least as
+         many names as a side ever has of that arm (5 inf, 4 cav, 3 gun).
+  LOG_WORDS  (SAFE)  the log's lines (about 70 letters). Keep the {names}
+         in braces: {n}, {a}, {b}, {max} are numbers, {name} a unit,
+         {country} a battle, {type} a battle type.
+  SCREEN_WORDS  (SAFE)  the words on every screen, one group per screen.
+         A letter in brackets - (E), (U), (L) - is the key that does it;
+         the key itself is in the code, so keep the letter. The title is
+         here too ("Little Wars", a working title). The AI disclosure is
+         NOT here: it stays in game.html (dev/disclosure.js reads it there).
+  TIPS  (SAFE)  Hook's Farm's tips, each shown once when it first matters
+         (about 3 lines of 60 letters).
+  THEME  (SAFE)  colours ("#rrggbb"), and the shapes that tell the sides
+         apart without colour: hat "tall" or "dome", base "ring" or "bar".
+         Give Red and Blue different shapes.
+  DATA_OK = true  the last line - keep it last.
+
+AFTER A RULE EDIT (a cloud session, or you)
+  node dev/selftest.js             which probes and replay lines changed
+  node dev/bots.js . 200           win rates, rounds and actions per battle
+                                   against GDD section 5's targets
+============================================================================

@@ -1,0 +1,30 @@
+# Little Wars - the plan for run-phases.js: PHASE 2-25, built from the stub
+# commit (HANDOFF.txt, NEXT 4). One line per phase: the phase number, then
+# the self-test line the spec expects after it, exactly as printed.
+#   node run-phases.js phase-plan.txt --dry-run
+#   node run-phases.js phase-plan.txt
+# To go on after a stop: delete the lines of the phases already committed.
+2  SELF-TEST 4/42 FAIL: step reach move
+3  SELF-TEST 5/42 FAIL: reach move leave
+4  SELF-TEST 6/42 FAIL: move leave sight
+5  SELF-TEST 8/42 FAIL: sight aim crew
+6  SELF-TEST 10/42 FAIL: crew support canfire
+7  SELF-TEST 12/42 FAIL: canfire shots cover
+8  SELF-TEST 15/42 FAIL: contact melees count
+9  SELF-TEST 17/42 FAIL: count outcome losses
+10 SELF-TEST 19/42 FAIL: losses free escorts
+11 SELF-TEST 21/42 FAIL: escorts fight take
+12 SELF-TEST 22/42 FAIL: fight take walk
+13 SELF-TEST 24/42 FAIL: walk turns backline
+14 SELF-TEST 25/42 FAIL: turns backline raid
+15 SELF-TEST 27/42 FAIL: raid result rear
+16 SELF-TEST 28/42 FAIL: result rear points
+17 SELF-TEST 30/42 FAIL: points record row
+18 SELF-TEST 32/42 FAIL: row style shotval
+19 SELF-TEST 33/42 FAIL: style shotval botaim
+20 SELF-TEST 35/42 FAIL: botaim head score
+21 SELF-TEST 36/42 FAIL: head score charge
+22 SELF-TEST 37/42 FAIL: score charge pick
+23 SELF-TEST 38/42 FAIL: charge pick botturn
+24 SELF-TEST 40/42 FAIL: botturn replay
+25 SELF-TEST 42/42 PASS

@@ -1,0 +1,1432 @@
+============================================================================
+ LITTLE WARS (working title) - build spec (Knotwork 3.8-alpha; "frontier
+ model orchestrates, local models build and fix, a human writes the story")
+ A grid-tactics campaign after H. G. Wells's Little Wars (1913): Red and
+ Blue toy soldiers - infantry squads, cavalry troops and gun sections -
+ fight eleven battles on floor-sized Countries of books, bricks and chalk,
+ with a short ink story between battles.
+ One game file: game.html (HTML + CSS + JS, no libraries of its own), plus
+ its finished data file data.js (the rules' numbers, the maps, the eleven
+ battles, the armies, the story's outcomes, the bots, the words, the
+ colours) and a finished folder ink/ with the conversation files. Opens
+ straight from disk. For itch.io, tools/pack.html turns it into ONE html
+ file.
+ 25 phases. Phase 1 is the skeleton (already in the repo). Phases 2-25
+ are each a FRESH session: the model reads this spec and game.html, does
+ ONE phase, and stops.
+============================================================================
+
+LINE MAP (for read tools that take a line range)
+  rules, game, files, API, traps, numbers: lines 96-419
+  PHASE 2 (armies): 443-482   PHASE 3 (steps and contact): 484-517
+  PHASE 4 (reach): 519-558   PHASE 5 (moving units): 560-599
+  PHASE 6 (line of fire): 601-641   PHASE 7 (crews and support): 643-677
+  PHASE 8 (gunfire): 679-725   PHASE 9 (who fights): 727-759
+  PHASE 10 (melee results): 761-788   PHASE 11 (losses): 790-826
+  PHASE 12 (escorts): 828-863   PHASE 13 (fighting): 865-905
+  PHASE 14 (escorts walk): 907-940   PHASE 15 (End Turn): 942-979
+  PHASE 16 (raid): 981-1004   PHASE 17 (result): 1006-1038
+  PHASE 18 (points): 1040-1072   PHASE 19 (outcomes): 1074-1098
+  PHASE 20 (bots 1): 1100-1126   PHASE 21 (bots 2): 1128-1156
+  PHASE 22 (bots 3): 1158-1190   PHASE 23 (bots 4): 1192-1223
+  PHASE 24 (bots 5): 1225-1264   PHASE 25 (bots 6): 1266-1299
+  fixer prompt: 1301-1432
+  (If you edit this spec, these numbers go stale - run python3 dev/linemap.py.)
+
+HOW THE HUMAN RUNS IT
+  The runner: on the laptop, run-phases.js builds a batch of phases with
+    no Claude session (LOCAL-SUBAGENTS.md, "Batch runs"): for each phase it
+    gives the BUILDER model the prompt below, checks that only that phase's
+    block changed, runs the self-test (node dev/selftest.js), compares its
+    line with the phase's EXPECTED SELF-TEST line, and commits. A wrong line
+    goes to the FIXER model (at most 2 tries). The plan file lists each
+    phase and its expected line, exactly as below.
+  Phases 2-25 prompt (BUILDER model, one fresh session each):
+    Read specs/LITTLEWARS-SPEC.txt and game.html, and do PHASE N. Then stop.
+  Never let a builder see the "reference" branch, the dev-reference/
+  folder or Claude's answer code.
+  After a batch, a cloud Claude session checks the blocks (the cloud
+  check): each phase's CHECK walk below, the phase builds and the planted
+  bugs on the reference branch. The self-test is the only gate on the
+  laptop.
+  THE CHECK SEED: the CHECK lines use a fixed campaign. Open game.html#4
+    (add #4 to the address; F5 if the page did not reload). A campaign
+    started from the title then uses seed 4. Press 1 for Red (or 2 for
+    Blue); the tutorial is on, so Hook's Farm comes first.
+  SELF-TEST: open game.html#test (it runs at once), or press G in a battle
+    (test mode, TEST shows bottom left) then T. The bottom line shows
+    "SELF-TEST n/42 ..." and names the FIRST THREE failing probes. Each
+    phase lists the exact line to expect. On the command line:
+    node dev/selftest.js (needs Playwright).
+  RED BANNER: if a phase block has a syntax error, the game shows a red
+    banner at the top: "The PHASE 6 block did not load (a syntax error in
+    it ...)". Runtime errors show there too, and conversation problems
+    (lines starting "Dialogue:"). Paste the banner into the fixer prompt,
+    plus the F12 Console line if there is one.
+  CONTROLS: click or tap. Title: 1 or 2 picks the paint (or tap a box), T
+    turns the tutorial on or off, C continues a saved campaign. A battle:
+    click one of your units, then a lit square to move it there; a gun
+    that may fire shows its aim squares as dots instead - click one to
+    fire (M switches a gun between aiming and moving). E = End Turn, U =
+    Undo (moves only, until End Turn), L = the selected unit leaves the
+    field (on your back line), F = fast bot turns, Tab = the next unit,
+    arrow keys + ENTER = the cursor, ESC = deselect. The set-up screen
+    (the curtain): click a unit, then a lit square of your zone; Ready (or
+    ENTER on an empty square, or R) starts the battle. Result screen:
+    ENTER or a tap. End screen: R.
+    CONVERSATIONS (a box at the bottom): ENTER, SPACE or a tap = next line;
+    1-4 or a tap = pick a choice (or arrow keys, then ENTER).
+    Test mode (G): T self-test; K win this battle, N lose it; B the bot
+    plays your side too (press again to stop); J the next round now. In
+    test mode a selected unit of yours shows its reach, and a selected gun
+    its aim squares, even before the phases that let them move or fire
+    (M switches a gun between the two).
+  THE STORY is story/story.ink (edit it in Inky; see Knotwork's
+    docs/WRITING-IN-INK.txt). The models never see it. It starts EMPTY:
+    every knot has only a summary. A knot with nothing to show is skipped,
+    the game says "(<knot> is not written yet)" at the bottom and uses
+    that knot's default outcome - so the whole game plays while the story
+    is being written, and the CHECK lines below never depend on it.
+    After an edit: Inky > File > Export story.js only... over
+    ink/story.js, then double-click tools/knotcheck.html.
+  RELEASE: double-click tools/pack.html and drop the game folder on it:
+    you get ONE html file (or a zip for itch.io) with everything inside.
+    Never give the packed file to a model.
+
+RULES FOR THE MODEL (every phase)
+  R1 You work in ONE file, game.html, and ONLY inside your phase's block:
+     between the lines // ==== PHASE N START ==== and
+     // ==== PHASE N END ====. Replace the stub functions there with real
+     ones and add any helpers you need inside the same block. Do not
+     rename the functions. Keep the line PHASE_OK[N] = true; as the last
+     line of the block, exactly as it is.
+  R2 Do not read or edit any other file, and change nothing in game.html
+     outside your block. The rest is finished and correct: the data (in
+     data.js), the drawing, the game flow, the self-test, the INK blocks
+     (<!-- INK:RUNTIME --> ... <!-- /INK:KIT -->) and the ink/ folder
+     (the conversation files). Everything you need from them is listed
+     in this spec (FILES and API).
+  R3 Use 1-4 edit calls. Read game.html once (it is long; find your block
+     by searching for "PHASE N START"). Do not read it back afterwards,
+     do not run anything (you cannot test it), do not create any other
+     file (no test scripts, no node, no PowerShell), and do not make a
+     task list or a plan.
+  R4 Format the code normally: one statement per line, 2-space indent,
+     the { at the end of the line that opens a block and the } on its own
+     line. NEVER put a whole function on one line. Keep the comment lines
+     above each function (they say what it RETURNS). Delete the block's
+     "STUBS for now" line (keep the line under it, which says what the
+     block is for). No classes, no modules, no other comments, no extra
+     features. Never write the text </script> anywhere, even in a comment
+     or a string.
+  R5 Randomness: use ONLY rng() and ONLY where a step says so. Never
+     Math.random(). The ORDER of rng() calls is part of the spec - an
+     extra or missing call changes every shot and every bot choice after
+     it, and the self-test's replay notices.
+  R6 Functions from other phases already exist, as stubs or finished -
+     call them where this spec says to, even if they do nothing yet.
+  R7 When the phase is done, reply with one line: DONE PHASE N
+  R8 The self-test checks the WHOLE game, so after your phase most of its
+     probes are SUPPOSED to fail - each phase's "EXPECTED SELF-TEST" line
+     shows the first three that still fail, and they belong to later
+     phases. Not your job, not a bug. Follow YOUR phase's steps exactly
+     as written - the numbers, names, order and ties, not your own design.
+  R9 Do not work the self-test out by hand, and do not read later phases
+     to understand yours. If you believe the spec is wrong, implement it
+     exactly as written anyway, then add one line after DONE:
+     SPEC DOUBT: <what and where>. Never keep going to "fix" it yourself.
+
+HOW THE GAME WORKS (read before any phase)
+  THE CAMPAIGN: the player picks a paint, Red or Blue, on the title screen
+  - the paint is all that differs - and whether the tutorial is played.
+  Then eleven battles in order: battle 0 is the tutorial, Hook's Farm
+  (it scores nothing); battles 1-9 are three acts of three; battle 10 is
+  the finale. A story knot plays before each battle (the skeleton plays
+  them); each scene_ knot sends an OUTCOME that changes the next battle
+  (phase 19). Only points carry over: the campaign score is the sum of
+  your points in battles 1-10.
+  THE BOARD: a grid of squares, W columns by H rows. In the code a square
+  is (x, y): x = 0 is the left column, y = 0 the TOP row. The top row is
+  THEIR back line, the bottom row (y = B.H - 1) YOURS. On screen a square
+  is named like "C9": a column letter (A = x 0) and a row number counted
+  from your back line (row 1 = the bottom row). sq("C9") and sqName(x, y)
+  convert. Next to = the 8 squares around. Distance = steps in any of the
+  8 directions: dist() (a diagonal step is one).
+  Each square holds a PIECE (data.js PIECES, read with pieceAt(x, y)):
+  floor ".", wood "w", hill "h", house "H" (and named houses such as "F"),
+  wall "=", rock "r", river "~", ford "f", bridge "b". A piece says
+  whether a unit may enter it (enter), what it costs to enter (cost),
+  whether it blocks a gun's line of fire (blocks), gives cover (cover),
+  is a hill (hill), or ends a move when entered (ford).
+  THE SIDES: "you" and "them" (the paint is only for drawing). Whose turn
+  it is: B.side.
+  UNITS: each unit stands on one square; one square holds one unit or one
+  gun. A unit is an object (see API): arm "inf" (an infantry squad, 6
+  figures), "cav" (a cavalry troop, 4), "gun" (a gun section: a gun and 4
+  crew), "hgun" (a horse gun: its crew ride) or "esc" (an escort walking
+  prisoners home: 1 figure). n = its figures (a gun section's n is its
+  crew; a gun with n = 0 is an EMPTY gun: it stays on its square). Units
+  never split or merge, except that a melee taking prisoners sends one
+  figure off as their escort.
+  A TURN (GDD 3.3): guns first - each gun in action may fire or move,
+  never both; the guns step ends when any other unit moves (B.gunsOpen
+  goes false). Then each unit may move once. Moves can be undone until End
+  Turn (the skeleton does Undo). End Turn (phase 15): every melee is
+  fought, empty guns are taken, the side's escorts walk, and the result is
+  checked. A ROUND is one turn for each side; B.row.first moves first; no
+  gun fires in round 1 (except the defender in a Defensive Game).
+  MOVING: a unit steps to squares next to it, paying each square's cost
+  (floor 1, wood and hill 2) out of its arm's move (ARMS: infantry 2,
+  cavalry 4, gun 2, horse gun 4). Entering a ford ends the move. It may
+  pass through a square of its own side (not a gun) but not stop there,
+  and it can't enter a square with an enemy or any gun. A diagonal step
+  can't squeeze between two squares that can't be entered. Entering a
+  square next to an enemy unit stops the move (contact).
+  GUNFIRE: a gun is in action when 4 or more figures count at it (its own
+  crew plus friendly figures next to it). It aims at a square within 10
+  squares with a line of fire, and fires 4 shots; each lands on the aimed
+  square by a seeded chance for the range (60/45/30%), otherwise on one of
+  the 8 squares around it. A shot that lands on a unit knocks one figure
+  over (any side's) - in a wood only on a seeded 50% roll.
+  MELEE (GDD 3.6): at End Turn, units of the two sides next to each other
+  fight, with every unit next to either of them. Only numbers count. Equal
+  numbers: every figure falls. Otherwise each figure of the smaller side
+  knocks one of the larger side over and falls - but if the smaller side
+  is ISOLATED (too few friends within 2 squares), the difference is taken
+  prisoner instead of falling. Prisoners walk to the taking side's back
+  line with an escort; if the escort falls, they go free.
+  BATTLE TYPES (GDD 4): Fight to the Finish ("finish"); Blow at the Rear
+  ("rear": a unit of 3+ figures on their back line - or the row's half of
+  it - wins, after a 3-turn withdrawal); Defensive Game ("defend": the
+  attacker wins on the defender's back line, the defender at the round
+  limit or when the attacker is under a quarter of its figures). A side
+  with no armed figures left loses.
+  POINTS (GDD 3.9): 100 for a win (50 each for a draw), 10 a gun held, 1
+  an infantry figure alive, 1.5 a cavalry one, 0.5 each prisoner for both
+  sides.
+  THE BOTS (phases 20-25): their side is played by a bot whose STYLE is a
+  row of numbers in data.js (BOT_STYLES); in bot runs and test mode the
+  "newcomer" style plays your side. A bot's turn is a series of actions -
+  fire, move, leave - one per call of botNext(side), until it returns null.
+  THE SKELETON already does: all data (the tables in data.js), every
+  screen and all drawing, all touch, mouse and key input, the campaign and
+  its order of battles, the set-up screen (the curtain), starting the
+  conversations and storing their outcomes, Undo, the tutorial's tips, the
+  bots' turn playback, saving, the red error banner and the self-test.
+  Until End Turn exists (phase 15), the skeleton passes the turn by itself;
+  until checkResult exists (phase 17), a battle never ends (test mode K or
+  N ends it). You write the rules.
+
+FILES (you only ever open game.html, and only change your block)
+  game.html     the game. From the top: the red banner's list, the four
+                INK blocks (they load ink/ - leave them alone), the DATA
+                block (data.js), STATE AND HELPERS, then one <script>
+                block per phase: PHASE 2 ... PHASE 25 - YOURS, then GAME
+                FLOW, STORY, BATTLE, SELF-TEST, CHECKS, DRAWING, INPUT.
+  data.js       the tables (finished; the author hand-edits words and
+                numbers there). Everything in it is listed under API.
+  ink/ink.js        the ink runtime, a library (finished)
+  ink/story.js      the conversations, compiled (finished)
+  ink/config.js     the game's hooks, conversations and names (finished)
+  ink/dialogue.js   the conversation box (finished)
+  (story/, tools/, dev/ and specs/ are for the human - the game never
+  loads them)
+
+API - everything the phase blocks can use (all already exist)
+  B      the battle (null on the title screen):
+           lv       the battle's number, 0-10
+           row      its row of the level table, with the story's outcome
+                    applied: {lv, part, type, country, first, curtain,
+                    youRows, themRows, rounds, drawLine, bot, rear,
+                    defender, knot, target, scout, horseGun, extra,
+                    pieces}. type "finish", "rear" or "defend"; first
+                    "you" or "them"; youRows / themRows each side's set-up
+                    rows; rounds the round limit; drawLine; bot the style
+                    of their bot; rear "west", "east", "all" or ""
+                    (rear battles); defender "you", "them" or "" (defend
+                    battles); scout, horseGun (true / false), extra (an
+                    array of arms: units you get more), pieces (switched-in
+                    map pieces) - phase 19 sets these four
+           W, H     the board's columns and rows
+           map      its rows of PIECES letters, top row first (read squares
+                    with pieceAt, never B.map directly)
+           units    every unit on the field, in the order they were made
+           side     whose turn it is: "you" or "them"
+           round    1, 2, ...
+           gunsOpen true until a unit that is not a gun moves this turn
+           T        each side's tally: B.T.you, B.T.them, each
+                    {fallen, safe, freed, held, gunsOff}: figures fallen
+                    (to the box); points of figures safe off the field;
+                    points of its prisoners freed; prisoners it holds at
+                    its back line; guns it took off the field
+           firedOn  {you, them}: true if that side's units were fired at
+                    in the other side's last turn (the bots read it)
+           raid     null, or {by, left} once a raid has got through
+           result   null, or {winner, why} when the battle is over
+           start    {you, them}: each side's armed figures at the start
+           botKey, botDone   the bots' memory of the turn (phase 25)
+  A UNIT is an object {id, side, arm, n, x, y, name, goal, moved, fired,
+         bare, off, of, pn, pv}:
+           id       a number, unique in the battle
+           side     "you" or "them"
+           arm      "inf", "cav", "gun", "hgun" or "esc"
+           n        its figures (a gun section: its crew; an empty gun: 0)
+           x, y     its square
+           name     its name ("1st Squad" - the skeleton's)
+           goal     "" or a square name ("C6") the gentle bot heads for
+           moved    true once it moved (or left) this turn
+           fired    true once it fired this turn (guns)
+           bare     true for a gun that fired: no cover until it moves
+           off      true once it left the field
+           of, pn, pv   an escort's: the arm its figure came from, its
+                    prisoners, and their points
+  CAMP   the campaign: {paint, tutorial, seed, next, points, done, wins,
+         draws, losses, last, outcomes, played, tips}. points / done /
+         wins / draws / losses count battles 1-10 only; last = {result,
+         points} of the last battle played ("won", "drawn" or "lost").
+  DIRS   the 8 directions as [dx, dy], in this order: up (toward THEIR
+         back line), up-right, right, down-right, down, down-left, left,
+         up-left: [[0,-1],[1,-1],[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1]].
+  rng()  0 <= rng() < 1, seeded.   say(text)  adds a line to the log.
+  words(t, o)  RETURNS t with each {key} replaced by o[key] (finished):
+         words(LOG_WORDS.fired, { name: "1st Gun", n: 2 }) gives
+         "1st Gun fires: 2 down.". A step that writes a log line says which
+         LOG_WORDS entry - never write the words yourself.
+  other(side)   "them" for "you", "you" for "them".
+  sq(name)      [x, y] of a square name: sq("C9") on a 9-row board is
+                [2, 0].
+  sqName(x, y)  the square's name: sqName(2, 0) on a 9-row board is "C9".
+  backY(side)   the y of side's back line: B.H - 1 for "you", 0 for
+                "them".
+  onBoard(x, y) true if (x, y) is on the board.
+  pieceAt(x, y) the PIECES record of the square, or null off the board:
+                {name, look, cost, enter, blocks, cover, hill, ford}.
+  dist(x0, y0, x1, y1)  the steps between two squares:
+                Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)).
+  unitAt(x, y)  the unit on the square, or null. A unit with n = 0 that is
+                not a gun, or one that left the field, is on no square;
+                an empty gun is.
+  isGun(u)      true for a gun section ("gun" or "hgun"), crewed or empty.
+  figVal(u)     the points one living figure of u is worth: ARMS[u.arm].pts
+                (an escort's: ARMS[u.of].pts).
+  clearFallen() takes the units with n = 0 (not guns) and the units that
+                left the field out of B.units.
+  addUnit(side, arm, x, y, goal)  RETURNS a new unit, after adding it to
+                the end of B.units: id = B.nextId (then one more), n a full
+                unit (ARMS[arm].figures), name the next of UNIT_NAMES[arm]
+                for that side, the flags false, of "", pn 0, pv 0.
+  freeSquare(side)  the free square of side's set-up zone nearest the
+                middle of its back line, as [x, y], or null.
+  stepsFrom(starts)  a grid g (read g[y][x]): the fewest steps from each
+                square to the nearest of starts (an array of [x, y]),
+                stepping as canStep allows; 999 where none can be reached.
+  backLine(side, half)  the squares of side's back line that can be
+                entered, from the left, as [x, y]: half "west" only those
+                with x < B.W / 2, "east" only x >= B.W / 2, anything else
+                all of them.
+  escortSquare(u, side)  the free square for an escort that unit u of side
+                gives, as [x, y], or null.
+  The tables (data.js - read them, never copy their values into code):
+  RULES       {range: 10, shots: 4, crew: 4, cover: 50, isolation: 2,
+              perEscort: 7, escortWalk: 2, raidSize: 3, withdraw: 3,
+              throughSize: 1, quarter: 25, win: 100, draw: 50, gunPts: 10,
+              prisonerPts: 0.5}
+  ON_TARGET   [{upTo: 3, pct: 60}, {upTo: 6, pct: 45}, {upTo: 10, pct: 30}]
+  ARMS        {inf: {figures: 6, move: 2, pts: 1, gun: false},
+              cav: {figures: 4, move: 4, pts: 1.5, gun: false},
+              gun: {figures: 4, move: 2, pts: 1, gun: true},
+              hgun: {figures: 4, move: 4, pts: 1.5, gun: true},
+              esc: {figures: 1, move: 2, pts: 0, gun: false}}
+  LOSS_ORDER  {own: ["inf", "cav", "esc", "gun", "hgun"],
+              other: ["gun", "hgun", "esc", "cav", "inf"]}
+  PIECES      the pieces by letter (above).
+  LEVELS      the eleven battle rows; ARMIES, one line per unit:
+              {lv, side, arm, at, goal} (at and goal are square names).
+  EFFECTS     each scene_ knot's outcomes, each a list of steps:
+              ["first", "you"], ["scout"], ["rear", "west"],
+              ["piece", "wall"], ["horseGun"], ["setupRows", 3],
+              ["unit", "cav"], ["rounds", 2], ["style", "cautious"].
+  BOT_STYLES  one record per style: {aim, charge, advance, cover,
+              together, groups, hunt, hold, guard, slip} (phases 20-25
+              say what each does).
+  UNIT_NAMES, LOG_WORDS, SCREEN_WORDS, TIPS, THEME - words and colours.
+  Functions each phase writes (all others call them by these names):
+    phase2:  inZone(side, x, y), makeArmy(side), armed(side)
+    phase3:  cornerOpen(x0, y0, x1, y1), canStep(x0, y0, x1, y1),
+             touching(a, b), enemyNear(side, x, y)
+    phase4:  reach(u)
+    phase5:  canMove(u), moveTo(u, x, y), canLeave(u), leaveField(u)
+    phase6:  lineOfFire(x0, y0, x1, y1), canAim(g, x, y), onTarget(d)
+    phase7:  crewAt(g), inAction(g), supportCount(side, m), isolated(side, m)
+    phase8:  canFire(g), fireGun(g, x, y), knockOver(u)
+    phase9:  contacts(), findMelees()
+    phase10: meleeCount(m, side), meleeOutcome(m)
+    phase11: lossOrder(m, side), takeFigures(list, k), freePrisoners(e)
+    phase12: betterEscort(a, b), escortFrom(m, side), makeEscorts(m, side, vals)
+    phase13: fightMelees(), takeGuns(side)
+    phase14: escortStep(e, g), walkEscorts(side)
+    phase15: endTurn(), onBackLine(side, size, half)
+    phase16: surrender(side), raidOver()
+    phase17: checkResult()
+    phase18: battlePoints(side), recordBattle()
+    phase19: applyOutcome(row, outcome)
+    phase20: botStyle(side), shotValue(g, x, y)
+    phase21: friendNear(side, v), aimFor(g, st)
+    phase22: headGrid(u, st)
+    phase23: moveScore(u, x, y, st, g)
+    phase24: chargeOk(u, x, y, st), bestSquare(u, st)
+    phase25: botNext(side)
+  A MELEE (m in the steps) is an array of units, in B.units order.
+
+COMMON JAVASCRIPT TRAPS (most of these caused real bugs in earlier games)
+  * Brace mistakes on long lines: see R4. Count { and } in each function.
+  * "Keep X" vs "skip X": when a step gives a test, write it exactly -
+    "skip the units NOT of side" is u.side !== side, not ===.
+  * x is the column, y the row, and y = 0 is the TOP row (their back
+    line). A grid g is read g[y][x], never g[x][y].
+  * < and <=, > and >=: copy the comparison the step gives. "fewer than
+    half" is a * 2 < b; "at least" is >=.
+  * Ties: when a step says "the first" or "strictly better", keep the one
+    found first and replace it only with a strictly better one (> , not
+    >=). Ties decide which square a bot picks, and the replay notices.
+  * Copies, not the same objects: a step that says "a new array" means
+    one; never sort or change a table from data.js (LOSS_ORDER, ARMIES,
+    LEVELS, EFFECTS ...) itself.
+  * Don't remove from an array you are looping over; units that fall keep
+    their place in B.units (n = 0) until clearFallen() - which only the
+    steps that say so call.
+  * Rounding: only where a step says (Math.floor and Math.ceil in phase 6).
+    Points can end in .5: never round them.
+  * Functions with RETURNS: return EXACTLY what the step says - true or
+    false (the words true / false - not 1 or 0), the number, the array or
+    the object it names; null where it says null. "RETURNS nothing" means
+    no return value.
+
+SHARED NUMBERS (all from data.js - read the tables, never write them in)
+  A full infantry squad has 6 figures, a cavalry troop 4, a gun section 4
+  crew (a horse gun's ride); an escort is 1 figure. Moves: infantry 2,
+  cavalry 4, gun 2, horse gun 4, escort walk 2. Move costs: floor, bridge
+  and ford 1, wood and hill 2.
+  Gun range 10; 4 shots; on target 60% at 1-3 squares, 45% at 4-6, 30% at
+  7-10; cover 50%; a gun is in action with 4 figures counting at it, and
+  moves only with 4 of its own crew.
+  Isolation distance 2 squares. 7 prisoners per escort.
+  Blow at the Rear: a unit of 3 figures on the back line; 3 turns to
+  withdraw. Defensive Game: the attacker needs a unit of 1 figure on the
+  defender's back line and a quarter (25%) of its starting figures.
+  Points: win 100, draw 50 each, a gun 10, a figure its arm's pts
+  (infantry 1, cavalry 1.5, crew as their arm), 0.5 each prisoner.
+
+============================================================================
+ PHASE 1 - the skeleton (already in the repository - no model needed)
+============================================================================
+CHECK: game.html#4 shows the title "Little Wars", the line under it, "Choose
+your paint - press 1 or 2, or tap one:", two boxes - 1 Red (four figures in
+tall flat hats, "tall flat hats, ringed bases") and 2 Blue (round domed
+hats, "round domed hats, barred bases") - "The paint is all that differs.",
+a framed line "T  Tutorial: on - Hook's Farm first" (T turns it off: "...
+off - straight to battle 1"), the AI disclosure in gold on two lines, and a
+grey credit line at the bottom. Press 1: Hook's Farm, an empty board (no
+units yet): the farm on its hill of stacked boards left of centre, the
+church on the right, woods, outbuildings and the cottage; the top line
+"Tutorial - Hook's Farm: Fight to the Finish" and "Round 1/8"; the panel
+"Your turn", "Guns first" and the buttons; the log "Hook's Farm: Fight to
+the Finish, 8 rounds.", "They move first.", "Round 1 of 8.", "Their turn.",
+"Your turn.", "No gun fires in the first round."; "(tutorial is not written
+yet)" bottom right; a tip box at the bottom (tap or SPACE closes it). E ends
+the turn: "Round 2 of 8." and so on. G shows TEST bottom left. No red
+banner.
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 1/42 FAIL: army extra armed
+NOT YET: no units (phase 2).
+
+============================================================================
+ PHASE 2 - the armies
+============================================================================
+Block: PHASE 2. Fill inZone(side, x, y), makeArmy(side) and armed(side).
+
+  inZone(side, x, y): true if the square (x, y) is in side's set-up zone.
+  1 If side === "you": return y >= B.H - B.row.youRows.
+  2 Otherwise return y < B.row.themRows.
+  (The zone is whole rows at the side's own back; x doesn't matter.)
+
+  makeArmy(side): makes side's units for the battle B.lv. RETURNS nothing.
+  1 horse = (side === "you" AND B.row.horseGun) - true when the story gave
+    you a horse gun.
+  2 For each line a of ARMIES, in order: skip it unless a.lv === B.lv AND
+    a.side === side.
+      arm = a.arm. If horse AND arm === "gun": arm = "hgun", and horse =
+      false (only the FIRST gun section becomes a horse gun).
+      s = sq(a.at). addUnit(side, arm, s[0], s[1], a.goal).
+  3 If side !== "you": return.
+  4 For each arm of B.row.extra, in order: s = freeSquare(side); if
+    s !== null: addUnit(side, arm, s[0], s[1], "").
+  (addUnit gives each unit its id, name and full figures - don't set them.)
+
+  armed(side): side's armed figures on the field.
+  1 n = 0. For each unit v of B.units: if v.side === side AND
+    v.arm !== "esc": n += v.n.
+  2 Return n.
+  (Escorts don't count. A unit that fell has n = 0; an empty gun counts 0.)
+
+CHECK: game.html#4, press 1: Hook's Farm with both armies. Their side at
+the top: a gun at C9 (4), squads at B8 and K8 (6 each), cavalry at D8 (4).
+Yours at the bottom: the gun at G2 in the central wood, squads at D2 and I2,
+cavalry at F1. Each unit shows its figures (the number top right). Yours
+(Red) wear tall flat hats on ringed bases, theirs round domed hats on barred
+bases. Hover a unit: the panel names it (1st Gun, 1st Squad, 2nd Squad, 1st
+Troop) and its square.
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 4/42 FAIL: step reach move
+NOT YET: nothing moves (phases 4-5); the panel's gun line shows "(0 at it)"
+(phase 7).
+
+============================================================================
+ PHASE 3 - steps and contact
+============================================================================
+Block: PHASE 3. Fill cornerOpen(x0, y0, x1, y1), canStep(x0, y0, x1, y1),
+touching(a, b) and enemyNear(side, x, y).
+
+  cornerOpen(x0, y0, x1, y1): false only for a diagonal step that would
+  squeeze between two squares that can't be entered.
+  1 If x0 === x1 OR y0 === y1 (not a diagonal step): return true.
+  2 Return pieceAt(x1, y0).enter || pieceAt(x0, y1).enter.
+  (The two squares beside a diagonal step are (x1, y0) and (x0, y1): one
+  of them open is enough.)
+
+  canStep(x0, y0, x1, y1): true if a unit may step from (x0, y0) to
+  (x1, y1), by the board alone (units are not looked at).
+  1 If !onBoard(x1, y1) OR dist(x0, y0, x1, y1) !== 1: return false.
+  2 If !pieceAt(x1, y1).enter: return false.
+  3 Return cornerOpen(x0, y0, x1, y1).
+
+  touching(a, b): true if units a and b stand next to each other, not
+  across a closed corner.
+  1 Return dist(a.x, a.y, b.x, b.y) === 1 && cornerOpen(a.x, a.y, b.x, b.y).
+
+  enemyNear(side, x, y): true if a unit of the other side with figures
+  stands next to the square (x, y), not across a closed corner.
+  1 For each unit v of B.units: if v.side !== side AND v.n > 0 AND
+    dist(x, y, v.x, v.y) === 1 AND cornerOpen(x, y, v.x, v.y): return true.
+  2 Return false.
+  (An empty gun (n = 0) doesn't count; an escort does.)
+
+CHECK: nothing new to see - this phase shows only in the self-test (phase 4
+uses it).
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 5/42 FAIL: reach move leave
+
+============================================================================
+ PHASE 4 - reach: the squares a unit can move to
+============================================================================
+Block: PHASE 4. Fill reach(u).
+
+  reach(u): the squares unit u can move to this turn, as an array of
+  {x, y, cost} - cost is the fewest move points it takes - top row first,
+  each row from the left. A search over squares, keyed by "x,y" strings:
+  1 mp = ARMS[u.arm].move. best = {} (an object: best["x,y"] = the fewest
+    points found so far to reach that square). best[u.x + "," + u.y] = 0.
+    open = [[u.x, u.y]].
+  2 While open.length > 0:
+    a s = open.shift() (the FIRST of the list). c = best[s[0] + "," + s[1]].
+    b If s is not u's own square AND (pieceAt(s[0], s[1]).ford OR
+      enemyNear(u.side, s[0], s[1])): go on to the next s - a move ends when
+      it enters a ford or a square next to an enemy, so nothing is reached
+      from there.
+    c For each d of DIRS: x = s[0] + d[0]; y = s[1] + d[1].
+      - If !canStep(s[0], s[1], x, y): skip this d.
+      - o = unitAt(x, y). If o !== null AND (o.side !== u.side OR
+        isGun(o)): skip this d (never into an enemy or any gun; through its
+        own squads and troops it may go).
+      - nc = c + pieceAt(x, y).cost. k = x + "," + y.
+      - If nc > mp OR (best[k] !== undefined AND best[k] <= nc): skip this d.
+      - best[k] = nc. open.push([x, y]).
+  3 out = []. For y from 0 to B.H - 1, and in each row for x from 0 to
+    B.W - 1: k = x + "," + y; if best[k] !== undefined AND unitAt(x, y) ===
+    null: out.push({x: x, y: y, cost: best[k]}).
+  4 Return out.
+  (Step 3 leaves out u's own square and every square with a unit: u passes
+  through its own units but can't stop on them. A square goes into open
+  again whenever a cheaper way to it is found - that is 2c's last test.)
+
+CHECK: game.html#4, press 1, then G (test mode). Click your cavalry at F1:
+33 squares light up, as far as row 5 (E5, F5, H5) - not your gun's square
+G2, not the outbuilding at C3; a wood costs 2 to enter. Click your squad at
+D2: 13 squares, as far as E4. (Clicking a lit square does nothing yet.)
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 6/42 FAIL: move leave sight
+NOT YET: units can't move (phase 5).
+
+============================================================================
+ PHASE 5 - moving units
+============================================================================
+Block: PHASE 5. Fill canMove(u), moveTo(u, x, y), canLeave(u) and
+leaveField(u).
+
+  canMove(u): true if unit u may move (or leave the field) now.
+  1 If u.side !== B.side OR u.n === 0 OR u.moved OR u.arm === "esc":
+    return false.
+  2 If isGun(u): return B.gunsOpen && !u.fired && u.n >= RULES.crew. (A gun
+    moves only in the guns step, only if it didn't fire, and only with
+    RULES.crew of its own crew.)
+  3 Return true.
+
+  moveTo(u, x, y): unit u moves to (x, y), a square from reach(u). RETURNS
+  nothing.
+  1 u.x = x; u.y = y; u.moved = true.
+  2 If isGun(u): u.bare = false (a gun that moved is in cover again).
+    Otherwise: B.gunsOpen = false (the guns step is over).
+
+  canLeave(u): true if unit u may leave the field now.
+  1 Return canMove(u) && u.y === backY(u.side).
+
+  leaveField(u): unit u leaves the field over its back line. RETURNS
+  nothing.
+  1 B.T[u.side].safe += u.n * figVal(u) (its figures are safe, and still
+    count for points).
+  2 If isGun(u): B.T[u.side].gunsOff += 1. Otherwise: B.gunsOpen = false.
+  3 say(words(LOG_WORDS.leftField, { name: u.name })).
+  4 u.n = 0; u.off = true; u.moved = true.
+
+CHECK: game.html#4, press 1. Click your cavalry at F1, then the lit square
+E5: it moves there, and the panel's "Guns first" becomes "Moves". U (Undo)
+puts it back ("Move taken back.") and "Guns first" returns. Click your gun
+at G2: it may move in round 1 (lit squares up to 2 steps), not fire. Move
+your squad at D2: it fades - it has moved. Click the cavalry (on your back
+line) and press L: "1st Troop leaves the field." E ends the turn.
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 8/42 FAIL: sight aim crew
+NOT YET: guns can't fire (phase 8); no melee at End Turn (phase 15).
+
+============================================================================
+ PHASE 6 - line of fire
+============================================================================
+Block: PHASE 6. Fill lineOfFire(x0, y0, x1, y1), canAim(g, x, y) and
+onTarget(d).
+
+  lineOfFire(x0, y0, x1, y1): true if a gun on (x0, y0) has a line of fire
+  to (x1, y1).
+  1 If pieceAt(x0, y0).hill: return true (a gun on a hill fires over
+    everything).
+  2 n = dist(x0, y0, x1, y1). For i from 1 to n - 1 (the squares between;
+    none when n <= 1):
+      fx = x0 + i * (x1 - x0) / n;  fy = y0 + i * (y1 - y0) / n.
+      a = pieceAt(Math.floor(fx + 0.5), Math.floor(fy + 0.5)).blocks.
+      b = pieceAt(Math.ceil(fx - 0.5), Math.ceil(fy - 0.5)).blocks.
+      If a && b: return false.
+  3 Return true.
+  ((fx, fy) is the point of the straight line i steps along. Mostly a and b
+  look at the same square. When the line passes exactly between two squares
+  (a coordinate ends in .5) they look at the two, and the line is blocked
+  only if BOTH block - as a step may pass a corner when one side is open.
+  Write the four Math calls exactly so - not Math.round.)
+
+  canAim(g, x, y): true if gun g may aim at the square (x, y).
+  1 If !onBoard(x, y): return false.
+  2 d = dist(g.x, g.y, x, y). If d < 1 OR d > RULES.range: return false.
+  3 Return lineOfFire(g.x, g.y, x, y).
+
+  onTarget(d): the percent chance that a shot lands on an aimed square d
+  squares away.
+  1 For each line t of ON_TARGET, in order: if d <= t.upTo: return t.pct.
+  2 Return 0.
+  (60 at 1-3 squares, 45 at 4-6, 30 at 7-10 - read the table.)
+
+CHECK: game.html#4, press 1, then G (test mode). Click your gun at G2, then
+M: dots show the 79 squares it could aim at, bigger dots on their units in
+sight - C9, D8 and K8 (the squad at B8 is behind the farm's hills). M again
+shows its moves.
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 10/42 FAIL: crew support canfire
+NOT YET: no firing (phase 8).
+
+============================================================================
+ PHASE 7 - crews and support
+============================================================================
+Block: PHASE 7. Fill crewAt(g), inAction(g), supportCount(side, m) and
+isolated(side, m).
+
+  crewAt(g): the figures that count at gun g.
+  1 n = g.n. For each unit v of B.units: if v !== g AND v.side === g.side
+    AND v.arm !== "esc" AND dist(v.x, v.y, g.x, g.y) === 1: n += v.n.
+  2 Return n.
+  (Its own crew plus every friendly unit next to it - corners don't matter
+  here; escorts don't count.)
+
+  inAction(g): true if gun g is in action.
+  1 Return crewAt(g) >= RULES.crew.
+
+  supportCount(side, m): the figures of side outside melee m that stand
+  within RULES.isolation squares of one of side's units in m.
+  1 n = 0. For each unit v of B.units:
+    - skip it if v.side !== side OR v.arm === "esc" OR m.indexOf(v) >= 0
+      (it is in the melee itself);
+    - for each unit w of m: if w.side === side AND dist(v.x, v.y, w.x, w.y)
+      <= RULES.isolation: n += v.n, and stop looking at m for this v
+      (break) - each v counts once.
+  2 Return n.
+
+  isolated(side, m): true if side is isolated in melee m.
+  1 own = the sum of w.n over the units w of m with w.side === side.
+  2 Return supportCount(side, m) * 2 < own. (Fewer than half.)
+
+CHECK: game.html#4, press 1. Click your gun at G2: the panel shows "crew 4
+(8 at it)" - its 4 crew and the troop at F1 next to it. Move the troop
+away: "crew 4 (4 at it)".
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 12/42 FAIL: canfire shots cover
+
+============================================================================
+ PHASE 8 - gunfire
+============================================================================
+Block: PHASE 8. Fill canFire(g), fireGun(g, x, y) and knockOver(u).
+
+  canFire(g): true if gun g may fire now.
+  1 If !isGun(g) OR g.side !== B.side OR !B.gunsOpen OR g.moved OR g.fired:
+    return false.
+  2 If B.round === 1 AND NOT (B.row.type === "defend" AND B.row.defender
+    === g.side): return false. (No gun fires in round 1, except the
+    defender's in a Defensive Game.)
+  3 Return inAction(g).
+
+  fireGun(g, x, y): gun g fires RULES.shots shots at the square (x, y).
+  RETURNS the figures knocked over.
+  1 g.fired = true; g.bare = true; B.firedOn[other(g.side)] = true.
+  2 p = onTarget(dist(g.x, g.y, x, y)). hits = 0.
+  3 Repeat RULES.shots times:
+    a tx = x; ty = y.
+    b If rng() * 100 >= p (it scatters): d = DIRS[Math.floor(rng() * 8)];
+      tx = x + d[0]; ty = y + d[1].
+    c If !onBoard(tx, ty) OR !lineOfFire(g.x, g.y, tx, ty): go on to the
+      next shot (this one does nothing).
+    d u = unitAt(tx, ty). If u === null OR u.n === 0: go on to the next
+      shot (nobody there, or an empty gun).
+    e If pieceAt(tx, ty).cover AND !u.bare AND rng() * 100 >= RULES.cover:
+      go on to the next shot (the cover saved it).
+    f knockOver(u). hits += 1.
+  4 say(words(LOG_WORDS.fired, { name: g.name, n: hits })).
+  5 Return hits.
+  (The rng() calls, in order: one per shot in 3b; a second in 3b only when
+  it scatters; one in 3e only when the shot lands on a unit in cover that
+  has not fired - JavaScript's && stops at the first false, so write 3e's
+  test in exactly that order. A shot can hit a unit of the gun's own side.)
+
+  knockOver(u): one figure of unit u falls. RETURNS nothing.
+  1 If u.arm === "esc": freePrisoners(u) (phase 11: its prisoners go free).
+  2 u.n -= 1. B.T[u.side].fallen += 1.
+
+CHECK: game.html#4, press 1, then E (no gun fires in round 1). Round 2, your
+turn: click your gun at G2 - dots show where it can aim. Click their
+cavalry at D8: "1st Gun fires: 2 down." - the troop shows 3, their gun at
+C9 shows 3 crew, and the panel's "Their box: 2" shows two fallen figures.
+Your gun now can neither fire again nor move this turn.
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 15/42 FAIL: contact melees count
+NOT YET: no melee at End Turn (phase 15).
+
+============================================================================
+ PHASE 9 - who fights
+============================================================================
+Block: PHASE 9. Fill contacts() and findMelees().
+
+  contacts(): every pair of touching units of opposite sides that both
+  have figures, as [a, b] with a before b in B.units.
+  1 out = []. For i from 0 to B.units.length - 1, and for j from i + 1 to
+    B.units.length - 1: a = B.units[i]; b = B.units[j]; if a.n > 0 AND
+    b.n > 0 AND a.side !== b.side AND touching(a, b): out.push([a, b]).
+  2 Return out.
+
+  findMelees(): the melees, as an array; each melee is an array of units
+  in B.units order; the melees in the order of their first units.
+  1 out = [].
+  2 For each pair p of contacts(), in order:
+    a m = a new array of every unit v of B.units, in order, with v.n > 0
+      AND (v === p[0] OR v === p[1] OR touching(v, p[0]) OR touching(v,
+      p[1])) - the pair and every unit next to either of them, of either
+      side.
+    b For i from out.length - 1 DOWN to 0: if out[i] shares a unit with m
+      (some unit of out[i] is in m): push each unit of out[i] that is not
+      yet in m onto m, then take out[i] out of out (out.splice(i, 1)).
+      (Melees that share a unit are one melee.)
+    c Sort m by B.units order (a comparator returning
+      B.units.indexOf(a) - B.units.indexOf(b)). out.push(m).
+  3 Sort out by the B.units index of each melee's first unit (a comparator
+    returning B.units.indexOf(a[0]) - B.units.indexOf(b[0])). Return out.
+
+CHECK: nothing new to see - only in the self-test (End Turn fights the
+melees from phase 15).
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 17/42 FAIL: count outcome losses
+
+============================================================================
+ PHASE 10 - melee results: what a melee does
+============================================================================
+Block: PHASE 10. Fill meleeCount(m, side) and meleeOutcome(m).
+
+  meleeCount(m, side): the figures of side in melee m.
+  1 Return the sum of u.n over the units u of m with u.side === side.
+
+  meleeOutcome(m): what melee m would do, changing nothing: an object
+  {you: {fall, taken}, them: {fall, taken}} - the figures that fall and
+  the figures taken prisoner on each side.
+  1 a = meleeCount(m, "you"); b = meleeCount(m, "them").
+    r = {you: {fall: 0, taken: 0}, them: {fall: 0, taken: 0}}.
+  2 If a === b: r.you.fall = a; r.them.fall = b; return r. (Equal: every
+    figure falls.)
+  3 big = "you" if a > b, otherwise "them". small = other(big).
+    s = Math.min(a, b).
+  4 p = 0. If isolated(small, m): p = Math.min(Math.max(a, b) - s, s) (the
+    difference is taken prisoner, at most the whole smaller side).
+  5 r[small].taken = p; r[small].fall = s - p; r[big].fall = s - p.
+    Return r.
+  (Supported, p stays 0: every figure of the smaller side knocks one of the
+  larger side over and falls. Wells's example: 9 against 11, isolated - 2
+  prisoners, and 7 fall on each side.)
+
+CHECK: nothing new - only in the self-test.
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 19/42 FAIL: losses free escorts
+
+============================================================================
+ PHASE 11 - losses, and freed prisoners
+============================================================================
+Block: PHASE 11. Fill lossOrder(m, side), takeFigures(list, k) and
+freePrisoners(e).
+
+  lossOrder(m, side): side's units in melee m in the order they lose
+  figures.
+  1 order = LOSS_ORDER.own if side === B.side (the side whose turn it is),
+    otherwise LOSS_ORDER.other.
+  2 list = a new array of the units u of m with u.side === side (m.filter).
+  3 Sort list by order.indexOf(u.arm) (smaller first), then u.n (fewer
+    figures first), then B.units.indexOf(u) (earlier first): a comparator
+    returning order.indexOf(a.arm) - order.indexOf(b.arm) || a.n - b.n ||
+    B.units.indexOf(a) - B.units.indexOf(b).
+  4 Return list.
+
+  takeFigures(list, k): takes k figures from the units of list, in order.
+  RETURNS an array of the points of each figure taken.
+  1 vals = [].
+  2 For each unit u of list, in order: while k > 0 AND u.n > 0: if
+    u.arm === "esc": freePrisoners(u). vals.push(figVal(u)); u.n -= 1;
+    k -= 1.
+  3 Return vals.
+  (It never touches B.T: fightMelees decides whether they fell or were
+  taken.)
+
+  freePrisoners(e): escort e's prisoners go free. RETURNS nothing.
+  1 If e.pn === 0: return.
+  2 B.T[other(e.side)].freed += e.pv (their own side counts them as living
+    figures).
+  3 say(words(LOG_WORDS.freed, { n: e.pn })).
+  4 e.pn = 0; e.pv = 0.
+
+CHECK: nothing new - only in the self-test.
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 21/42 FAIL: escorts fight take
+
+============================================================================
+ PHASE 12 - escorts
+============================================================================
+Block: PHASE 12. Fill betterEscort(a, b), escortFrom(m, side) and
+makeEscorts(m, side, vals).
+
+  betterEscort(a, b): true if unit a should give an escort before unit b.
+  1 If isGun(a) !== isGun(b): return !isGun(a) (a gun's crew only if
+    nothing else is left).
+  2 If a.n !== b.n: return a.n > b.n (the larger unit).
+  3 Return a.arm === "inf" && b.arm !== "inf" (infantry before cavalry).
+
+  escortFrom(m, side): the unit of side in melee m that gives a figure to
+  be an escort, or null.
+  1 best = null. For each unit u of m, in order: skip it if u.side !== side
+    OR u.n === 0 OR u.arm === "esc"; if best === null OR betterEscort(u,
+    best): best = u.
+  2 Return best.
+
+  makeEscorts(m, side, vals): side takes the prisoners whose points are in
+  vals (from takeFigures), from melee m - one escort for every
+  RULES.perEscort of them. RETURNS nothing.
+  1 For i = 0, then i += RULES.perEscort, while i < vals.length:
+    a part = vals.slice(i, i + RULES.perEscort). pv = the sum of part.
+    b u = escortFrom(m, side). s = null if u === null, otherwise
+      escortSquare(u, side).
+    c If s === null: B.T[side].held += part.length (held at once); go on to
+      the next part.
+    d u.n -= 1. e = addUnit(side, "esc", s[0], s[1], ""). e.of = u.arm;
+      e.pn = part.length; e.pv = pv.
+  (escortFrom is asked again for each part: the unit that gave the first
+  escort may not be the largest any more.)
+
+CHECK: nothing new - only in the self-test.
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 22/42 FAIL: fight take walk
+
+============================================================================
+ PHASE 13 - fighting, and empty guns taken
+============================================================================
+Block: PHASE 13. Fill fightMelees() and takeGuns(side).
+
+  fightMelees(): fights every melee on the board, for the side whose turn
+  it is (B.side). RETURNS nothing.
+  1 ms = findMelees(). rs = a new array of meleeOutcome(m) for each m of
+    ms, in order - ALL of them now, before any is fought: every melee is
+    judged on the board as it stands at End Turn.
+  2 sides = [B.side, other(B.side)].
+  3 For i from 0 to ms.length - 1:
+    a taken = {}. For each s of sides, in order: list = lossOrder(ms[i], s);
+      taken[s] = takeFigures(list, rs[i][s].taken); then B.T[s].fallen +=
+      takeFigures(list, rs[i][s].fall).length. (First the prisoners, then
+      the falls, from the same list.)
+    b say(words(LOG_WORDS.melee, { a: rs[i].you.fall + rs[i].you.taken,
+      b: rs[i].them.fall + rs[i].them.taken })).
+    c For each s of sides, in order: if taken[s].length > 0:
+      say(words(LOG_WORDS.taken, { n: taken[s].length })), then
+      makeEscorts(ms[i], other(s), taken[s]) (the OTHER side takes s's
+      figures prisoner).
+  (Units that fell stay in B.units with n = 0; endTurn clears them.)
+
+  takeGuns(side): at the end of side's turn, side takes each empty gun of
+  the other side that has no figure of its own side next to it and a unit
+  of side (not an escort) with RULES.crew or more figures next to it.
+  RETURNS nothing.
+  1 For each unit g of B.units: skip it if !isGun(g) OR g.n > 0 OR
+    g.side === side.
+      theirs = false; ours = false.
+      For each unit v of B.units with v.n > 0 AND dist(v.x, v.y, g.x, g.y)
+      === 1: if v.side === g.side: theirs = true; otherwise, if v.arm !==
+      "esc" AND v.n >= RULES.crew: ours = true.
+      If !theirs AND ours: g.side = side; say(words(LOG_WORDS.gunTaken,
+      { name: g.name })).
+
+CHECK: nothing new - only in the self-test (End Turn calls them from phase
+15).
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 24/42 FAIL: walk turns backline
+
+============================================================================
+ PHASE 14 - escorts walk
+============================================================================
+Block: PHASE 14. Fill escortStep(e, g) and walkEscorts(side).
+
+  escortStep(e, g): the square [x, y] escort e steps to next, or null. g
+  is a stepsFrom grid of its side's back line.
+  1 best = null; bn = 0.
+  2 For each d of DIRS, in order: x = e.x + d[0]; y = e.y + d[1].
+    - skip it if !canStep(e.x, e.y, x, y) OR unitAt(x, y) !== null OR
+      g[y][x] >= g[e.y][e.x] (it must get closer);
+    - near = 1 if enemyNear(e.side, x, y), otherwise 0;
+    - if best === null OR near < bn OR (near === bn AND g[y][x] <
+      g[best[1]][best[0]]): best = [x, y]; bn = near.
+  3 Return best.
+  (Out of contact where it can, then the shortest way, then the first in
+  DIRS order.)
+
+  walkEscorts(side): each escort of side walks up to RULES.escortWalk steps
+  toward side's back line, and leaves the field there with its prisoners.
+  RETURNS nothing.
+  1 g = stepsFrom(backLine(side, "all")).
+  2 For each unit e of B.units: skip it unless e.side === side AND e.arm
+    === "esc" AND e.n > 0.
+    a For i from 0 while i < RULES.escortWalk AND e.y !== backY(side):
+      s = escortStep(e, g); if s === null: stop walking (break).
+      e.x = s[0]; e.y = s[1]. If pieceAt(e.x, e.y).ford: stop walking.
+    b If e.y === backY(side): B.T[side].safe += figVal(e); B.T[side].held
+      += e.pn; say(words(LOG_WORDS.escortHome, { n: e.pn })); e.n = 0;
+      e.off = true; e.pn = 0; e.pv = 0.
+
+CHECK: nothing new - only in the self-test.
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 25/42 FAIL: turns backline raid
+
+============================================================================
+ PHASE 15 - End Turn
+============================================================================
+Block: PHASE 15. Fill endTurn() and onBackLine(side, size, half).
+
+  endTurn(): ends B.side's turn. RETURNS nothing.
+  1 fightMelees(). clearFallen(). takeGuns(B.side). walkEscorts(B.side).
+    clearFallen().
+  2 B.result = checkResult(). If B.result !== null: return (the battle is
+    over; the skeleton shows the result).
+  3 B.firedOn[B.side] = false.
+  4 If B.side !== B.row.first: B.round += 1 (a round ends with the second
+    side's turn).
+  5 B.side = other(B.side). B.gunsOpen = true.
+  6 For each unit u of B.units with u.side === B.side (the side whose turn
+    it is now): u.moved = false; u.fired = false.
+
+  onBackLine(side, size, half): true if a unit of side (not an escort) with
+  size or more figures stands on the other side's back line, in half.
+  1 For each unit u of B.units:
+    - skip it if u.side !== side OR u.arm === "esc" OR u.n < size OR
+      u.y !== backY(other(side));
+    - skip it if half === "west" AND u.x >= B.W / 2;
+    - skip it if half === "east" AND u.x < B.W / 2;
+    - otherwise return true.
+  2 Return false.
+
+CHECK: game.html#4, press 1. Round 1: move your cavalry from F1 to F5, then
+E. Round 2: move it to E7 - next to their cavalry at D8, so the move stops
+there - then E: "Melee: you lose 4, they lose 0." and "4 taken prisoner.":
+their gun at C9 is next to their troop too, so it was 8 against 4, and your
+troop was isolated. An escort (one figure of their troop - it shows 3 now -
+with four of yours facing away) stands at D9 on their back line. "Round 3 of
+8.": at the end of their turn it leaves the field ("An escort brings 4
+prisoners in.").
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 27/42 FAIL: raid result rear
+NOT YET: a battle never ends (phase 17); their side doesn't move (phase 25).
+
+============================================================================
+ PHASE 16 - a raid: the withdrawal, and surrender
+============================================================================
+Block: PHASE 16. Fill surrender(side) and raidOver().
+
+  surrender(side): side surrenders after a raid. RETURNS nothing.
+  1 w = other(side).
+  2 For each unit u of B.units with u.side === side: if u.arm === "esc":
+    freePrisoners(u). B.T[w].held += u.n; u.n = 0. If isGun(u): u.side = w.
+  (Each of its figures still on the field is the other side's prisoner -
+  an escort's own figure too - and its guns, crewed or empty, are the other
+  side's.)
+
+  raidOver(): null while the loser of a raid is still withdrawing, or the
+  result once it is over. (checkResult calls it while B.raid is set.)
+  1 loser = other(B.raid.by).
+  2 If B.side === loser: B.raid.left -= 1 (each of the loser's turns counts).
+  3 If B.raid.left === 0 OR armed(loser) === 0: surrender(loser); return
+    {winner: B.raid.by, why: "raid"}.
+  4 Return null.
+
+CHECK: nothing new - only in the self-test (a raid needs phase 17).
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 28/42 FAIL: result rear points
+
+============================================================================
+ PHASE 17 - the result
+============================================================================
+Block: PHASE 17. Fill checkResult().
+
+  checkResult(): null while the battle goes on, or {winner, why} - winner
+  "you", "them" or "draw". Called at the end of B.side's turn. In order:
+  1 If B.raid !== null: return raidOver().
+  2 s = B.side; t = B.row.type; a = armed("you"); b = armed("them").
+  3 If a === 0 OR b === 0: return {winner: "you" if a > 0, otherwise
+    "them" if b > 0, otherwise "draw"; why: "none"}.
+  4 If t !== "defend" AND a < B.row.drawLine AND b < B.row.drawLine:
+    return {winner: "draw", why: "few"}.
+  5 If t === "rear" AND onBackLine(s, RULES.raidSize, B.row.rear):
+    B.raid = {by: s, left: RULES.withdraw};
+    say(words(LOG_WORDS.raid, { n: RULES.withdraw })); return null.
+  6 If t === "defend": att = other(B.row.defender).
+    a If armed(att) * 100 < B.start[att] * RULES.quarter: return
+      {winner: B.row.defender, why: "quarter"}.
+    b If s === att AND onBackLine(att, RULES.throughSize, "all"): return
+      {winner: att, why: "through"}.
+  7 If B.round >= B.row.rounds AND s !== B.row.first: return {winner:
+    B.row.defender if t === "defend", otherwise "draw"; why: "rounds"}.
+  8 Return null.
+
+CHECK: game.html#4, press 1, then G (test mode) and J seven times (round 8,
+your turn), then E: the result screen - "Hook's Farm is a draw" (the round
+limit), points 0 and 0 for now, "The tutorial scores no campaign points.".
+ENTER: battle 1, The Two Hills, on its set-up screen ("(scene_1 is not
+written yet)"), their side hidden.
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 30/42 FAIL: points record row
+NOT YET: points (phase 18).
+
+============================================================================
+ PHASE 18 - points, and the campaign
+============================================================================
+Block: PHASE 18. Fill battlePoints(side) and recordBattle().
+
+  battlePoints(side): side's points for the finished battle B (B.result is
+  set).
+  1 w = B.result.winner. p = RULES.win if w === side, RULES.draw if w ===
+    "draw", otherwise 0.
+  2 prisoners = B.T.you.held + B.T.them.held.
+  3 For each unit u of B.units: skip it if u.off. If u.arm === "esc":
+    prisoners += u.pn. If u.side === side: p += u.n * figVal(u), and if
+    isGun(u): p += RULES.gunPts.
+  4 p += B.T[side].gunsOff * RULES.gunPts + B.T[side].safe + B.T[side].freed.
+  5 Return p + prisoners * RULES.prisonerPts.
+  (Every prisoner - held at a back line or still walking with its escort -
+  is worth RULES.prisonerPts to BOTH sides. An empty gun still counts for
+  the side it belongs to.)
+
+  recordBattle(): adds the finished battle to the campaign CAMP. RETURNS
+  your points in it.
+  1 pts = battlePoints("you"). w = B.result.winner. res = "won" if w ===
+    "you", "drawn" if w === "draw", otherwise "lost".
+  2 CAMP.last = {result: res, points: pts}.
+  3 If B.lv > 0 (the tutorial scores nothing): CAMP.points += pts;
+    CAMP.done += 1; and CAMP.wins, CAMP.draws or CAMP.losses += 1, by res.
+  4 Return pts.
+
+CHECK: as phase 17's walk: the result screen now shows 82 for you and 82
+for them (50 for the draw, 10 for the gun, 1 for each infantry figure, 1.5
+for each cavalry figure).
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 32/42 FAIL: row style shotval
+
+============================================================================
+ PHASE 19 - outcomes: what the story's outcomes do
+============================================================================
+Block: PHASE 19. Fill applyOutcome(row, outcome).
+
+  applyOutcome(row, outcome): applies the story outcome (one of row.knot's
+  outcomes in EFFECTS, or "") to row, a battle row made by baseRow.
+  RETURNS nothing.
+  1 fx = EFFECTS[row.knot]. If fx is undefined OR fx[outcome] is undefined:
+    return. (The tutorial's knot has no outcomes; "" or an unknown outcome
+    changes nothing.)
+  2 For each step s of fx[outcome], in order, with k = s[0] (an if / else
+    if chain):
+      "first": row.first = s[1].        "scout": row.scout = true.
+      "rear": row.rear = s[1].          "piece": row.pieces.push(s[1]).
+      "horseGun": row.horseGun = true.  "setupRows": row.youRows = s[1].
+      "unit": row.extra.push(s[1]).     "rounds": row.rounds += s[1].
+      "style": row.bot = s[1].
+  (Never change LEVELS or EFFECTS: row is already a copy.)
+
+CHECK: as phase 17's walk, then ENTER: battle 1's set-up screen now shows
+their units ("Your scouts show their set-up." - scene_1's default outcome,
+"scout").
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 33/42 FAIL: style shotval botaim
+
+============================================================================
+ PHASE 20 - the bots, 1: the style, and what a shot is worth
+============================================================================
+Block: PHASE 20. Fill botStyle(side) and shotValue(g, x, y).
+
+  botStyle(side): the BOT_STYLES record side's bot plays.
+  1 If side === "them": return BOT_STYLES[B.row.bot].
+  2 Return BOT_STYLES.newcomer.
+
+  shotValue(g, x, y): the figures one shot of gun g aimed at (x, y) can be
+  expected to knock over, in percent - plus for the other side's figures,
+  minus for its own.
+  1 p = onTarget(dist(g.x, g.y, x, y)). v = 0.
+  2 For k from -1 to 7 (k = -1: the aimed square itself; 0-7: the squares
+    around it, in DIRS order):
+      tx = x; ty = y; c = p. If k >= 0: tx = x + DIRS[k][0]; ty = y +
+      DIRS[k][1]; c = (100 - p) / 8.
+      Skip it if !onBoard(tx, ty) OR !lineOfFire(g.x, g.y, tx, ty).
+      u = unitAt(tx, ty). Skip it if u === null OR u.n === 0.
+      If pieceAt(tx, ty).cover AND !u.bare: c = c * RULES.cover / 100.
+      v += -c if u.side === g.side, otherwise v += c.
+  3 Return v.
+  (No rng() here: it is the expected value.)
+
+CHECK: nothing new - only in the self-test.
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 35/42 FAIL: botaim head score
+
+============================================================================
+ PHASE 21 - the bots, 2: what a gun aims at
+============================================================================
+Block: PHASE 21. Fill friendNear(side, v) and aimFor(g, st).
+
+  friendNear(side, v): true if a unit of side with figures, other than v,
+  stands next to unit v.
+  1 For each unit w of B.units: if w !== v AND w.side === side AND w.n > 0
+    AND dist(w.x, w.y, v.x, v.y) === 1: return true.
+  2 Return false.
+
+  aimFor(g, st): the square [x, y] gun g aims at for style st, or null.
+  1 best = null; bs = 0.
+  2 For each unit v of B.units, in order:
+    a skip it if v.side === g.side OR v.n === 0 OR !canAim(g, v.x, v.y);
+    b s = shotValue(g, v.x, v.y); skip it if s <= 0 (a shot that would cost
+      it more than the other side);
+    c if st.aim !== "best": skip it if friendNear(g.side, v) (never at a
+      unit with one of its own units next to it); then s =
+      -dist(g.x, g.y, v.x, v.y) if st.aim === "nearest", otherwise s = v.n
+      + (100 if st.aim === "guns" AND isGun(v), otherwise 0). ("most": the
+      most figures; "guns": gun sections first, then the most figures;
+      "best" keeps the shot value.)
+    d if best === null OR s > bs: best = [v.x, v.y]; bs = s.
+  3 Return best.
+
+CHECK: nothing new - only in the self-test.
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 36/42 FAIL: head score charge
+
+============================================================================
+ PHASE 22 - the bots, 3: where a unit is heading
+============================================================================
+Block: PHASE 22. Fill headGrid(u, st).
+
+  headGrid(u, st): the stepsFrom grid toward where unit u is heading, for
+  style st. The first of these that applies:
+  1 side = u.side. If B.raid !== null AND B.raid.by !== side (its side
+    lost a raid and withdraws): return stepsFrom(backLine(side, "all")).
+  2 If u.arm === "cav" AND B.row.type === "rear": return
+    stepsFrom(backLine(other(side), B.row.rear)).
+  3 If u.arm === "cav" AND B.row.type === "defend" AND B.row.defender !==
+    side: return stepsFrom(backLine(B.row.defender, "all")).
+  4 Make three new arrays and a number from the units v of B.units with
+    v.side !== side, in order:
+      guns     [v.x, v.y] of each v with isGun(v) (crewed or empty);
+      foes     [v.x, v.y] of each v with v.n > 0;
+      threats  [v.x, v.y] of each v with v.n > 0 AND v.arm !== "esc" AND
+               Math.abs(v.y - backY(side)) < B.H / 2 (in side's own half);
+      near     the smallest dist(u.x, u.y, v.x, v.y) over the foes (999 if
+               there are none).
+  5 If threats.length > 0 AND (B.row.type === "rear" OR B.row.defender ===
+    side): return stepsFrom(threats) (raiders in its half: go for them).
+  6 If st.groups > 0 AND u.goal !== "" AND near > st.groups: return
+    stepsFrom([sq(u.goal)]).
+  7 If st.hunt === "guns" AND u.arm === "cav" AND guns.length > 0: return
+    stepsFrom(guns).
+  8 Return stepsFrom(foes).
+  (Only arm "cav" is cavalry here: a horse gun isn't.)
+
+CHECK: nothing new - only in the self-test.
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 37/42 FAIL: score charge pick
+
+============================================================================
+ PHASE 23 - the bots, 4: how good a square is
+============================================================================
+Block: PHASE 23. Fill moveScore(u, x, y, st, g).
+
+  moveScore(u, x, y, st, g): the score of unit u ending its move on (x, y),
+  for style st, heading along the grid g (from headGrid). Higher is better.
+  1 s = -st.advance * g[y][x].
+  2 If isGun(u) AND NOT (B.raid !== null AND B.raid.by !== u.side): s = 0;
+    then for each unit v of B.units: d = dist(x, y, v.x, v.y); if v.side !==
+    u.side AND v.n > 0 AND d >= 1 AND d <= RULES.range AND lineOfFire(x, y,
+    v.x, v.y): s += st.advance. (A gun likes squares it can fire from:
+    st.advance for each enemy unit it could aim at from there - unless its
+    side is withdrawing after a raid.)
+  3 p = pieceAt(x, y). If p.cover OR p.hill: s += st.cover; and if x === u.x
+    AND y === u.y AND !B.firedOn[u.side]: s += st.hold (holding cover or a
+    hill while not fired on).
+  4 friends = 0; danger = false. For each unit v of B.units: skip it if
+    v === u OR v.arm === "esc"; d = dist(v.x, v.y, x, y);
+    - v of the other side: if v.n > 0 AND d <= ARMS[v.arm].move + 1:
+      danger = true (it could reach (x, y) next turn);
+    - v of u's side: if d <= RULES.isolation: friends += v.n. If d === 1
+      AND isGun(v) AND v.n < RULES.crew: s += st.guard (guarding a gun
+      short of crew).
+  5 If friends === 0: s -= st.together.
+  6 If danger AND friends * 2 < u.n: s -= st.guard (where it would be
+    isolated).
+  7 Return s.
+
+CHECK: nothing new - only in the self-test.
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 38/42 FAIL: charge pick botturn
+
+============================================================================
+ PHASE 24 - the bots, 5: charging, and the square a unit picks
+============================================================================
+Block: PHASE 24. Fill chargeOk(u, x, y, st) and bestSquare(u, st).
+
+  chargeOk(u, x, y, st): true if style st lets unit u move into contact on
+  (x, y).
+  1 ox = u.x; oy = u.y. Put u on (x, y) for a moment: u.x = x; u.y = y.
+  2 m = null. For each melee k of findMelees(): if k contains u
+    (k.indexOf(u) >= 0): m = k.
+  3 ok = false. If m !== null: me = meleeCount(m, u.side); foe =
+    meleeCount(m, other(u.side)); r = meleeOutcome(m); then by st.charge:
+      "twice":    ok = me >= 2 * foe.
+      "more":     ok = me > foe AND (me > u.n OR supportCount(u.side, m)
+                  > 0) - more figures, and a friend in the melee or near it.
+      "isolated": ok = me > foe AND isolated(other(u.side), m).
+      "even":     ok = me >= foe.
+      otherwise ("ahead"): ok = r[other(u.side)].fall +
+                  r[other(u.side)].taken > r[u.side].fall + r[u.side].taken.
+  4 Put u back: u.x = ox; u.y = oy. Return ok.
+
+  bestSquare(u, st): the square [x, y] unit u ends its move on, for style st.
+  1 g = headGrid(u, st).
+  2 c = [[u.x, u.y]] (staying put comes first), then push [r.x, r.y] for
+    each r of reach(u), in reach's order.
+  3 plain = st.slip > 0 && rng() * 100 < st.slip. (ONE rng() call, before
+    the loop, and only when st.slip > 0.)
+  4 best = null; bs = 0. For each square s of c, in order:
+    a moved = (s[0] !== u.x OR s[1] !== u.y).
+    b If moved AND enemyNear(u.side, s[0], s[1]) AND (isGun(u) OR
+      !chargeOk(u, s[0], s[1], st)): skip it (into contact only if its
+      charge rule allows; a gun never).
+    c v = -g[s[1]][s[0]] if plain (the plainest move: straight ahead),
+      otherwise v = moveScore(u, s[0], s[1], st, g).
+    d If best === null OR v > bs: best = s; bs = v.
+  5 Return best.
+
+CHECK: nothing new - only in the self-test.
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 40/42 FAIL: botturn replay
+
+============================================================================
+ PHASE 25 - the bots, 6: a bot's turn
+============================================================================
+Block: PHASE 25. Fill botNext(side).
+
+  botNext(side): the bot's next action for side, or null to end its turn:
+  {kind: "fire", u, x, y}, {kind: "move", u, x, y} or {kind: "leave", u}.
+  The skeleton carries the action out and asks again; B.botDone lists the
+  ids of the units already looked at this turn.
+  1 key = B.round + side (for example "2them"). If B.botKey !== key:
+    B.botKey = key; B.botDone = [] (a new turn).
+  2 st = botStyle(side). back = (B.raid !== null AND B.raid.by !== side) -
+    withdrawing after a lost raid.
+  3 Two passes, the guns first: for guns of [true, false]: for each unit u
+    of B.units, in order:
+    a skip it if u.side !== side OR isGun(u) !== guns OR u.id is in
+      B.botDone;
+    b B.botDone.push(u.id) (each unit is looked at once a turn);
+    c if back AND canLeave(u): return {kind: "leave", u: u};
+    d if canFire(u): t = aimFor(u, st); if t !== null: return {kind:
+      "fire", u: u, x: t[0], y: t[1]};
+    e if canMove(u): s = bestSquare(u, st); if s[0] !== u.x OR s[1] !==
+      u.y: return {kind: "move", u: u, x: s[0], y: s[1]}.
+  4 Return null.
+
+CHECK: game.html#4, press 1: their side moves first - their squads to A6 and
+K6, their cavalry to D6 (their gun stays at C9: no gun fires in round 1,
+and it can aim at your side from there). Then "Your turn.". E: in round 2
+their gun fires ("1st Gun fires: 0 down.") and their squads move to B5, the
+hill by the farm, and K5, by the church - Wells's Red: the main body for
+the farm, the small group for the church. G, then B: the newcomer bot plays
+your side too, and the battle plays to its end and its result screen.
+EXPECTED SELF-TEST (the FAILs named are later phases):
+  SELF-TEST 42/42 PASS
+
+============================================================================
+ FIXER PROMPT (the runner sends the fixer when a phase's self-test line is
+ not the EXPECTED one)
+============================================================================
+  Read ONLY these parts of specs/LITTLEWARS-SPEC.txt (line numbers are in
+  the LINE MAP at the top): the rules and API, and PHASE <N>. Then read
+  only the PHASE <N> block of game.html (search for "PHASE <N> START") -
+  the only part you may change - and fix it.
+  Symptom: <what you saw>
+  Red banner / console error: <paste it, or "none">
+  Self-test line: <paste it, or "not run">
+  If the symptom describes something a LATER phase adds, reply
+  "NOT A BUG - PHASE <n>" and change nothing.
+  If the EXPECTED line itself contradicts the phase's steps, reply
+  "SPEC MISMATCH: <quote both>" and change nothing.
+  First compare the PHASE <N> block with the spec's steps line by line -
+  most bugs are a missing or changed step and show up just by reading.
+  Fix the root cause with the smallest edit, at most 2 edit calls. After
+  any brace fix, count { and } in every function of the block - they must
+  match. Keep the block's last line PHASE_OK[N] = true;. Reply with:
+  CAUSE: <one sentence>  FIX: <one sentence>
+
+  Where things usually break (the probe's name in brackets; its phase):
+    red banner "The PHASE N block did -> a syntax error in that block:
+      not load"                         count braces, look for a missing )
+                                        or a stray }
+    red banner "A </script> line is  -> the edit took the line under PHASE
+      missing ..." / no self-test       N END with it - put it back on its
+      at all                            own line (the block may be fine)
+    [army] (2) wrong squares or zone -> sq(a.at) not used, ARMIES lines of
+                                        other battles or sides not skipped,
+                                        or > instead of >= in inZone
+    [extra] (2)                      -> every gun made a horse gun (horse
+                                        not set false), extra units made
+                                        for "them" too, or freeSquare's
+                                        null not checked
+    [armed] (2)                      -> escorts counted
+    [step] (3)                       -> && instead of || in cornerOpen, the
+                                        corner test left out of canStep, or
+                                        an empty unit (n = 0) counted by
+                                        enemyNear
+    [reach] (4)                      -> the ford / contact stop missing or
+                                        tested on the start square, a gun
+                                        passed through, the out list not
+                                        in top-row-first order, or a
+                                        cheaper way not re-opened
+    [move] [leave] (5)               -> gunsOpen not closed by a non-gun
+                                        move, the crew test missing, or the
+                                        points of leaving not added
+    [sight] [aim] (6)                -> Math.round instead of the floor /
+                                        ceil pair, || instead of && on the
+                                        two squares, the hill rule missing,
+                                        or the range test off by one
+    [crew] [support] (7)             -> escorts counted, the melee's own
+                                        units counted as support, a unit
+                                        counted twice (no break), or <=
+                                        instead of < in isolated
+    [canfire] (8)                    -> the round-1 rule or the defender's
+                                        exception wrong
+    [shots] [cover] (8)              -> the rng() calls in another order or
+                                        number (the scatter roll is only
+                                        made after a miss; the cover roll
+                                        only on a unit in cover that has not
+                                        fired), the line-of-fire test left
+                                        out for scattered shots, or the log
+                                        line's words written in
+    [contact] [melees] (9)           -> dist === 1 instead of touching, a
+                                        unit next to the pair left out, or
+                                        melees that share a unit not merged
+    [count] [outcome] (10)           -> prisoners taken when supported, or
+                                        not capped at the smaller side
+    [losses] [free] (11)             -> own / other order swapped, the
+                                        sort keys in another order, or a
+                                        taken escort's prisoners not freed
+    [escorts] (12)                   -> betterEscort's tests in another
+                                        order, escortFrom not asked again
+                                        for each part, or the part sizes
+                                        wrong
+    [fight] (13)                     -> outcomes worked out one melee at a
+                                        time (they must ALL be worked out
+                                        first), falls taken before
+                                        prisoners, or the escorts made for
+                                        the wrong side
+    [take] (13)                      -> an escort of the gun's side not
+                                        counted as its figure next to it
+    [walk] (14)                      -> the enemy test not preferred, ties
+                                        not left to DIRS order, the ford
+                                        not stopping the walk
+    [turns] (15)                     -> the order of step 1, the round
+                                        counted after the first side, or
+                                        the wrong side's moved / fired
+                                        flags reset
+    [backline] (15)                  -> the halves swapped, or escorts
+                                        counted
+    [raid] (16)                      -> guns not handed over, an escort's
+                                        own figure not taken, or the
+                                        raider's turns counted down too
+    [result] [rear] (17)             -> the tests in another order (the
+                                        quarter before "through"), <=
+                                        instead of <, or the round limit
+                                        checked after the first side
+    [points] [record] (18)           -> units that left the field counted,
+                                        prisoners scored for one side only,
+                                        or the tutorial added to CAMP
+    [row] (19)                       -> rounds set instead of added, or
+                                        LEVELS itself changed
+    [style] [shotval] (20)           -> cover or the line of fire left out
+                                        of shotValue, or own figures added
+    [botaim] (21)                    -> friendNear not checked for the
+                                        simple aims, or "nearest" scored
+                                        the wrong way round
+    [head] (22)                      -> the checks in another order, or
+                                        threats not limited to the side's
+                                        own half
+    [score] (23)                     -> a step left out or a gun scored by
+                                        the grid, guard not added for EACH
+                                        gun short of crew next to it
+    [charge] [pick] (24)             -> u not put back, the slip roll made
+                                        for every style, ties going to the
+                                        later square (>= instead of >), or
+                                        a gun allowed into contact
+    [botturn] (25)                   -> guns not first, a unit looked at
+                                        twice, or leaving not tried first
+                                        while withdrawing
+    [replay] (25, or any phase)      -> the whole game played by bots on
+                                        both sides, five battles: if every
+                                        other probe passes, some step's
+                                        order or tie differs from the spec
+                                        - an rng() call, a loop order, a
+                                        < or <=, a "first" or "strictly
+                                        better". Re-read your block's steps.
+============================================================================

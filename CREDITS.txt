@@ -16,13 +16,24 @@ WHO DOES WHAT (as CLAUDE.md has it; the author may reword this)
   and the docs.
   The local builder: the code inside game.html's PHASE blocks, written
   from Claude's step-by-step spec.
-  There is no game code yet (2026-10-20).
+
+GAME CODE
+  game.html's skeleton (2026-10-20, Claude Opus 5.5): the red banner,
+  STATE AND HELPERS, and GAME FLOW - the campaign, the screens and their
+  drawing, input, the conversations' wiring, Undo, the tips, the bots'
+  turn playback, saving, the tables' checks and the self-test. Its 24
+  PHASE blocks (PHASE 2-25, the rules and the bots) are stubs for the
+  local builder to write from specs/LITTLEWARS-SPEC.txt; Claude's own
+  answer code for them is kept apart, on the repository's reference
+  branch, and never reaches the builder. data.js's tables (the structure
+  and first values) are Claude's; their words and numbers are the
+  author's to hand-edit (hand-edits.txt). ink/config.js is Claude's.
 
 AI DISCLOSURE
   AI Disclosure: code by Claude Opus 5.5. Design and decisions by Kenton Howard. Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT).
   (The line above is kept on one line so dev/disclosure.js can check and
-  update it; README.md and CLAUDE.md hold the same line, and the title
-  screen will. The author's words, 2026-10-20: the last sentence is his
+  update it; README.md, CLAUDE.md and the title screen (game.html) hold
+  the same line. The author's words, 2026-10-20: the last sentence is his
   decision of that day. "Code" means game.html, data.js, ink/config.js
   and the checks in dev/; disclosure.jsonc lists them. The model list
   does not cover the story (story/story.ink, compiled to ink/story.js),
@@ -32,7 +43,10 @@ AI DISCLOSURE
   (THE DISCLOSURE CHECK and THE RUNNER, below).)
 
 STORY (story/story.ink)
-  To be written by the author in Inky. Not in the repository yet.
+  To be written by the author in Inky. The skeleton's story.ink holds
+  only the contract and an empty knot for each place the game plays one,
+  each with its summary (Claude's; no story text), compiled to
+  ink/story.js; story/CONTRACT.txt is the writer's one-page copy.
 
 THE KIT
   Knotwork 3.8-alpha (branching conversations for browser games) by

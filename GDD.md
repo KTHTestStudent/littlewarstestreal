@@ -1,11 +1,13 @@
-# Little Wars (working title) - Game Design Document, v0.4
+# Little Wars (working title) - Game Design Document, v0.5
 
-Status: v0.4, 2026-10-20, after the design session (section 9, step 2),
-with the author's later answer on Knotwork (step 3, section 10) and his
-yes to all of Claude's proposals. The rules, the tables, the story
-contract and the targets are written. Every number is a starting value
-for the bot runs (step 6) to tune; the design freeze comes after them.
-What the author decided, and when, is in section 10.
+Status: v0.5, 2026-10-20, after the skeleton (section 9, step 4): the
+rules, the tables, the story contract and the targets as in v0.4 (the
+design session, the Knotwork step and the author's yes to all of Claude's
+proposals), now built as a runner-ready skeleton - data.js holds every
+table, the maps of battles 1-10 are drawn roughly, and section 11 gives
+the phase split. Every number is a starting value for the bot runs (step
+6) to tune; the design freeze comes after them. What the author decided,
+and when, is in section 10.
 
 ## 1 Pitch
 
@@ -253,6 +255,7 @@ ending plays (the author's decision, 2026-10-20).
 | Prisoners per escort / escort walk | 7 / 2 squares | W23 |
 | Raid size (Blow at the Rear) | 3 figures | W28 |
 | Withdrawal after a raid | 3 turns | W28 gives six |
+| Figures a unit of the attacker needs on the defender's back line (Defensive Game) | 1 (any unit, as section 4 says) | - |
 | Defender's share (Defensive Game) | two-thirds | W29 |
 | Attacker's quarter (Defensive Game) | a quarter | W29 |
 | Set-up rows | 2 | - |
@@ -420,8 +423,8 @@ knot: who moves first, the curtain, the set-up zone, a unit more, a horse
 gun, the round limit, the raid's half, their bot's style, or one of the
 row's switchable pieces.
 
-The Countries, to be drawn as data.js maps (the skeleton session draws them
-roughly from this table; the bot runs reshape them):
+The Countries, drawn as data.js maps (the skeleton drew them roughly from
+this table; the bot runs reshape them):
 
 | # | Country | Pieces | What it is for |
 |---|---|---|---|
@@ -535,6 +538,30 @@ data change.
 | bold | sends cavalry at the back line (Blow at the Rear) or at guns | the crew of guns first | it has at least as many figures |
 | clever | as steady, and keeps its guns supported, pulls back units that would be isolated | the square with the most figures likely hit | it counts the melee's result and comes out ahead |
 | newcomer | your side in bot runs only: as steady, but now and then (seeded) takes a plain move instead of the best one | | |
+
+How the skeleton plays these (data.js BOT_STYLES, one row of numbers per
+style; the phase steps in the spec say it exactly):
+
+- A bot's turn: guns first, then the other units, each looked at once. A
+  gun fires if it may and has a target; otherwise it, like any unit, moves
+  to its best square (or stays).
+- Aiming: "nearest", "most" and "guns" never aim at a unit that has one of
+  the bot's own units next to it; "best" weighs every square a shot may
+  land on, its own figures counting against.
+- Where a unit heads: home when its side withdraws after a lost raid;
+  cavalry at the back line in a Blow at the Rear (the row's half), and at
+  the defender's when attacking in a Defensive Game; in a Blow at the Rear,
+  and for the defender, the enemy units in its own half (raiders) first; a
+  gentle unit for its group's goal square (ARMIES) while no enemy is within
+  `groups` squares; bold cavalry at the enemy's guns; otherwise the nearest
+  enemy.
+- A square's score: `advance` points a step closer; a gun instead scores
+  the enemy units it could aim at from there; `cover` for a wood or hill,
+  and `hold` more for staying put there while not fired on (cautious);
+  `together` off with no friend within the isolation distance; `guard`
+  (clever) for standing by a gun short of crew, and off where it would be
+  isolated with an enemy able to reach it next turn.
+- A unit moves into contact only when its charge rule allows; a gun never.
 
 ### 6.5 Appendix (optional, later)
 
@@ -729,7 +756,9 @@ As in Amontillado, the design is settled before the story.
    with all eleven rows and rough maps, self-test, spec, reference, stub
    commit), the story contract's other three copies (section 7), and
    HANDOFF.txt. The first target is the tutorial battle playing end to
-   end; the other ten battles are then mostly table rows.
+   end; the other ten battles are then mostly table rows. Done 2026-10-20
+   (Opus 5.5, extra effort, the author's choice): all eleven battles play
+   end to end with bots on both sides.
 5. Runner on the laptop, no Claude session: the builder writes the PHASE
    blocks. A Sonnet 5.5 laptop session is used only to plan, approve and
    read reports.
@@ -807,9 +836,8 @@ Still open (later):
 
 - The author: the title, the story's frame and speakers, the Country
   names if he wants his own, the licence.
-- The skeleton session: the maps of battles 1-10, the exact phase split
-  (section 11).
-- The bot runs: every number.
+- The bot runs: every number, the maps of battles 1-10 (drawn roughly by
+  the skeleton) and the bots' numbers.
 
 ## 11 Code layout
 
@@ -826,20 +854,24 @@ tables a person can hand-edit.
 | `ink/dialogue.js`, `tools/` (knotcheck, viewer, pack) | unedited copies from Knotwork 3.8-alpha, brought in before the skeleton (section 9, step 3) | Knotwork (its own AI disclosure) |
 | `story/story.ink` | the story. The skeleton writes only the contract header and empty knots with their summaries | the author |
 | `story/CONTRACT.txt` | the contract on one page, for the writer | Claude |
-| `dev/` | headless checks: `selftest.js` (prints the SELF-TEST line), `bots.js`, `outcomes.js`, `knotcheck.js`, `playruns.js`, `README.txt`; and `disclosure.js`, the Auto-Disclosure-Tool's unedited copy | Claude |
+| `dev/` | headless checks: `selftest.js` (prints the SELF-TEST line), `bots.js` (the bot runs), `linemap.py` (the spec's LINE MAP), `inkc.sh` (compiles ink as Inky does), `README.txt`; `outcomes.js` and `playruns.js` when the bot runs and the story need them (Knotwork's `tools/knotcheck.js` runs headless as it is); and `disclosure.js`, the Auto-Disclosure-Tool's unedited copy | Claude |
 | `specs/LITTLEWARS-SPEC.txt` | the builder's spec: steps per phase, EXPECTED self-test lines, CHECK walks, FIXER PROMPT, LINE MAP | Claude |
 | `CREDITS.txt` | who made what, the disclosure line, Knotwork's version and repository, inkjs's licence (from the Knotwork step on) | Claude (the author's words where he gives them) |
 | `hand-edits.txt` | the author's hand-edit guide to data.js (from the skeleton on) | Claude |
 
 - The reference branch holds `dev-reference/` (Claude's answer code). It
   never reaches the laptop's clone or a builder's prompt.
-- A proposed phase split, for the skeleton session to fix: PHASE 2 the board (pieces,
-  steps, reachable squares, line of fire); PHASE 3 the armies (units from
-  the row, set-up zones, the in-action count, isolation); PHASE 4 gunfire;
-  PHASE 5 melee, prisoners and escorts; PHASE 6 the turn (guns first,
-  moves and Undo, End Turn, taking guns, leaving the field, results by
-  battle type); PHASE 7 points and the campaign (scoring, the story's
-  outcomes applied to the next row); PHASE 8 the bots.
+- The phase split (the skeleton's, 2026-10-20): 24 small blocks, PHASE 2
+  to PHASE 25, each a few functions of about 30-55 lines, so that the local
+  builder finishes each inside its 10-minute limit (in Amontillado, blocks
+  of 34-57 lines took it 3 to 10 minutes). PHASE 2 the armies; 3 steps and
+  contact; 4 reach; 5 moving units and leaving the field; 6 line of fire;
+  7 crews and isolation; 8 gunfire; 9 who fights; 10 melee results; 11
+  losses and freed prisoners; 12 escorts; 13 fighting and guns taken; 14
+  escorts walk; 15 End Turn; 16 a raid's withdrawal and surrender; 17 the
+  result; 18 points and the campaign; 19 the story's outcomes; 20-25 the
+  bots. The board helpers (pieces, distance, path grids, escort squares)
+  are the skeleton's. specs/LITTLEWARS-SPEC.txt has each phase's steps.
 - The AI disclosure check (`node dev/disclosure.js`) counts as code:
   game.html, data.js, ink/ (less story.js, ink.js and dialogue.js) and dev/
   (less disclosure.js); the story is story/story.ink and ink/story.js

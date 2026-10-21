@@ -5,92 +5,164 @@ file short: when a NEXT item is done, move its notes into HISTORY in a line
 or two.
 
 START HERE
-  Where things stand (2026-10-20): the design is written and settled for
-  the skeleton, Knotwork's files are in, no game code yet.
-    * On working: the author's setup, the first cloud session's work (this
-      file, README.md, the AI disclosure check) and the design session's
-      (GDD.md v0.4, disclosure.jsonc set to its layout).
-    * On working-claude (NEXT 2, for the author to merge): Knotwork
-      3.8-alpha's files copied unedited (THE FILES), CREDITS.txt, the
-      disclosure's new sentence (decision 9) in README.md, CLAUDE.md and
-      CREDITS.txt, and the author's yes to all of Claude's proposals
-      (decision 10) written into GDD.md.
-  Next: NEXT 3, the skeleton (Opus 5.5 high). Its starter prompt is just
-  below.
+  Where things stand (2026-10-20): the skeleton is in and runner-ready.
+  All eleven battles play end to end with bots on both sides in Claude's
+  reference game; on working-claude the 24 PHASE blocks are stubs, waiting
+  for the local builder.
+    * On working: everything up to NEXT 2 (Knotwork's files, CREDITS.txt,
+      the disclosure's sentence).
+    * On working-claude (NEXT 3, for the author to merge): game.html's
+      skeleton with PHASE 2-25 as stubs (the stub commit), data.js (every
+      table, the eleven rows, rough maps for battles 1-10, Hook's Farm as
+      GDD 6.3), specs/LITTLEWARS-SPEC.txt, dev/ (selftest.js, bots.js,
+      linemap.py, inkc.sh, README.txt), the story contract's three copies
+      (story/story.ink with empty knots, ink/config.js, story/CONTRACT.txt)
+      and ink/story.js compiled from it, hand-edits.txt, phase-plan.txt
+      (the runner's plan) and phase-runner.json, the title screen's
+      disclosure, and GDD v0.5.
+    * On reference (cloud sessions only - never on the laptop):
+      dev-reference/ - Claude's reference game.html with all 24 blocks
+      (SELF-TEST 42/42 PASS), the phase builds, 64 planted bugs (all
+      caught) and a block-by-block compare.
+  Next: NEXT 4, the runner on the laptop (no Claude session). Its steps
+  and commands are in NEXT 4 below.
   Before it starts: the author merges working-claude into working (OPEN
-  ITEMS).
+  ITEMS), and keeps the reference branch out of the laptop's clone (NEXT
+  4, step 1).
   Open for the author, by hand: OPEN ITEMS below.
 
-STARTER PROMPT (the author pastes it into a new cloud session)
+STARTER PROMPT (for NEXT 5, after the runner; the author pastes it into a
+new cloud session)
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
-  (Opus 5.5, high). Start from origin/working-claude (merge origin/working
-  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 3.
+  (Opus 5.5, medium). Start from origin/working-claude (merge origin/working
+  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 5.
 
 NEXT
-  3 The skeleton (cloud, Opus 5.5 high), as GDD section 9 step 4 says.
-    a The first target: the tutorial, Hook's Farm, plays end to end in the
-      browser and headless (6.3), with bots on both sides.
-    b game.html (skeleton: red banner, STATE AND HELPERS, GAME FLOW) and
-      data.js (all of GDD 11's tables: the eleven LEVELS rows, and rough
-      COUNTRIES maps for battles 1-10 from GDD 6.1's table; Hook's Farm
-      exactly as 6.3). Fix the phase split (GDD 11 proposes PHASE 2-8).
-    c Runner-ready, per LOCAL-SUBAGENTS.md: PHASE blocks ending in
-      PHASE_OK[N] = true; dev/selftest.js printing a SELF-TEST line with an
-      EXPECTED line per phase; specs/LITTLEWARS-SPEC.txt with steps, CHECK
-      walks, a FIXER PROMPT and a LINE MAP; the reference branch
-      (dev-reference/) and a stub commit, so the builder's diff is each
-      whole block.
-    d The story contract's other three copies (GDD 7): story/story.ink's
-      header and empty knots with summaries (no prose, no placeholder
-      lines), ink/config.js, story/CONTRACT.txt. Wire game.html to the
-      kit's ink/dialogue.js as it is in the repo (Knotwork 3.8-alpha; read
-      its header and Knotwork's docs/ADDING-TO-A-GAME.txt sections 1-4d
-      for the API and the scene_ content type; never edit it). Its
-      knotcheck is the kit's: Amontillado's copy has three checks the kit
-      lacks (Amontillado CREDITS.txt, THE KIT). If the skeleton needs one,
-      it goes into Knotwork first, then is copied here.
-    e The title screen shows the disclosure line (decision 9's words):
-      add game.html to disclosure.jsonc's line.files.
-    f End: node dev/selftest.js and node dev/disclosure.js; update START
-      HERE and NEXT, with the runner's plan lines exactly as the self-test
-      prints them and the commands for NEXT 4; a HISTORY line; push to
-      working-claude; the pull request steps for the author.
-  4 The runner on the laptop (no Claude session): the builder writes the
-    PHASE blocks. NEXT 3 leaves the branch command, the plan lines and the
-    commands here.
-  5 The cloud check (Opus 5.5 medium), then bot runs for balance and battle
-    length against GDD section 5 (dev/bots.js, dev/outcomes.js), reshaping
-    the maps and numbers; then the design freeze.
+  4 The runner on the laptop (no Claude session): the local builder writes
+    PHASE 2-25 from the spec, one fresh run each (LOCAL-SUBAGENTS.md,
+    "Batch runs"). In Git Bash in C:\Git\littlewarstestreal:
+      1 Once, before the next pull - keeps the reference branch (Claude's
+        answer code) out of this clone (LOCAL-SUBAGENTS.md hard rule 4):
+          git config --add remote.origin.fetch '^refs/heads/reference'
+        (If it was fetched already: git update-ref -d
+        refs/remotes/origin/reference, then git gc --prune=now.)
+      2 After merging the pull request on GitHub:
+          git checkout working
+          git pull
+          git branch -r               no origin/reference in the list
+          node dev/selftest.js        SELF-TEST 1/42 FAIL: army extra armed
+                                      (exit 1 - expected: all stubs)
+      3 Ollama running from the tray, Continue's autocomplete off, heavy
+        apps closed, the laptop kept awake (24 phases: about 2-3 hours).
+      4 The throwaway branch, the check, the batch:
+          git checkout -b build-phases
+          node run-phases.js phase-plan.txt --dry-run
+          node run-phases.js phase-plan.txt
+        phase-plan.txt (in the repository) holds the 24 plan lines, the
+        spec's EXPECTED lines exactly as the self-test prints them:
+          2  SELF-TEST 4/42 FAIL: step reach move
+          3  SELF-TEST 5/42 FAIL: reach move leave
+          4  SELF-TEST 6/42 FAIL: move leave sight
+          5  SELF-TEST 8/42 FAIL: sight aim crew
+          6  SELF-TEST 10/42 FAIL: crew support canfire
+          7  SELF-TEST 12/42 FAIL: canfire shots cover
+          8  SELF-TEST 15/42 FAIL: contact melees count
+          9  SELF-TEST 17/42 FAIL: count outcome losses
+          10 SELF-TEST 19/42 FAIL: losses free escorts
+          11 SELF-TEST 21/42 FAIL: escorts fight take
+          12 SELF-TEST 22/42 FAIL: fight take walk
+          13 SELF-TEST 24/42 FAIL: walk turns backline
+          14 SELF-TEST 25/42 FAIL: turns backline raid
+          15 SELF-TEST 27/42 FAIL: raid result rear
+          16 SELF-TEST 28/42 FAIL: result rear points
+          17 SELF-TEST 30/42 FAIL: points record row
+          18 SELF-TEST 32/42 FAIL: row style shotval
+          19 SELF-TEST 33/42 FAIL: style shotval botaim
+          20 SELF-TEST 35/42 FAIL: botaim head score
+          21 SELF-TEST 36/42 FAIL: head score charge
+          22 SELF-TEST 37/42 FAIL: score charge pick
+          23 SELF-TEST 38/42 FAIL: charge pick botturn
+          24 SELF-TEST 40/42 FAIL: botturn replay
+          25 SELF-TEST 42/42 PASS
+        The last line includes the replay probe: five whole battles played
+        by bots on both sides must come out exactly as in Claude's
+        reference, so a builder's step order or tie that differs shows
+        there (no replay-same-as line is needed or possible: no branch the
+        laptop sees has the finished game).
+      5 If it stops: the report says why (LOCAL-SUBAGENTS.md). To go on
+        after fixing the cause, delete the plan's lines for the phases
+        already committed and run it again. The blocks are 30-61 lines;
+        in Amontillado, blocks of 34-57 lines took the builder 3 to 10+
+        minutes, so a run may meet the 10-minute builder limit. If a run
+        stops at the limit with its edit whole, the author may commit it
+        by hand as he did Amontillado's phase 6, or raise builderMinutes in
+        phase-runner.json (his call).
+      6 After the batch: the runner runs node dev/disclosure.js, which will
+        say the line misses the builder (Qwen 3.6) - every block is its
+        code. The local models go into the line only on the author's word
+        (decision 6): his words, then a cloud session applies them in
+        README.md, CLAUDE.md, CREDITS.txt and game.html. If the fixer was
+        used, it is his call too. Then: git checkout working, git merge
+        build-phases, git push (the runner prints the same advice).
+  5 The cloud check (Opus 5.5 medium), then the bot runs for balance and
+    battle length against GDD section 5, reshaping the maps and numbers;
+    then the design freeze.
+    a The check: node dev/selftest.js (42/42 PASS, the replay lines the
+      reference's); on the reference branch (dev-reference/README.txt):
+      compare.py on the built game.html, phasebuilds.py (with the stub
+      commit's game.html: git show 5beb94c:game.html), plant.py; each
+      phase's CHECK walk in the spec
+      for the visible phases (2, 4-8, 15, 17-19, 25).
+    b The first bot runs (Claude's reference game, node dev/bots.js . 200,
+      each knot's default outcome; your side's score counting a draw as
+      half, against GDD 5.2's target):
+        battle 0 Hook's Farm      88 (90)   median 5 of 8 rounds
+        1 The Two Hills (finish)  47 (75)   7 of 10
+        2 The Long Wall (rear)    17 (75)   their raid 77%
+        3 The Cottages (defend)   10 (75)   their cavalry "through" 50%
+        4 The Chalk Brook         56 (65)   40% reach the round limit
+        5 The Orchard (rear)      32 (65)   their raid 62%
+        6 The Mill Hill (attack) 100 (65)   your cavalry "through" 91%,
+                                            in round 3
+        7 The Ridge               53 (55)
+        8 The Village (attack)   100 (55)   "through" 95%, round 3
+        9 The Two Fords (rear)    72 (55)   your raid 62%
+        10 The Whole Floor        83 (50)
+      The tutorial is on target, and the even Fights to the Finish come
+      out near even. Two things need the bot runs' levers:
+      - A Defensive Game is won by a cavalry dash: the attacker's troops
+        reach the defender's back line in about 3 rounds, past a defender
+        of two-thirds the force on a 12-16 wide board, and one unit there
+        wins (GDD 4). This is a design question for the author, not a
+        number only: levers include RULES.throughSize (the figures that
+        unit needs, now 1 - the skeleton put it in data.js for this), the
+        defender's set-up rows, the maps' walls and woods, or holding the
+        back line for a turn (a rule change: spec steps and a rebuild).
+      - A Blow at the Rear goes to whoever raids first (77% and 62% for
+        their side, 62% for yours): the same levers, plus RULES.raidSize.
+      Bot styles, maps and win-rate targets are all data.js; GDD 6.4 says
+      how the skeleton plays the styles.
+    c dev/outcomes.js (each scene_ outcome's next battle, GDD 5.2's
+      sidegrade check) is still to write - a cloud session's, with the bot
+      runs.
   6 The author writes the story in Inky. A cloud session may review it with
-    knotcheck and play runs.
+    knotcheck (node tools/knotcheck.js .) and play runs.
   7 The author: playtests, the release.
   Later, if it goes well: the Appendix (GDD 6.5).
 
 WHAT TO READ (keep it cheap)
-  For NEXT 3 (the skeleton): CLAUDE.md, this file down to HISTORY, GDD.md
-    (about 47 KB; sections 3, 4, 6, 7 and 11 above all), LOCAL-SUBAGENTS.md
-    (what the runner needs from a skeleton), ink/dialogue.js's header.
-    In Knotwork (KTHTestStudent/knotworkprivateprealpha, read-only, branch
-    working): docs/ADDING-TO-A-GAME.txt (25 KB; sections 1-4d, 5, 7) and
-    template/game-canvas.html's wiring - the canvas page, as Little Wars
-    is plain canvas.
+  For NEXT 5 (the cloud check and the bot runs): CLAUDE.md, this file down
+    to HISTORY, the spec's rules and API part and the phases a check needs
+    (the LINE MAP at its top), dev/README.txt, and on the reference branch
+    dev-reference/README.txt. GDD.md sections 4, 5 and 6 for the bot runs.
   Wells's Little Wars (1913): only to check a rule. GDD section 3 restates
     the rules with their numbers (W1-W29). If needed, read chapter III (The
     Rules) only:
     https://www.gutenberg.org/cache/epub/3691/pg3691-images.html
     Its prose never goes into this repository (CLAUDE.md, content rules).
   Amontillado (KTHTestStudent/amontillado-test, branch working; read-only
-    from here; git clone --depth 1 --branch working). The model for the
-    skeleton's shape. Read parts, not whole files:
-      specs/AMONTILLADO-SPEC.txt  (87 KB) its first 20 lines (LINE MAP),
-                                  one phase's section, the FIXER PROMPT
-                                  (grep -n 'FIXER PROMPT')
-      game.html                   (150 KB) only the red-banner script at
-                                  the top and STATE AND HELPERS; grep for
-                                  the rest (GDD section 11 there maps it)
-      dev/selftest.js (2 KB), dev/README.txt (19 KB, the checks' list)
-      story/CONTRACT.txt (6 KB), ink/config.js (4 KB), story.ink's header
-    Don't read its HANDOFF.txt (about 208 KB) for this.
+    from here): the model for the workflow. Don't read its HANDOFF.txt
+    (about 208 KB); its dev/README.txt and spec's FIXER PROMPT are short.
 
 THE AUTHOR'S DECISIONS (2026-10-20)
   1 The game: a grid-tactics campaign after H. G. Wells's Little Wars, with
@@ -103,14 +175,16 @@ THE AUTHOR'S DECISIONS (2026-10-20)
     the sides are symmetrical; points carry over only; no Phaser; the
     tutorial's knots send no outcome).
   4 Branches: working is his; Claude pushes only to working-claude; main is
-    the front page.
+    the front page. (The reference branch is Claude's answer code, kept by
+    cloud sessions, NEXT 3c; it never reaches the laptop.)
   5 His calls: the title, the repository name, the story frame and the
     story itself.
   6 AI disclosure: "AI Disclosure: code by Claude Opus 5.5. Design and
-    decisions by Kenton Howard." (the tool's own pattern), in README.md and
-    CLAUDE.md, checked by node dev/disclosure.js. --apply may add a Claude
-    model. The local models (Qwen 3.6 builder, Qwen 3.8 fixer) go in only
-    on his word. Decision 9 adds a sentence, applied in NEXT 2.
+    decisions by Kenton Howard." (the tool's own pattern), in README.md,
+    CLAUDE.md, CREDITS.txt and the title screen (game.html), checked by
+    node dev/disclosure.js. --apply may add a Claude model. The local
+    models (Qwen 3.6 builder, Qwen 3.8 fixer) go in only on his word.
+    Decision 9 adds a sentence, applied in NEXT 2.
   7 README.md: Claude's draft, added at his request. He may rewrite it.
     Change it only when he asks.
   8 The design session's answers (GDD section 10): fixed units with their
@@ -134,22 +208,38 @@ THE AUTHOR'S DECISIONS (2026-10-20)
 
 THE FILES
   CLAUDE.md          rules for Claude sessions (line 1 is the runner's
-                     pointer line; keep it first)
-  GDD.md             the design (v0.4)
+                     pointer line; keep it first); its Checks section
+  GDD.md             the design (v0.5)
   HANDOFF.txt        this file
   README.md          the front page, with the disclosure line
   CREDITS.txt        who does what, the disclosure line, Knotwork's version
                      and commit, inkjs's licence
-  disclosure.jsonc   the disclosure check's settings, set to GDD section
-                     11's layout
+  disclosure.jsonc   the disclosure check's settings (game.html joined the
+                     files that hold the line with the skeleton)
+  game.html          the game: the red banner, STATE AND HELPERS, PHASE
+                     2-25 (stubs for the builder), GAME FLOW, the self-test,
+                     the tables' checks, drawing, input
+  data.js            the tables to hand-edit (hand-edits.txt is the guide)
+  hand-edits.txt     the author's guide to data.js
+  specs/LITTLEWARS-SPEC.txt   the builder's spec: rules, API, 25 phases with
+                     steps, CHECK walks and EXPECTED lines, the FIXER
+                     PROMPT, the LINE MAP (python3 dev/linemap.py)
+  phase-plan.txt     the runner's plan for PHASE 2-25 (NEXT 4)
+  phase-runner.json  run-phases.js's settings for this game (the spec's
+                     path; the author's limits)
+  story/story.ink    the story: the contract and empty knots (the author's
+                     to write); story/CONTRACT.txt, the writer's one page
+  ink/config.js      the contract for the kit and knotcheck
+  ink/story.js       the compiled story (from the empty skeleton for now)
   ink/ink.js, ink/dialogue.js, tools/ (knotcheck.html and .js, pack.html
   and .js, viewer.html), LICENSE-INKJS.txt
                      unedited copies of Knotwork 3.8-alpha: KTHTestStudent/
                      knotworkprivateprealpha, branch working, 67688c3 (no
                      3.8-alpha tag); byte for byte checked. Never edit them
                      here (CLAUDE.md)
-  dev/disclosure.js  an unedited copy of Auto-Disclosure-Tool's disclosure.js
-                     (branch working, af06b0f)
+  dev/               selftest.js, bots.js, linemap.py, inkc.sh, README.txt;
+                     disclosure.js, an unedited copy of Auto-Disclosure-
+                     Tool's disclosure.js (branch working, af06b0f)
   run-local.sh, run-phases.js, LOCAL-SUBAGENTS.md, phase-plan.example.txt
                      the runner's copies: the same files as
                      Auto-Disclosure-Tool's, from localsubagentresults main
@@ -157,8 +247,15 @@ THE FILES
   .gitattributes     LF line endings for run-local.sh on Windows
   .gitignore         the runner's output folders, node_modules and Claude
                      Code's laptop settings
+  On the reference branch only: dev-reference/ (README.txt, game.html,
+  blocks.py, phasebuilds.py, plant.py, compare.py).
 
 OPEN ITEMS (the author, by hand)
+  * Merge working-claude into working (a pull request on GitHub), and later
+    working into main when the front page should show README.md.
+  * README.md's Status line still says "Design only. There is no game code
+    yet." (decision 7: his words - rewrite it when he likes, or ask a
+    session to).
   * littlewarstest/ is a nested-repository link (git mode 160000, no
     .gitmodules): a "git add ." picked up a folder with its own .git inside
     the project. A clone gets an empty folder. To remove it, in Git Bash:
@@ -169,8 +266,6 @@ OPEN ITEMS (the author, by hand)
       git rm --cached littlewarstest
       git commit -m "Remove the nested littlewarstest link"
       git push
-  * Merge working-claude into working (a pull request on GitHub), and later
-    working into main when the front page should show README.md.
   * In Knotwork, not here (his choice, 2026-10-20: push now, note it): its
     README.txt has no AI disclosure - the disclosure the line points at is
     in its CREDITS.txt (HOW IT WAS MADE) - and the README's banner still
@@ -206,3 +301,26 @@ HISTORY
               written into the GDD. Found: Knotwork's README has no AI
               disclosure; its CREDITS.txt holds it. The author chose
               67688c3 and to push now, with a note (OPEN ITEMS).
+  2026-10-20  The skeleton session (cloud, Opus 5.5 at extra effort, the
+              author's choice; NEXT 3): it found an uncommitted draft from
+              an earlier run of the same session at high effort, kept its
+              data.js and much of its flow and drawing, and re-split its 8
+              big PHASE blocks into 24 of 30-61 lines (the builder's
+              10-minute limit). Rule fixes: melees judged all at once,
+              surrender hands over guns, a line of fire the same for both
+              sides; bots: guns score squares by targets in sight,
+              interception in rear and defend battles, cautious "hold" and
+              clever "guard" (data.js). Self-test 42 probes (64 planted
+              bugs, all caught), the spec, the contract's copies, dev/
+              tools, the reference branch, the stub commit. Bot runs:
+              NEXT 5b. Disclosure check: exit 0.
+  2026-10-21  The same session, restarted (cloud, Opus 5.5, extra): the run
+              above had committed but not pushed, and its reference branch
+              was still only in the workspace. Rechecked: the stub game
+              1/42, the reference 42/42, all 25 phase builds the spec's
+              lines, 64 of 64 planted bugs caught, and run-phases.js with a
+              stand-in builder on a throwaway clone (24 first-try commits,
+              42/42; the disclosure check then names Qwen 3.6, as NEXT 4
+              step 6 says). Committed its last spec edit (PHASE 4 step 2b:
+              a ford OR contact ends a move), pushed working-claude and
+              reference.
