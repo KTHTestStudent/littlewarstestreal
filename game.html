@@ -1228,8 +1228,10 @@ function moveScore(u, x, y, st, g) {
     }
   }
   var p = pieceAt(x, y);
-  if (p.cover || p.hill) s += st.cover;
-  if (x === u.x && y === u.y && !B.firedOn[u.side]) s += st.hold;
+  if (p.cover || p.hill) {
+    s += st.cover;
+    if (x === u.x && y === u.y && !B.firedOn[u.side]) s += st.hold;
+  }
   var friends = 0;
   var danger = false;
   for (var vi2 = 0; vi2 < B.units.length; vi2++) {
