@@ -980,11 +980,9 @@ function surrender(side) {
   for (var i = 0; i < B.units.length; i++) {
     var u = B.units[i];
     if (u.side !== side) continue;
-    if (u.arm === "esc") {
-      freePrisoners(u);
-      B.T[w].held += u.n;
-      u.n = 0;
-    }
+    if (u.arm === "esc") freePrisoners(u);
+    B.T[w].held += u.n;
+    u.n = 0;
     if (isGun(u)) u.side = w;
   }
 }
