@@ -704,19 +704,34 @@ PHASE_OK[9] = true;
 </script>
 <script>
 // ==== PHASE 10 START ====
-// STUBS for now - PHASE 10 fills them in.
 // Melee results: counting the figures, and what a melee does.
 
 // RETURNS the figures of side in melee m.
 function meleeCount(m, side) {
-  return 0;
+  var n = 0;
+  for (var i = 0; i < m.length; i++) {
+    if (m[i].side === side) n += m[i].n;
+  }
+  return n;
 }
 
 // RETURNS what melee m would do, changing nothing: {you: {fall, taken},
 // them: {fall, taken}} - the figures that fall and the figures taken
 // prisoner on each side.
 function meleeOutcome(m) {
-  return { you: { fall: 0, taken: 0 }, them: { fall: 0, taken: 0 } };
+  var a = meleeCount(m, "you");
+  var b = meleeCount(m, "them");
+  var r = { you: { fall: 0, taken: 0 }, them: { fall: 0, taken: 0 } };
+  if (a === b) { r.you.fall = a; r.them.fall = b; return r; }
+  var big = a > b ? "you" : "them";
+  var small = other(big);
+  var s = Math.min(a, b);
+  var p = 0;
+  if (isolated(small, m)) p = Math.min(Math.max(a, b) - s, s);
+  r[small].taken = p;
+  r[small].fall = s - p;
+  r[big].fall = s - p;
+  return r;
 }
 PHASE_OK[10] = true;
 // ==== PHASE 10 END ====
