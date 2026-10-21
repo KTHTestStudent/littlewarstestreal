@@ -653,19 +653,51 @@ PHASE_OK[8] = true;
 </script>
 <script>
 // ==== PHASE 9 START ====
-// STUBS for now - PHASE 9 fills them in.
 // Who fights: the units in contact, and the melees they make.
 
 // RETURNS every pair of touching units of opposite sides that both have
 // figures, as [a, b] with a before b in B.units.
 function contacts() {
-  return [];
+  var out = [];
+  for (var i = 0; i < B.units.length; i++) {
+    for (var j = i + 1; j < B.units.length; j++) {
+      var a = B.units[i];
+      var b = B.units[j];
+      if (a.n > 0 && b.n > 0 && a.side !== b.side && touching(a, b)) out.push([a, b]);
+    }
+  }
+  return out;
 }
 
 // RETURNS the melees: an array of melees, each an array of units in
 // B.units order, the melees in the order of their first units.
 function findMelees() {
-  return [];
+  var out = [];
+  var pairs = contacts();
+  for (var pi = 0; pi < pairs.length; pi++) {
+    var p = pairs[pi];
+    var m = [];
+    for (var vi = 0; vi < B.units.length; vi++) {
+      var v = B.units[vi];
+      if (v.n > 0 && (v === p[0] || v === p[1] || touching(v, p[0]) || touching(v, p[1]))) m.push(v);
+    }
+    for (var i = out.length - 1; i >= 0; i--) {
+      var shares = false;
+      for (var mi = 0; mi < m.length; mi++) {
+        if (out[i].indexOf(m[mi]) >= 0) { shares = true; break; }
+      }
+      if (shares) {
+        for (var oi = 0; oi < out[i].length; oi++) {
+          if (m.indexOf(out[i][oi]) < 0) m.push(out[i][oi]);
+        }
+        out.splice(i, 1);
+      }
+    }
+    m.sort(function (a, b) { return B.units.indexOf(a) - B.units.indexOf(b); });
+    out.push(m);
+  }
+  out.sort(function (a, b) { return B.units.indexOf(a[0]) - B.units.indexOf(b[0]); });
+  return out;
 }
 PHASE_OK[9] = true;
 // ==== PHASE 9 END ====
