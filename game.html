@@ -1084,13 +1084,27 @@ PHASE_OK[18] = true;
 </script>
 <script>
 // ==== PHASE 19 START ====
-// STUBS for now - PHASE 19 fills them in.
 // The story's outcomes: what a scene_ knot's outcome does to the next row.
 
 // RETURNS nothing. Applies the story outcome (one of row.knot's outcomes
 // in EFFECTS, or "") to row, a battle row from baseRow: each of its steps
 // in order.
 function applyOutcome(row, outcome) {
+  var fx = EFFECTS[row.knot];
+  if (fx === undefined || fx[outcome] === undefined) return;
+  for (var si = 0; si < fx[outcome].length; si++) {
+    var s = fx[outcome][si];
+    var k = s[0];
+    if (k === "first") row.first = s[1];
+    else if (k === "scout") row.scout = true;
+    else if (k === "rear") row.rear = s[1];
+    else if (k === "piece") row.pieces.push(s[1]);
+    else if (k === "horseGun") row.horseGun = true;
+    else if (k === "setupRows") row.youRows = s[1];
+    else if (k === "unit") row.extra.push(s[1]);
+    else if (k === "rounds") row.rounds += s[1];
+    else if (k === "style") row.bot = s[1];
+  }
 }
 PHASE_OK[19] = true;
 // ==== PHASE 19 END ====
