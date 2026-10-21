@@ -1003,12 +1003,39 @@ PHASE_OK[16] = true;
 </script>
 <script>
 // ==== PHASE 17 START ====
-// STUBS for now - PHASE 17 fills them in.
 // The result: is the battle over, and who won.
 
 // RETURNS null while the battle goes on, or {winner, why} - winner "you",
 // "them" or "draw". Called at the end of B.side's turn.
 function checkResult() {
+  if (B.raid !== null) return raidOver();
+  var s = B.side;
+  var t = B.row.type;
+  var a = armed("you");
+  var b = armed("them");
+  if (a === 0 || b === 0) {
+    return { winner: a > 0 ? "you" : (b > 0 ? "them" : "draw"), why: "none" };
+  }
+  if (t !== "defend" && a < B.row.drawLine && b < B.row.drawLine) {
+    return { winner: "draw", why: "few" };
+  }
+  if (t === "rear" && onBackLine(s, RULES.raidSize, B.row.rear)) {
+    B.raid = { by: s, left: RULES.withdraw };
+    say(words(LOG_WORDS.raid, { n: RULES.withdraw }));
+    return null;
+  }
+  if (t === "defend") {
+    var att = other(B.row.defender);
+    if (armed(att) * 100 < B.start[att] * RULES.quarter) {
+      return { winner: B.row.defender, why: "quarter" };
+    }
+    if (s === att && onBackLine(att, RULES.throughSize, "all")) {
+      return { winner: att, why: "through" };
+    }
+  }
+  if (B.round >= B.row.rounds && s !== B.row.first) {
+    return { winner: t === "defend" ? B.row.defender : "draw", why: "rounds" };
+  }
   return null;
 }
 PHASE_OK[17] = true;
