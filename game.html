@@ -1286,8 +1286,8 @@ function chargeOk(u, x, y, st) {
 function bestSquare(u, st) {
   var g = headGrid(u, st);
   var c = [[u.x, u.y]];
-  var reach = reach(u);
-  for (var ri = 0; ri < reach.length; ri++) c.push([reach[ri].x, reach[ri].y]);
+  var squares = reach(u);
+  for (var ri = 0; ri < squares.length; ri++) c.push([squares[ri].x, squares[ri].y]);
   var plain = st.slip > 0 && rng() * 100 < st.slip;
   var best = null;
   var bs = 0;
