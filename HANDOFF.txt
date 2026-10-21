@@ -5,37 +5,42 @@ file short: when a NEXT item is done, move its notes into HISTORY in a line
 or two.
 
 START HERE
-  Where things stand (2026-10-20): the skeleton is in and runner-ready.
-  All eleven battles play end to end with bots on both sides in Claude's
-  reference game; on working-claude the 24 PHASE blocks are stubs, waiting
-  for the local builder.
-    * On working: everything up to NEXT 2 (Knotwork's files, CREDITS.txt,
-      the disclosure's sentence).
-    * On working-claude (NEXT 3, for the author to merge): game.html's
-      skeleton with PHASE 2-25 as stubs (the stub commit), data.js (every
-      table, the eleven rows, rough maps for battles 1-10, Hook's Farm as
-      GDD 6.3), specs/LITTLEWARS-SPEC.txt, dev/ (selftest.js, bots.js,
-      linemap.py, inkc.sh, README.txt), the story contract's three copies
-      (story/story.ink with empty knots, ink/config.js, story/CONTRACT.txt)
-      and ink/story.js compiled from it, hand-edits.txt, phase-plan.txt
-      (the runner's plan) and phase-runner.json, the title screen's
-      disclosure, and GDD v0.5.
+  Where things stand (2026-10-21, midday): NEXT 4, the runner, is under way
+  on the author's laptop, on the local branch build-phases (made from
+  working after pull request #4 - the skeleton - was merged). Not pushed;
+  no cloud session can see it until he merges it into working and pushes.
+    * Phases 2-12: the builder, first try each.
+    * Phase 13: the builder hit the 10-minute limit with its edit whole
+      (the self-test already gave the spec's line); the author committed
+      it by hand as the builder's ("phase 13: builder, first try, ...").
+    * Phase 18: the builder stopped at the 10-minute limit; the author
+      raised builderMinutes to 15 (phase-runner.json, committed on
+      build-phases) and went on.
+    * Phase 19: the builder's first try missed the spec's line (the
+      runner committed it for the fixer); fixer try 1 hit the 30-minute
+      limit with its edit whole, and the author committed it by hand as
+      the fixer's ("phase 19: fixer try 1, ...", the fixer's Local-Model
+      line). So the fixer (Qwen 3.8) wrote phase 19's final code.
+    * Next on the laptop: phases 20-25 from a trimmed plan (NEXT 4, AFTER
+      A STOP). He was weighing fixerMinutes 45 (his old 15 / 45 split);
+      phase-runner.json on build-phases says what he chose.
+    * On working and working-claude: everything through NEXT 3 (the
+      skeleton, stubs, spec, data, contract, GDD v0.5).
     * On reference (cloud sessions only - never on the laptop):
       dev-reference/ - Claude's reference game.html with all 24 blocks
       (SELF-TEST 42/42 PASS), the phase builds, 64 planted bugs (all
       caught) and a block-by-block compare.
-  Next: NEXT 4, the runner on the laptop (no Claude session). Its steps
-  and commands are in NEXT 4 below.
-  Before it starts: the author merges working-claude into working (OPEN
-  ITEMS), and keeps the reference branch out of the laptop's clone (NEXT
-  4, step 1).
+  Next: finish NEXT 4 on the laptop, then NEXT 5 (the cloud check, which
+  now ends with the disclosure decision - decision 11).
   Open for the author, by hand: OPEN ITEMS below.
 
-STARTER PROMPT (for NEXT 5, after the runner; the author pastes it into a
-new cloud session)
+STARTER PROMPT (the author pastes it into a new cloud session - for help
+while the batch runs, and for NEXT 5 once build-phases is merged and pushed)
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
   (Opus 5.5, medium). Start from origin/working-claude (merge origin/working
-  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 5.
+  into it first). Read CLAUDE.md and HANDOFF.txt first, then help with NEXT 4
+  (the runner on my laptop, in progress - I'll paste what it says), and do
+  NEXT 5 once build-phases is merged into working and pushed.
 
 NEXT
   4 The runner on the laptop (no Claude session): the local builder writes
@@ -89,21 +94,56 @@ NEXT
         reference, so a builder's step order or tie that differs shows
         there (no replay-same-as line is needed or possible: no branch the
         laptop sees has the finished game).
-      5 If it stops: the report says why (LOCAL-SUBAGENTS.md). To go on
-        after fixing the cause, delete the plan's lines for the phases
-        already committed and run it again. The blocks are 30-61 lines;
-        in Amontillado, blocks of 34-57 lines took the builder 3 to 10+
-        minutes, so a run may meet the 10-minute builder limit. If a run
-        stops at the limit with its edit whole, the author may commit it
-        by hand as he did Amontillado's phase 6, or raise builderMinutes in
-        phase-runner.json (his call).
+      5 If it stops: the report says why (LOCAL-SUBAGENTS.md). The blocks
+        are 30-62 lines (phase 24 the biggest); on 2026-10-21 the builder
+        met its 10-minute limit at phases 13 and 18 and the fixer its
+        30 at phase 19, each time with the edit whole (START HERE).
+        AFTER A STOP (what worked on 2026-10-21):
+        a Is the edit whole? All of these:
+            git diff --stat                    only game.html
+            grep -n "PHASE N START\|PHASE N END\|PHASE_OK\[N\]" game.html
+            git diff -U0 game.html | grep '^@@'
+                                               every hunk inside PHASE N
+            node dev/selftest.js               exactly the plan's line for
+                                               N; no RED BANNER, page error
+                                               or console lines
+        b Whole: commit it by hand, crediting the model that wrote it -
+          the subject decides it for dev/disclosure.js:
+            builder:  "phase N: builder, first try, <self-test line>"
+            fixer:    "phase N: fixer try K, <self-test line>"
+          with a body ("Stopped at the M-minute limit with its edit whole;
+          committed by hand by Kenton Howard. Only the PHASE N block of
+          game.html changed. The spec's expected line.") and the right
+          Local-Model line. For the builder it can be copied from the
+          last builder commit; for the fixer it can't (the last commit is
+          the builder's first try), so take it from Ollama:
+            LM="Local-Model: $(ollama list | awk '/^fixer/{print $1" "$2}')"
+          (the fixer's id is 3237d5585563, the builder's 2167ff73fd1a -
+          disclosure.jsonc). A wrong subject or Local-Model line on this
+          local branch: git commit --amend with the right ones.
+          Not whole: git checkout -- game.html, and the plan restarts at N.
+        c Raising a limit (builderMinutes, fixerMinutes in
+          phase-runner.json) is the author's call; commit the change
+          before running, or the runner refuses ("uncommitted changes").
+        d The rest of the plan: never edit phase-plan.txt (tracked - the
+          same refusal). A trimmed copy in prompts/ (ignored by Git):
+            mkdir -p prompts
+            grep -E '^(1[89]|2[0-5]) ' phase-plan.txt > prompts/plan.txt
+                                       (the pattern for "from 18 on")
+            cat prompts/plan.txt       first line the next phase, last 25
+            node run-phases.js prompts/plan.txt --dry-run
+            node run-phases.js prompts/plan.txt
+        e Keep copies of a stopped run's files outside the project folder
+          (a folder inside it is one "git add ." away from the repo, like
+          littlewarstest/). .local-runs/ is ignored by Git and keeps the
+          logs.
       6 After the batch: the runner runs node dev/disclosure.js, which will
-        say the line misses the builder (Qwen 3.6) - every block is its
-        code. The local models go into the line only on the author's word
-        (decision 6): his words, then a cloud session applies them in
-        README.md, CLAUDE.md, CREDITS.txt and game.html. If the fixer was
-        used, it is his call too. Then: git checkout working, git merge
-        build-phases, git push (the runner prints the same advice).
+        say the line misses the builder (Qwen 3.6) and the fixer (Qwen
+        3.8, phase 19). Leave the line as it is for now: the author
+        decides at the end of NEXT 5's code review (decision 11). Then:
+        git checkout working, git merge build-phases, git push (the runner
+        prints the same advice; its "DON'T MERGE" warning appears only on
+        a branch made from an old commit).
   5 The cloud check (Opus 5.5 medium), then the bot runs for balance and
     battle length against GDD section 5, reshaping the maps and numbers;
     then the design freeze.
@@ -112,7 +152,18 @@ NEXT
       compare.py on the built game.html, phasebuilds.py (with the stub
       commit's game.html: git show 5beb94c:game.html), plant.py; each
       phase's CHECK walk in the spec
-      for the visible phases (2, 4-8, 15, 17-19, 25).
+      for the visible phases (2, 4-8, 15, 17-19, 25). Read the blocks
+      committed by hand after a time limit closely - 13 and 19, and 18 if
+      it was (git log --format='%h %s' shows which) - and check each
+      phase commit's subject and Local-Model line name the model that
+      wrote it.
+    a2 The disclosure, at the end of the review (decision 11): run node
+      dev/disclosure.js, show the author which models wrote which blocks
+      (builder: every block it committed; fixer: 19, and any other fixer
+      commit), and ask for his words. Apply them in README.md, CLAUDE.md,
+      CREDITS.txt (who wrote what) and game.html's title screen, then add
+      the names or ids to disclosure.jsonc only as he says, and run the
+      check again (exit 0).
     b The first bot runs (Claude's reference game, node dev/bots.js . 200,
       each knot's default outcome; your side's score counting a draw as
       half, against GDD 5.2's target):
@@ -205,6 +256,12 @@ THE AUTHOR'S DECISIONS (2026-10-20)
     story's scene_ prefix, sceneDone, sidegrade outcome pairs, defaults
     and VARs, and the hats and base marks. Their numbers stay starting
     values for the bot runs; the words and numbers stay his to hand-edit.
+  11 (2026-10-21) The runner's limits are his call (builder raised to 15
+    minutes; fixer 30, or 45 if he raised it). A run that stops at a limit
+    with its edit whole is committed by hand, credited to the model that
+    wrote it (NEXT 4 step 5). Whether Qwen 3.6 and Qwen 3.8 go into the
+    disclosure line is decided at the end of NEXT 5's code review
+    (NEXT 5 a2) - until then the line stays as it is.
 
 THE FILES
   CLAUDE.md          rules for Claude sessions (line 1 is the runner's
@@ -251,6 +308,15 @@ THE FILES
   blocks.py, phasebuilds.py, plant.py, compare.py).
 
 OPEN ITEMS (the author, by hand)
+  * An idea for the runner, his call (a cloud session on
+    localsubagentresults, then copied here): three of today's stops were
+    a time limit with the edit already whole. run-phases.js could, on a
+    timeout, still run the self-test and, when it gives the plan's line
+    with only that block changed, commit it as that model's run (noting
+    the timeout) instead of stopping. Reading the stopped runs'
+    .reasoning.txt first would show whether the models were re-checking a
+    finished edit (more time or this change helps) or going in circles
+    (neither does).
   * Merge working-claude into working (a pull request on GitHub), and later
     working into main when the front page should show README.md.
   * README.md's Status line still says "Design only. There is no game code
@@ -324,3 +390,9 @@ HISTORY
               step 6 says). Committed its last spec edit (PHASE 4 step 2b:
               a ford OR contact ends a move), pushed working-claude and
               reference.
+  2026-10-21  A help session (cloud, Opus 5.5, during NEXT 4 on the
+              laptop): the author's runner stops at phases 13, 18 and 19
+              (time limits, edits whole); the recipe for going on after a
+              stop (NEXT 4 step 5), the fixer's credit for phase 19, and
+              his decision 11 (limits; the disclosure decided at the end
+              of NEXT 5's review). HANDOFF only.
