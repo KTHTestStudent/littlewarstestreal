@@ -605,23 +605,48 @@ PHASE_OK[7] = true;
 </script>
 <script>
 // ==== PHASE 8 START ====
-// STUBS for now - PHASE 8 fills them in.
 // Gunfire: who may fire, the seeded shots, cover, knocking a figure over.
 
 // RETURNS true if gun g may fire now.
 function canFire(g) {
-  return false;
+  if (!isGun(g) || g.side !== B.side || !B.gunsOpen || g.moved || g.fired) return false;
+  if (B.round === 1 && !(B.row.type === "defend" && B.row.defender === g.side)) return false;
+  return inAction(g);
 }
 
 // RETURNS the figures knocked over. Gun g fires RULES.shots shots at the
 // square (x, y).
 function fireGun(g, x, y) {
-  return 0;
+  g.fired = true;
+  g.bare = true;
+  B.firedOn[other(g.side)] = true;
+  var p = onTarget(dist(g.x, g.y, x, y));
+  var hits = 0;
+  for (var i = 0; i < RULES.shots; i++) {
+    var tx = x;
+    var ty = y;
+    if (rng() * 100 >= p) {
+      var d = DIRS[Math.floor(rng() * 8)];
+      tx = x + d[0];
+      ty = y + d[1];
+    }
+    if (!onBoard(tx, ty) || !lineOfFire(g.x, g.y, tx, ty)) continue;
+    var u = unitAt(tx, ty);
+    if (u === null || u.n === 0) continue;
+    if (pieceAt(tx, ty).cover && !u.bare && rng() * 100 >= RULES.cover) continue;
+    knockOver(u);
+    hits += 1;
+  }
+  say(words(LOG_WORDS.fired, { name: g.name, n: hits }));
+  return hits;
 }
 
 // RETURNS nothing. One figure of unit u falls (an escort's prisoners go
 // free first).
 function knockOver(u) {
+  if (u.arm === "esc") freePrisoners(u);
+  u.n -= 1;
+  B.T[u.side].fallen += 1;
 }
 PHASE_OK[8] = true;
 // ==== PHASE 8 END ====
