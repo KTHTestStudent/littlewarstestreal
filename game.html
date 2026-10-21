@@ -932,18 +932,37 @@ PHASE_OK[14] = true;
 </script>
 <script>
 // ==== PHASE 15 START ====
-// STUBS for now - PHASE 15 fills them in.
 // End Turn: the order of things, and units on a back line.
 
 // RETURNS nothing. Ends B.side's turn: the melees, the guns taken, the
 // escorts' walk, the result check, then the other side's turn.
 function endTurn() {
+  fightMelees();
+  clearFallen();
+  takeGuns(B.side);
+  walkEscorts(B.side);
+  clearFallen();
+  B.result = checkResult();
+  if (B.result !== null) return;
+  B.firedOn[B.side] = false;
+  if (B.side !== B.row.first) B.round += 1;
+  B.side = other(B.side);
+  B.gunsOpen = true;
+  for (var u of B.units) {
+    if (u.side === B.side) { u.moved = false; u.fired = false; }
+  }
 }
 
 // RETURNS true if a unit of side (not an escort) with size or more figures
 // stands on the other side's back line, in half ("west": x < B.W / 2,
 // "east": x >= B.W / 2, anything else: anywhere on it).
 function onBackLine(side, size, half) {
+  for (var u of B.units) {
+    if (u.side !== side || u.arm === "esc" || u.n < size || u.y !== backY(other(side))) continue;
+    if (half === "west" && u.x >= B.W / 2) continue;
+    if (half === "east" && u.x < B.W / 2) continue;
+    return true;
+  }
   return false;
 }
 PHASE_OK[15] = true;
