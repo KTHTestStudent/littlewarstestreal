@@ -5,6 +5,6 @@
   "disclosure": "node dev/disclosure.js",
   "protectedBranches": ["working", "main", "working-claude", "reference"],
   "builderMinutes": 15,
-  "fixerMinutes": 30,
+  "fixerMinutes": 45,
   "fixerTries": 2
 }
