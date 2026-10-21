@@ -482,26 +482,35 @@ PHASE_OK[4] = true;
 </script>
 <script>
 // ==== PHASE 5 START ====
-// STUBS for now - PHASE 5 fills them in.
 // Moving units: who may move, a move, leaving the field.
 
 // RETURNS true if unit u may move (or leave the field) now.
 function canMove(u) {
-  return false;
+  if (u.side !== B.side || u.n === 0 || u.moved || u.arm === "esc") return false;
+  if (isGun(u)) return B.gunsOpen && !u.fired && u.n >= RULES.crew;
+  return true;
 }
 
 // RETURNS nothing. Unit u moves to (x, y), a square from reach(u).
 function moveTo(u, x, y) {
+  u.x = x; u.y = y; u.moved = true;
+  if (isGun(u)) u.bare = false;
+  else B.gunsOpen = false;
 }
 
 // RETURNS true if unit u may leave the field now: it may move, and it
 // stands on its own back line.
 function canLeave(u) {
-  return false;
+  return canMove(u) && u.y === backY(u.side);
 }
 
 // RETURNS nothing. Unit u leaves the field over its back line, safe.
 function leaveField(u) {
+  B.T[u.side].safe += u.n * figVal(u);
+  if (isGun(u)) B.T[u.side].gunsOff += 1;
+  else B.gunsOpen = false;
+  say(words(LOG_WORDS.leftField, {name: u.name}));
+  u.n = 0; u.off = true; u.moved = true;
 }
 PHASE_OK[5] = true;
 // ==== PHASE 5 END ====
