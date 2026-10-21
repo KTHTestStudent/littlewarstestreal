@@ -314,3 +314,13 @@ HISTORY
               bugs, all caught), the spec, the contract's copies, dev/
               tools, the reference branch, the stub commit. Bot runs:
               NEXT 5b. Disclosure check: exit 0.
+  2026-10-21  The same session, restarted (cloud, Opus 5.5, extra): the run
+              above had committed but not pushed, and its reference branch
+              was still only in the workspace. Rechecked: the stub game
+              1/42, the reference 42/42, all 25 phase builds the spec's
+              lines, 64 of 64 planted bugs caught, and run-phases.js with a
+              stand-in builder on a throwaway clone (24 first-try commits,
+              42/42; the disclosure check then names Qwen 3.6, as NEXT 4
+              step 6 says). Committed its last spec edit (PHASE 4 step 2b:
+              a ford OR contact ends a move), pushed working-claude and
+              reference.
