@@ -1111,19 +1111,37 @@ PHASE_OK[19] = true;
 </script>
 <script>
 // ==== PHASE 20 START ====
-// STUBS for now - PHASE 20 fills them in.
 // The bots, 1: which style plays, and what a shot is worth.
 
 // RETURNS the BOT_STYLES record side's bot plays: the row's bot for
 // "them", the newcomer for "you".
 function botStyle(side) {
+  if (side === "them") return BOT_STYLES[B.row.bot];
   return BOT_STYLES.newcomer;
 }
 
 // RETURNS the figures one shot of gun g aimed at (x, y) can be expected to
 // knock over, in percent: plus for the other side's, minus for its own.
 function shotValue(g, x, y) {
-  return 0;
+  var p = onTarget(dist(g.x, g.y, x, y));
+  var v = 0;
+  for (var k = -1; k <= 7; k++) {
+    var tx = x;
+    var ty = y;
+    var c = p;
+    if (k >= 0) {
+      tx = x + DIRS[k][0];
+      ty = y + DIRS[k][1];
+      c = (100 - p) / 8;
+    }
+    if (!onBoard(tx, ty) || !lineOfFire(g.x, g.y, tx, ty)) continue;
+    var u = unitAt(tx, ty);
+    if (u === null || u.n === 0) continue;
+    if (pieceAt(tx, ty).cover && !u.bare) c = c * RULES.cover / 100;
+    if (u.side === g.side) v -= c;
+    else v += c;
+  }
+  return v;
 }
 PHASE_OK[20] = true;
 // ==== PHASE 20 END ====
