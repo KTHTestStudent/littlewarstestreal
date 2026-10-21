@@ -970,18 +970,34 @@ PHASE_OK[15] = true;
 </script>
 <script>
 // ==== PHASE 16 START ====
-// STUBS for now - PHASE 16 fills them in.
 // A raid: the loser's withdrawal, and surrender.
 
 // RETURNS nothing. side surrenders after a raid: each of its figures on
 // the field is the other side's prisoner, its escorts' prisoners go free,
 // and its guns are the other side's.
 function surrender(side) {
+  var w = other(side);
+  for (var i = 0; i < B.units.length; i++) {
+    var u = B.units[i];
+    if (u.side !== side) continue;
+    if (u.arm === "esc") {
+      freePrisoners(u);
+      B.T[w].held += u.n;
+      u.n = 0;
+    }
+    if (isGun(u)) u.side = w;
+  }
 }
 
 // RETURNS null while the loser of a raid (the side that is not B.raid.by)
 // is still withdrawing, or the result once it is over.
 function raidOver() {
+  var loser = other(B.raid.by);
+  if (B.side === loser) B.raid.left -= 1;
+  if (B.raid.left === 0 || armed(loser) === 0) {
+    surrender(loser);
+    return { winner: B.raid.by, why: "raid" };
+  }
   return null;
 }
 PHASE_OK[16] = true;
