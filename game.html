@@ -1237,8 +1237,8 @@ function moveScore(u, x, y, st, g) {
     if (v === u || v.arm === "esc") continue;
     var d = dist(v.x, v.y, x, y);
     if (v.side !== u.side && v.n > 0 && d <= ARMS[v.arm].move + 1) danger = true;
-    if (d <= RULES.isolation) friends += v.n;
-    if (d === 1 && isGun(v) && v.n < RULES.crew) s += st.guard;
+    if (v.side === u.side && d <= RULES.isolation) friends += v.n;
+    if (v.side === u.side && d === 1 && isGun(v) && v.n < RULES.crew) s += st.guard;
   }
   if (friends === 0) s -= st.together;
   if (danger && friends * 2 < u.n) s -= st.guard;
