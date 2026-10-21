@@ -738,25 +738,44 @@ PHASE_OK[10] = true;
 </script>
 <script>
 // ==== PHASE 11 START ====
-// STUBS for now - PHASE 11 fills them in.
 // Losses: who falls first, taking the figures, prisoners freed.
 
 // RETURNS side's units in melee m in the order they lose figures: by
 // LOSS_ORDER (own if side's turn it is, other if not), then the unit with
 // the fewest figures first, then in B.units order.
 function lossOrder(m, side) {
-  return [];
+  var order = side === B.side ? LOSS_ORDER.own : LOSS_ORDER.other;
+  var list = m.filter(function(u) { return u.side === side; });
+  list.sort(function(a, b) {
+    return order.indexOf(a.arm) - order.indexOf(b.arm) || a.n - b.n || B.units.indexOf(a) - B.units.indexOf(b);
+  });
+  return list;
 }
 
 // RETURNS an array of the points of each figure taken. Takes k figures
 // from the units of list, in order (an escort frees its prisoners first).
 function takeFigures(list, k) {
-  return [];
+  var vals = [];
+  for (var i = 0; i < list.length; i++) {
+    var u = list[i];
+    while (k > 0 && u.n > 0) {
+      if (u.arm === "esc") freePrisoners(u);
+      vals.push(figVal(u));
+      u.n -= 1;
+      k -= 1;
+    }
+  }
+  return vals;
 }
 
 // RETURNS nothing. Escort e's prisoners go free: they go back to their
 // own side's box, safe.
 function freePrisoners(e) {
+  if (e.pn === 0) return;
+  B.T[other(e.side)].freed += e.pv;
+  say(words(LOG_WORDS.freed, { n: e.pn }));
+  e.pn = 0;
+  e.pv = 0;
 }
 PHASE_OK[11] = true;
 // ==== PHASE 11 END ====
