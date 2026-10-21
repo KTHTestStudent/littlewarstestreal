@@ -1306,12 +1306,32 @@ PHASE_OK[24] = true;
 </script>
 <script>
 // ==== PHASE 25 START ====
-// STUBS for now - PHASE 25 fills them in.
 // The bots, 6: the next action of a bot's turn.
 
 // RETURNS the bot's next action for side, or null to end its turn:
 // {kind: "fire", u, x, y}, {kind: "move", u, x, y} or {kind: "leave", u}.
 function botNext(side) {
+  var key = B.round + side;
+  if (B.botKey !== key) { B.botKey = key; B.botDone = []; }
+  var st = botStyle(side);
+  var back = B.raid !== null && B.raid.by !== side;
+  for (var gi = 0; gi <= 1; gi++) {
+    var guns = gi === 0;
+    for (var i = 0; i < B.units.length; i++) {
+      var u = B.units[i];
+      if (u.side !== side || isGun(u) !== guns || B.botDone.indexOf(u.id) >= 0) continue;
+      B.botDone.push(u.id);
+      if (back && canLeave(u)) return { kind: "leave", u: u };
+      if (canFire(u)) {
+        var t = aimFor(u, st);
+        if (t !== null) return { kind: "fire", u: u, x: t[0], y: t[1] };
+      }
+      if (canMove(u)) {
+        var s = bestSquare(u, st);
+        if (s[0] !== u.x || s[1] !== u.y) return { kind: "move", u: u, x: s[0], y: s[1] };
+      }
+    }
+  }
   return null;
 }
 PHASE_OK[25] = true;
