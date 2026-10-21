@@ -879,7 +879,6 @@ PHASE_OK[13] = true;
 </script>
 <script>
 // ==== PHASE 14 START ====
-// STUBS for now - PHASE 14 fills them in.
 // Escorts walk: toward their own back line, and off the field there.
 
 // RETURNS the square [x, y] escort e steps to, or null: a square next to
@@ -887,12 +886,46 @@ PHASE_OK[13] = true;
 // back line); not next to an enemy if it can; then the lowest g; then the
 // first in DIRS order.
 function escortStep(e, g) {
-  return null;
+  var best = null;
+  var bn = 0;
+  for (var di = 0; di < DIRS.length; di++) {
+    var d = DIRS[di];
+    var x = e.x + d[0];
+    var y = e.y + d[1];
+    if (!canStep(e.x, e.y, x, y) || unitAt(x, y) !== null || g[y][x] >= g[e.y][e.x]) continue;
+    var near = enemyNear(e.side, x, y) ? 1 : 0;
+    if (best === null || near < bn || (near === bn && g[y][x] < g[best[1]][best[0]])) {
+      best = [x, y];
+      bn = near;
+    }
+  }
+  return best;
 }
 
 // RETURNS nothing. Each escort of side walks up to RULES.escortWalk steps
 // toward side's back line, and leaves the field there with its prisoners.
 function walkEscorts(side) {
+  var g = stepsFrom(backLine(side, "all"));
+  for (var i = 0; i < B.units.length; i++) {
+    var e = B.units[i];
+    if (e.side !== side || e.arm !== "esc" || e.n === 0) continue;
+    for (var step = 0; step < RULES.escortWalk && e.y !== backY(side); step++) {
+      var s = escortStep(e, g);
+      if (s === null) break;
+      e.x = s[0];
+      e.y = s[1];
+      if (pieceAt(e.x, e.y).ford) break;
+    }
+    if (e.y === backY(side)) {
+      B.T[side].safe += figVal(e);
+      B.T[side].held += e.pn;
+      say(words(LOG_WORDS.escortHome, { n: e.pn }));
+      e.n = 0;
+      e.off = true;
+      e.pn = 0;
+      e.pv = 0;
+    }
+  }
 }
 PHASE_OK[14] = true;
 // ==== PHASE 14 END ====
