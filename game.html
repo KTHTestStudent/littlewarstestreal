@@ -517,23 +517,38 @@ PHASE_OK[5] = true;
 </script>
 <script>
 // ==== PHASE 6 START ====
-// STUBS for now - PHASE 6 fills them in.
 // Line of fire: what a gun can aim at, and how often a shot lands there.
 
 // RETURNS true if a gun on (x0, y0) has a line of fire to (x1, y1).
 function lineOfFire(x0, y0, x1, y1) {
-  return false;
+  if (pieceAt(x0, y0).hill) return true;
+  var n = dist(x0, y0, x1, y1);
+  for (var i = 1; i < n; i++) {
+    var fx = x0 + i * (x1 - x0) / n;
+    var fy = y0 + i * (y1 - y0) / n;
+    var a = pieceAt(Math.floor(fx + 0.5), Math.floor(fy + 0.5)).blocks;
+    var b = pieceAt(Math.ceil(fx - 0.5), Math.ceil(fy - 0.5)).blocks;
+    if (a && b) return false;
+  }
+  return true;
 }
 
 // RETURNS true if gun g may aim at the square (x, y): on the board, 1 to
 // RULES.range squares away, with a line of fire.
 function canAim(g, x, y) {
-  return false;
+  if (!onBoard(x, y)) return false;
+  var d = dist(g.x, g.y, x, y);
+  if (d < 1 || d > RULES.range) return false;
+  return lineOfFire(g.x, g.y, x, y);
 }
 
 // RETURNS the percent chance that a shot lands on an aimed square d
 // squares away: the pct of the first ON_TARGET line with d <= upTo, or 0.
 function onTarget(d) {
+  for (var ti = 0; ti < ON_TARGET.length; ti++) {
+    var t = ON_TARGET[ti];
+    if (d <= t.upTo) return t.pct;
+  }
   return 0;
 }
 PHASE_OK[6] = true;
