@@ -1179,12 +1179,34 @@ PHASE_OK[21] = true;
 </script>
 <script>
 // ==== PHASE 22 START ====
-// STUBS for now - PHASE 22 fills them in.
 // The bots, 3: where a unit is heading.
 
 // RETURNS the stepsFrom grid toward where unit u is heading, for style st.
 function headGrid(u, st) {
-  return stepsFrom([]);
+  var side = u.side;
+  if (B.raid !== null && B.raid.by !== side) return stepsFrom(backLine(side, "all"));
+  if (u.arm === "cav" && B.row.type === "rear") return stepsFrom(backLine(other(side), B.row.rear));
+  if (u.arm === "cav" && B.row.type === "defend" && B.row.defender !== side) return stepsFrom(backLine(B.row.defender, "all"));
+  var guns = [];
+  var foes = [];
+  var threats = [];
+  var near = 999;
+  for (var i = 0; i < B.units.length; i++) {
+    var v = B.units[i];
+    if (v.side !== side) {
+      if (isGun(v)) guns.push([v.x, v.y]);
+      if (v.n > 0) {
+        foes.push([v.x, v.y]);
+        if (v.arm !== "esc" && Math.abs(v.y - backY(side)) < B.H / 2) threats.push([v.x, v.y]);
+        var dd = dist(u.x, u.y, v.x, v.y);
+        if (dd < near) near = dd;
+      }
+    }
+  }
+  if (threats.length > 0 && (B.row.type === "rear" || B.row.defender === side)) return stepsFrom(threats);
+  if (st.groups > 0 && u.goal !== "" && near > st.groups) return stepsFrom([sq(u.goal)]);
+  if (st.hunt === "guns" && u.arm === "cav" && guns.length > 0) return stepsFrom(guns);
+  return stepsFrom(foes);
 }
 PHASE_OK[22] = true;
 // ==== PHASE 22 END ====
