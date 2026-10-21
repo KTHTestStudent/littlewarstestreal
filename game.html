@@ -359,55 +359,78 @@ function escortSquare(u, side) {
 </script>
 <script>
 // ==== PHASE 2 START ====
-// STUBS for now - PHASE 2 fills them in.
 // The armies: set-up zones, each side's units, their armed figures.
 
 // RETURNS true if the square (x, y) is in side's set-up zone: its back
 // B.row.youRows rows for "you", its back B.row.themRows rows for "them".
 function inZone(side, x, y) {
-  return false;
+  if (side === "you") return y >= B.H - B.row.youRows;
+  return y < B.row.themRows;
 }
 
 // RETURNS nothing. Makes side's units for the battle B.lv: its ARMIES
 // lines, in order, then (for "you" only) one unit for each arm in
 // B.row.extra.
 function makeArmy(side) {
+  var horse = side === "you" && B.row.horseGun;
+  for (var i = 0; i < ARMIES.length; i++) {
+    var a = ARMIES[i];
+    if (a.lv !== B.lv || a.side !== side) continue;
+    var arm = a.arm;
+    if (horse && arm === "gun") { arm = "hgun"; horse = false; }
+    var s = sq(a.at);
+    addUnit(side, arm, s[0], s[1], a.goal);
+  }
+  if (side !== "you") return;
+  for (var j = 0; j < B.row.extra.length; j++) {
+    var s2 = freeSquare(side);
+    if (s2 !== null) addUnit(side, B.row.extra[j], s2[0], s2[1], "");
+  }
 }
 
 // RETURNS side's armed figures on the field: the n of each of its units,
 // escorts left out.
 function armed(side) {
-  return 0;
+  var n = 0;
+  for (var v of B.units) {
+    if (v.side === side && v.arm !== "esc") n += v.n;
+  }
+  return n;
 }
 PHASE_OK[2] = true;
 // ==== PHASE 2 END ====
 </script>
 <script>
 // ==== PHASE 3 START ====
-// STUBS for now - PHASE 3 fills them in.
 // Steps and contact: which steps the board allows, and who touches whom.
 
 // RETURNS false only for a diagonal step that would squeeze between two
 // squares that can't be entered (the two squares beside the step).
 function cornerOpen(x0, y0, x1, y1) {
-  return true;
+  if (x0 === x1 || y0 === y1) return true;
+  return pieceAt(x1, y0).enter || pieceAt(x0, y1).enter;
 }
 
 // RETURNS true if a unit may step from (x0, y0) to (x1, y1), by the board
 // alone (units are not looked at).
 function canStep(x0, y0, x1, y1) {
-  return false;
+  if (!onBoard(x1, y1) || dist(x0, y0, x1, y1) !== 1) return false;
+  if (!pieceAt(x1, y1).enter) return false;
+  return cornerOpen(x0, y0, x1, y1);
 }
 
 // RETURNS true if units a and b stand next to each other, not across a
 // closed corner.
 function touching(a, b) {
-  return false;
+  return dist(a.x, a.y, b.x, b.y) === 1 && cornerOpen(a.x, a.y, b.x, b.y);
 }
 
 // RETURNS true if a unit of the other side with figures stands next to
 // the square (x, y), not across a closed corner.
 function enemyNear(side, x, y) {
+  for (const v of B.units) {
+    if (v.side !== side && v.n > 0 && dist(x, y, v.x, v.y) === 1 && cornerOpen(x, y, v.x, v.y)) return true;
+  }
   return false;
 }
 PHASE_OK[3] = true;
@@ -415,63 +438,117 @@ PHASE_OK[3] = true;
 </script>
 <script>
 // ==== PHASE 4 START ====
-// STUBS for now - PHASE 4 fills them in.
 // Moving: the squares a unit can reach this turn.
 
 // RETURNS the squares unit u can move to this turn, as an array of
 // {x, y, cost} - cost is the fewest move points it takes - top row first,
 // each row from the left.
 function reach(u) {
-  return [];
+  var mp = ARMS[u.arm].move;
+  var best = {};
+  var k0 = u.x + "," + u.y;
+  best[k0] = 0;
+  var open = [[u.x, u.y]];
+  while (open.length > 0) {
+    var s = open.shift();
+    var c = best[s[0] + "," + s[1]];
+    var sk = s[0] + "," + s[1];
+    if ((s[0] !== u.x || s[1] !== u.y) && (pieceAt(s[0], s[1]).ford || enemyNear(u.side, s[0], s[1]))) continue;
+    for (var di = 0; di < DIRS.length; di++) {
+      var d = DIRS[di];
+      var x = s[0] + d[0];
+      var y = s[1] + d[1];
+      if (!canStep(s[0], s[1], x, y)) continue;
+      var o = unitAt(x, y);
+      if (o !== null && (o.side !== u.side || isGun(o))) continue;
+      var nc = c + pieceAt(x, y).cost;
+      var nk = x + "," + y;
+      if (nc > mp || (best[nk] !== undefined && best[nk] <= nc)) continue;
+      best[nk] = nc;
+      open.push([x, y]);
+    }
+  }
+  var out = [];
+  for (var yy = 0; yy < B.H; yy++) {
+    for (var xx = 0; xx < B.W; xx++) {
+      var kk = xx + "," + yy;
+      if (best[kk] !== undefined && unitAt(xx, yy) === null) out.push({x: xx, y: yy, cost: best[kk]});
+    }
+  }
+  return out;
 }
 PHASE_OK[4] = true;
 // ==== PHASE 4 END ====
 </script>
 <script>
 // ==== PHASE 5 START ====
-// STUBS for now - PHASE 5 fills them in.
 // Moving units: who may move, a move, leaving the field.
 
 // RETURNS true if unit u may move (or leave the field) now.
 function canMove(u) {
-  return false;
+  if (u.side !== B.side || u.n === 0 || u.moved || u.arm === "esc") return false;
+  if (isGun(u)) return B.gunsOpen && !u.fired && u.n >= RULES.crew;
+  return true;
 }
 
 // RETURNS nothing. Unit u moves to (x, y), a square from reach(u).
 function moveTo(u, x, y) {
+  u.x = x; u.y = y; u.moved = true;
+  if (isGun(u)) u.bare = false;
+  else B.gunsOpen = false;
 }
 
 // RETURNS true if unit u may leave the field now: it may move, and it
 // stands on its own back line.
 function canLeave(u) {
-  return false;
+  return canMove(u) && u.y === backY(u.side);
 }
 
 // RETURNS nothing. Unit u leaves the field over its back line, safe.
 function leaveField(u) {
+  B.T[u.side].safe += u.n * figVal(u);
+  if (isGun(u)) B.T[u.side].gunsOff += 1;
+  else B.gunsOpen = false;
+  say(words(LOG_WORDS.leftField, {name: u.name}));
+  u.n = 0; u.off = true; u.moved = true;
 }
 PHASE_OK[5] = true;
 // ==== PHASE 5 END ====
 </script>
 <script>
 // ==== PHASE 6 START ====
-// STUBS for now - PHASE 6 fills them in.
 // Line of fire: what a gun can aim at, and how often a shot lands there.
 
 // RETURNS true if a gun on (x0, y0) has a line of fire to (x1, y1).
 function lineOfFire(x0, y0, x1, y1) {
-  return false;
+  if (pieceAt(x0, y0).hill) return true;
+  var n = dist(x0, y0, x1, y1);
+  for (var i = 1; i < n; i++) {
+    var fx = x0 + i * (x1 - x0) / n;
+    var fy = y0 + i * (y1 - y0) / n;
+    var a = pieceAt(Math.floor(fx + 0.5), Math.floor(fy + 0.5)).blocks;
+    var b = pieceAt(Math.ceil(fx - 0.5), Math.ceil(fy - 0.5)).blocks;
+    if (a && b) return false;
+  }
+  return true;
 }
 
 // RETURNS true if gun g may aim at the square (x, y): on the board, 1 to
 // RULES.range squares away, with a line of fire.
 function canAim(g, x, y) {
-  return false;
+  if (!onBoard(x, y)) return false;
+  var d = dist(g.x, g.y, x, y);
+  if (d < 1 || d > RULES.range) return false;
+  return lineOfFire(g.x, g.y, x, y);
 }
 
 // RETURNS the percent chance that a shot lands on an aimed square d
 // squares away: the pct of the first ON_TARGET line with d <= upTo, or 0.
 function onTarget(d) {
+  for (var ti = 0; ti < ON_TARGET.length; ti++) {
+    var t = ON_TARGET[ti];
+    if (d <= t.upTo) return t.pct;
+  }
   return 0;
 }
 PHASE_OK[6] = true;
@@ -479,166 +556,329 @@ PHASE_OK[6] = true;
 </script>
 <script>
 // ==== PHASE 7 START ====
-// STUBS for now - PHASE 7 fills them in.
 // Crews and support: guns in action, and isolation in a melee.
 
 // RETURNS the figures that count at gun g: its own crew (g.n), plus the
 // figures of every other unit of its side next to it (not escorts).
 function crewAt(g) {
-  return 0;
+  var n = g.n;
+  for (var vi = 0; vi < B.units.length; vi++) {
+    var v = B.units[vi];
+    if (v !== g && v.side === g.side && v.arm !== "esc" && dist(v.x, v.y, g.x, g.y) === 1) n += v.n;
+  }
+  return n;
 }
 
 // RETURNS true if gun g is in action: RULES.crew or more figures count at it.
 function inAction(g) {
-  return false;
+  return crewAt(g) >= RULES.crew;
 }
 
 // RETURNS the figures of side outside melee m (an array of units) in units
 // within RULES.isolation squares of one of side's units in m (escorts left
 // out).
 function supportCount(side, m) {
-  return 0;
+  var n = 0;
+  for (var vi = 0; vi < B.units.length; vi++) {
+    var v = B.units[vi];
+    if (v.side !== side || v.arm === "esc" || m.indexOf(v) >= 0) continue;
+    for (var mi = 0; mi < m.length; mi++) {
+      var w = m[mi];
+      if (w.side === side && dist(v.x, v.y, w.x, w.y) <= RULES.isolation) { n += v.n; break; }
+    }
+  }
+  return n;
 }
 
 // RETURNS true if side is isolated in melee m: its support is fewer than
 // half of its own figures in m.
 function isolated(side, m) {
-  return false;
+  var own = 0;
+  for (var i = 0; i < m.length; i++) {
+    var w = m[i];
+    if (w.side === side) own += w.n;
+  }
+  return supportCount(side, m) * 2 < own;
 }
 PHASE_OK[7] = true;
 // ==== PHASE 7 END ====
 </script>
 <script>
 // ==== PHASE 8 START ====
-// STUBS for now - PHASE 8 fills them in.
 // Gunfire: who may fire, the seeded shots, cover, knocking a figure over.
 
 // RETURNS true if gun g may fire now.
 function canFire(g) {
-  return false;
+  if (!isGun(g) || g.side !== B.side || !B.gunsOpen || g.moved || g.fired) return false;
+  if (B.round === 1 && !(B.row.type === "defend" && B.row.defender === g.side)) return false;
+  return inAction(g);
 }
 
 // RETURNS the figures knocked over. Gun g fires RULES.shots shots at the
 // square (x, y).
 function fireGun(g, x, y) {
-  return 0;
+  g.fired = true;
+  g.bare = true;
+  B.firedOn[other(g.side)] = true;
+  var p = onTarget(dist(g.x, g.y, x, y));
+  var hits = 0;
+  for (var i = 0; i < RULES.shots; i++) {
+    var tx = x;
+    var ty = y;
+    if (rng() * 100 >= p) {
+      var d = DIRS[Math.floor(rng() * 8)];
+      tx = x + d[0];
+      ty = y + d[1];
+    }
+    if (!onBoard(tx, ty) || !lineOfFire(g.x, g.y, tx, ty)) continue;
+    var u = unitAt(tx, ty);
+    if (u === null || u.n === 0) continue;
+    if (pieceAt(tx, ty).cover && !u.bare && rng() * 100 >= RULES.cover) continue;
+    knockOver(u);
+    hits += 1;
+  }
+  say(words(LOG_WORDS.fired, { name: g.name, n: hits }));
+  return hits;
 }
 
 // RETURNS nothing. One figure of unit u falls (an escort's prisoners go
 // free first).
 function knockOver(u) {
+  if (u.arm === "esc") freePrisoners(u);
+  u.n -= 1;
+  B.T[u.side].fallen += 1;
 }
 PHASE_OK[8] = true;
 // ==== PHASE 8 END ====
 </script>
 <script>
 // ==== PHASE 9 START ====
-// STUBS for now - PHASE 9 fills them in.
 // Who fights: the units in contact, and the melees they make.
 
 // RETURNS every pair of touching units of opposite sides that both have
 // figures, as [a, b] with a before b in B.units.
 function contacts() {
-  return [];
+  var out = [];
+  for (var i = 0; i < B.units.length; i++) {
+    for (var j = i + 1; j < B.units.length; j++) {
+      var a = B.units[i];
+      var b = B.units[j];
+      if (a.n > 0 && b.n > 0 && a.side !== b.side && touching(a, b)) out.push([a, b]);
+    }
+  }
+  return out;
 }
 
 // RETURNS the melees: an array of melees, each an array of units in
 // B.units order, the melees in the order of their first units.
 function findMelees() {
-  return [];
+  var out = [];
+  var pairs = contacts();
+  for (var pi = 0; pi < pairs.length; pi++) {
+    var p = pairs[pi];
+    var m = [];
+    for (var vi = 0; vi < B.units.length; vi++) {
+      var v = B.units[vi];
+      if (v.n > 0 && (v === p[0] || v === p[1] || touching(v, p[0]) || touching(v, p[1]))) m.push(v);
+    }
+    for (var i = out.length - 1; i >= 0; i--) {
+      var shares = false;
+      for (var mi = 0; mi < m.length; mi++) {
+        if (out[i].indexOf(m[mi]) >= 0) { shares = true; break; }
+      }
+      if (shares) {
+        for (var oi = 0; oi < out[i].length; oi++) {
+          if (m.indexOf(out[i][oi]) < 0) m.push(out[i][oi]);
+        }
+        out.splice(i, 1);
+      }
+    }
+    m.sort(function (a, b) { return B.units.indexOf(a) - B.units.indexOf(b); });
+    out.push(m);
+  }
+  out.sort(function (a, b) { return B.units.indexOf(a[0]) - B.units.indexOf(b[0]); });
+  return out;
 }
 PHASE_OK[9] = true;
 // ==== PHASE 9 END ====
 </script>
 <script>
 // ==== PHASE 10 START ====
-// STUBS for now - PHASE 10 fills them in.
 // Melee results: counting the figures, and what a melee does.
 
 // RETURNS the figures of side in melee m.
 function meleeCount(m, side) {
-  return 0;
+  var n = 0;
+  for (var i = 0; i < m.length; i++) {
+    if (m[i].side === side) n += m[i].n;
+  }
+  return n;
 }
 
 // RETURNS what melee m would do, changing nothing: {you: {fall, taken},
 // them: {fall, taken}} - the figures that fall and the figures taken
 // prisoner on each side.
 function meleeOutcome(m) {
-  return { you: { fall: 0, taken: 0 }, them: { fall: 0, taken: 0 } };
+  var a = meleeCount(m, "you");
+  var b = meleeCount(m, "them");
+  var r = { you: { fall: 0, taken: 0 }, them: { fall: 0, taken: 0 } };
+  if (a === b) { r.you.fall = a; r.them.fall = b; return r; }
+  var big = a > b ? "you" : "them";
+  var small = other(big);
+  var s = Math.min(a, b);
+  var p = 0;
+  if (isolated(small, m)) p = Math.min(Math.max(a, b) - s, s);
+  r[small].taken = p;
+  r[small].fall = s - p;
+  r[big].fall = s - p;
+  return r;
 }
 PHASE_OK[10] = true;
 // ==== PHASE 10 END ====
 </script>
 <script>
 // ==== PHASE 11 START ====
-// STUBS for now - PHASE 11 fills them in.
 // Losses: who falls first, taking the figures, prisoners freed.
 
 // RETURNS side's units in melee m in the order they lose figures: by
 // LOSS_ORDER (own if side's turn it is, other if not), then the unit with
 // the fewest figures first, then in B.units order.
 function lossOrder(m, side) {
-  return [];
+  var order = side === B.side ? LOSS_ORDER.own : LOSS_ORDER.other;
+  var list = m.filter(function(u) { return u.side === side; });
+  list.sort(function(a, b) {
+    return order.indexOf(a.arm) - order.indexOf(b.arm) || a.n - b.n || B.units.indexOf(a) - B.units.indexOf(b);
+  });
+  return list;
 }
 
 // RETURNS an array of the points of each figure taken. Takes k figures
 // from the units of list, in order (an escort frees its prisoners first).
 function takeFigures(list, k) {
-  return [];
+  var vals = [];
+  for (var i = 0; i < list.length; i++) {
+    var u = list[i];
+    while (k > 0 && u.n > 0) {
+      if (u.arm === "esc") freePrisoners(u);
+      vals.push(figVal(u));
+      u.n -= 1;
+      k -= 1;
+    }
+  }
+  return vals;
 }
 
 // RETURNS nothing. Escort e's prisoners go free: they go back to their
 // own side's box, safe.
 function freePrisoners(e) {
+  if (e.pn === 0) return;
+  B.T[other(e.side)].freed += e.pv;
+  say(words(LOG_WORDS.freed, { n: e.pn }));
+  e.pn = 0;
+  e.pv = 0;
 }
 PHASE_OK[11] = true;
 // ==== PHASE 11 END ====
 </script>
 <script>
 // ==== PHASE 12 START ====
-// STUBS for now - PHASE 12 fills them in.
 // Escorts: which unit gives the escort, and making the escorts.
 
 // RETURNS true if unit a should give an escort before unit b: not a gun
 // before a gun, then more figures, then infantry before anything else.
 function betterEscort(a, b) {
-  return false;
+  if (isGun(a) !== isGun(b)) return !isGun(a);
+  if (a.n !== b.n) return a.n > b.n;
+  return a.arm === "inf" && b.arm !== "inf";
 }
 
 // RETURNS the unit of side in melee m that gives a figure to be an escort,
 // or null if it has none.
 function escortFrom(m, side) {
-  return null;
+  var best = null;
+  for (var i = 0; i < m.length; i++) {
+    var u = m[i];
+    if (u.side !== side || u.n === 0 || u.arm === "esc") continue;
+    if (best === null || betterEscort(u, best)) best = u;
+  }
+  return best;
 }
 
 // RETURNS nothing. side takes the prisoners whose points are in vals, from
 // melee m: one escort for every RULES.perEscort of them.
 function makeEscorts(m, side, vals) {
+  for (var i = 0; i < vals.length; i += RULES.perEscort) {
+    var part = vals.slice(i, i + RULES.perEscort);
+    var pv = 0;
+    for (var j = 0; j < part.length; j++) pv += part[j];
+    var u = escortFrom(m, side);
+    var s = null;
+    if (u !== null) s = escortSquare(u, side);
+    if (s === null) { B.T[side].held += part.length; continue; }
+    u.n -= 1;
+    var e = addUnit(side, "esc", s[0], s[1], "");
+    e.of = u.arm;
+    e.pn = part.length;
+    e.pv = pv;
+  }
 }
 PHASE_OK[12] = true;
 // ==== PHASE 12 END ====
 </script>
 <script>
 // ==== PHASE 13 START ====
-// STUBS for now - PHASE 13 fills them in.
 // Fighting: every melee at once, and empty guns taken.
 
 // RETURNS nothing. Fights every melee on the board for the side whose turn
 // it is: all are judged on the board as it stands, then fought in order.
 function fightMelees() {
+  var ms = findMelees();
+  var rs = [];
+  for (var i = 0; i < ms.length; i++) rs.push(meleeOutcome(ms[i]));
+  var sides = [B.side, other(B.side)];
+  for (i = 0; i < ms.length; i++) {
+    var taken = {};
+    for (var j = 0; j < sides.length; j++) {
+      var s = sides[j];
+      var list = lossOrder(ms[i], s);
+      taken[s] = takeFigures(list, rs[i][s].taken);
+      B.T[s].fallen += takeFigures(list, rs[i][s].fall).length;
+    }
+    say(words(LOG_WORDS.melee, {a: rs[i].you.fall + rs[i].you.taken, b: rs[i].them.fall + rs[i].them.taken}));
+    for (j = 0; j < sides.length; j++) {
+      s = sides[j];
+      if (taken[s].length > 0) {
+        say(words(LOG_WORDS.taken, {n: taken[s].length}));
+        makeEscorts(ms[i], other(s), taken[s]);
+      }
+    }
+  }
 }
 
 // RETURNS nothing. At the end of side's turn, side takes each empty gun of
 // the other side that has no figure of its own side next to it and a unit
 // of side (not an escort) with RULES.crew or more figures next to it.
 function takeGuns(side) {
+  for (var i = 0; i < B.units.length; i++) {
+    var g = B.units[i];
+    if (!isGun(g) || g.n > 0 || g.side === side) continue;
+    var theirs = false;
+    var ours = false;
+    for (var j = 0; j < B.units.length; j++) {
+      var v = B.units[j];
+      if (v.n > 0 && dist(v.x, v.y, g.x, g.y) === 1) {
+        if (v.side === g.side) theirs = true;
+        else if (v.arm !== "esc" && v.n >= RULES.crew) ours = true;
+      }
+    }
+    if (!theirs && ours) { g.side = side; say(words(LOG_WORDS.gunTaken, {name: g.name})); }
+  }
 }
 PHASE_OK[13] = true;
 // ==== PHASE 13 END ====
 </script>
 <script>
 // ==== PHASE 14 START ====
-// STUBS for now - PHASE 14 fills them in.
 // Escorts walk: toward their own back line, and off the field there.
 
 // RETURNS the square [x, y] escort e steps to, or null: a square next to
@@ -646,30 +886,83 @@ PHASE_OK[13] = true;
 // back line); not next to an enemy if it can; then the lowest g; then the
 // first in DIRS order.
 function escortStep(e, g) {
-  return null;
+  var best = null;
+  var bn = 0;
+  for (var di = 0; di < DIRS.length; di++) {
+    var d = DIRS[di];
+    var x = e.x + d[0];
+    var y = e.y + d[1];
+    if (!canStep(e.x, e.y, x, y) || unitAt(x, y) !== null || g[y][x] >= g[e.y][e.x]) continue;
+    var near = enemyNear(e.side, x, y) ? 1 : 0;
+    if (best === null || near < bn || (near === bn && g[y][x] < g[best[1]][best[0]])) {
+      best = [x, y];
+      bn = near;
+    }
+  }
+  return best;
 }
 
 // RETURNS nothing. Each escort of side walks up to RULES.escortWalk steps
 // toward side's back line, and leaves the field there with its prisoners.
 function walkEscorts(side) {
+  var g = stepsFrom(backLine(side, "all"));
+  for (var i = 0; i < B.units.length; i++) {
+    var e = B.units[i];
+    if (e.side !== side || e.arm !== "esc" || e.n === 0) continue;
+    for (var step = 0; step < RULES.escortWalk && e.y !== backY(side); step++) {
+      var s = escortStep(e, g);
+      if (s === null) break;
+      e.x = s[0];
+      e.y = s[1];
+      if (pieceAt(e.x, e.y).ford) break;
+    }
+    if (e.y === backY(side)) {
+      B.T[side].safe += figVal(e);
+      B.T[side].held += e.pn;
+      say(words(LOG_WORDS.escortHome, { n: e.pn }));
+      e.n = 0;
+      e.off = true;
+      e.pn = 0;
+      e.pv = 0;
+    }
+  }
 }
 PHASE_OK[14] = true;
 // ==== PHASE 14 END ====
 </script>
 <script>
 // ==== PHASE 15 START ====
-// STUBS for now - PHASE 15 fills them in.
 // End Turn: the order of things, and units on a back line.
 
 // RETURNS nothing. Ends B.side's turn: the melees, the guns taken, the
 // escorts' walk, the result check, then the other side's turn.
 function endTurn() {
+  fightMelees();
+  clearFallen();
+  takeGuns(B.side);
+  walkEscorts(B.side);
+  clearFallen();
+  B.result = checkResult();
+  if (B.result !== null) return;
+  B.firedOn[B.side] = false;
+  if (B.side !== B.row.first) B.round += 1;
+  B.side = other(B.side);
+  B.gunsOpen = true;
+  for (var u of B.units) {
+    if (u.side === B.side) { u.moved = false; u.fired = false; }
+  }
 }
 
 // RETURNS true if a unit of side (not an escort) with size or more figures
 // stands on the other side's back line, in half ("west": x < B.W / 2,
 // "east": x >= B.W / 2, anything else: anywhere on it).
 function onBackLine(side, size, half) {
+  for (var u of B.units) {
+    if (u.side !== side || u.arm === "esc" || u.n < size || u.y !== backY(other(side))) continue;
+    if (half === "west" && u.x >= B.W / 2) continue;
+    if (half === "east" && u.x < B.W / 2) continue;
+    return true;
+  }
   return false;
 }
 PHASE_OK[15] = true;
@@ -677,18 +970,32 @@ PHASE_OK[15] = true;
 </script>
 <script>
 // ==== PHASE 16 START ====
-// STUBS for now - PHASE 16 fills them in.
 // A raid: the loser's withdrawal, and surrender.
 
 // RETURNS nothing. side surrenders after a raid: each of its figures on
 // the field is the other side's prisoner, its escorts' prisoners go free,
 // and its guns are the other side's.
 function surrender(side) {
+  var w = other(side);
+  for (var i = 0; i < B.units.length; i++) {
+    var u = B.units[i];
+    if (u.side !== side) continue;
+    if (u.arm === "esc") freePrisoners(u);
+    B.T[w].held += u.n;
+    u.n = 0;
+    if (isGun(u)) u.side = w;
+  }
 }
 
 // RETURNS null while the loser of a raid (the side that is not B.raid.by)
 // is still withdrawing, or the result once it is over.
 function raidOver() {
+  var loser = other(B.raid.by);
+  if (B.side === loser) B.raid.left -= 1;
+  if (B.raid.left === 0 || armed(loser) === 0) {
+    surrender(loser);
+    return { winner: B.raid.by, why: "raid" };
+  }
   return null;
 }
 PHASE_OK[16] = true;
@@ -696,12 +1003,39 @@ PHASE_OK[16] = true;
 </script>
 <script>
 // ==== PHASE 17 START ====
-// STUBS for now - PHASE 17 fills them in.
 // The result: is the battle over, and who won.
 
 // RETURNS null while the battle goes on, or {winner, why} - winner "you",
 // "them" or "draw". Called at the end of B.side's turn.
 function checkResult() {
+  if (B.raid !== null) return raidOver();
+  var s = B.side;
+  var t = B.row.type;
+  var a = armed("you");
+  var b = armed("them");
+  if (a === 0 || b === 0) {
+    return { winner: a > 0 ? "you" : (b > 0 ? "them" : "draw"), why: "none" };
+  }
+  if (t !== "defend" && a < B.row.drawLine && b < B.row.drawLine) {
+    return { winner: "draw", why: "few" };
+  }
+  if (t === "rear" && onBackLine(s, RULES.raidSize, B.row.rear)) {
+    B.raid = { by: s, left: RULES.withdraw };
+    say(words(LOG_WORDS.raid, { n: RULES.withdraw }));
+    return null;
+  }
+  if (t === "defend") {
+    var att = other(B.row.defender);
+    if (armed(att) * 100 < B.start[att] * RULES.quarter) {
+      return { winner: B.row.defender, why: "quarter" };
+    }
+    if (s === att && onBackLine(att, RULES.throughSize, "all")) {
+      return { winner: att, why: "through" };
+    }
+  }
+  if (B.round >= B.row.rounds && s !== B.row.first) {
+    return { winner: t === "defend" ? B.row.defender : "draw", why: "rounds" };
+  }
   return null;
 }
 PHASE_OK[17] = true;
@@ -709,124 +1043,295 @@ PHASE_OK[17] = true;
 </script>
 <script>
 // ==== PHASE 18 START ====
-// STUBS for now - PHASE 18 fills them in.
 // Points and the campaign: a battle's points, a battle recorded.
 
 // RETURNS side's points for the finished battle B (B.result is set).
 function battlePoints(side) {
-  return 0;
+  var w = B.result.winner;
+  var p = w === side ? RULES.win : (w === "draw" ? RULES.draw : 0);
+  var prisoners = B.T.you.held + B.T.them.held;
+  for (var i = 0; i < B.units.length; i++) {
+    var u = B.units[i];
+    if (u.off) continue;
+    if (u.arm === "esc") prisoners += u.pn;
+    if (u.side === side) {
+      p += u.n * figVal(u);
+      if (isGun(u)) p += RULES.gunPts;
+    }
+  }
+  p += B.T[side].gunsOff * RULES.gunPts + B.T[side].safe + B.T[side].freed;
+  return p + prisoners * RULES.prisonerPts;
 }
 
 // RETURNS your points in the finished battle B, after adding the battle
 // to the campaign CAMP.
 function recordBattle() {
-  return 0;
+  var pts = battlePoints("you");
+  var w = B.result.winner;
+  var res = w === "you" ? "won" : (w === "draw" ? "drawn" : "lost");
+  CAMP.last = { result: res, points: pts };
+  if (B.lv > 0) {
+    CAMP.points += pts;
+    CAMP.done += 1;
+    if (res === "won") CAMP.wins += 1;
+    else if (res === "drawn") CAMP.draws += 1;
+    else CAMP.losses += 1;
+  }
+  return pts;
 }
 PHASE_OK[18] = true;
 // ==== PHASE 18 END ====
 </script>
 <script>
 // ==== PHASE 19 START ====
-// STUBS for now - PHASE 19 fills them in.
 // The story's outcomes: what a scene_ knot's outcome does to the next row.
 
 // RETURNS nothing. Applies the story outcome (one of row.knot's outcomes
 // in EFFECTS, or "") to row, a battle row from baseRow: each of its steps
 // in order.
 function applyOutcome(row, outcome) {
+  var fx = EFFECTS[row.knot];
+  if (fx === undefined || fx[outcome] === undefined) return;
+  for (var si = 0; si < fx[outcome].length; si++) {
+    var s = fx[outcome][si];
+    var k = s[0];
+    if (k === "first") row.first = s[1];
+    else if (k === "scout") row.scout = true;
+    else if (k === "rear") row.rear = s[1];
+    else if (k === "piece") row.pieces.push(s[1]);
+    else if (k === "horseGun") row.horseGun = true;
+    else if (k === "setupRows") row.youRows = s[1];
+    else if (k === "unit") row.extra.push(s[1]);
+    else if (k === "rounds") row.rounds += s[1];
+    else if (k === "style") row.bot = s[1];
+  }
 }
 PHASE_OK[19] = true;
 // ==== PHASE 19 END ====
 </script>
 <script>
 // ==== PHASE 20 START ====
-// STUBS for now - PHASE 20 fills them in.
 // The bots, 1: which style plays, and what a shot is worth.
 
 // RETURNS the BOT_STYLES record side's bot plays: the row's bot for
 // "them", the newcomer for "you".
 function botStyle(side) {
+  if (side === "them") return BOT_STYLES[B.row.bot];
   return BOT_STYLES.newcomer;
 }
 
 // RETURNS the figures one shot of gun g aimed at (x, y) can be expected to
 // knock over, in percent: plus for the other side's, minus for its own.
 function shotValue(g, x, y) {
-  return 0;
+  var p = onTarget(dist(g.x, g.y, x, y));
+  var v = 0;
+  for (var k = -1; k <= 7; k++) {
+    var tx = x;
+    var ty = y;
+    var c = p;
+    if (k >= 0) {
+      tx = x + DIRS[k][0];
+      ty = y + DIRS[k][1];
+      c = (100 - p) / 8;
+    }
+    if (!onBoard(tx, ty) || !lineOfFire(g.x, g.y, tx, ty)) continue;
+    var u = unitAt(tx, ty);
+    if (u === null || u.n === 0) continue;
+    if (pieceAt(tx, ty).cover && !u.bare) c = c * RULES.cover / 100;
+    if (u.side === g.side) v -= c;
+    else v += c;
+  }
+  return v;
 }
 PHASE_OK[20] = true;
 // ==== PHASE 20 END ====
 </script>
 <script>
 // ==== PHASE 21 START ====
-// STUBS for now - PHASE 21 fills them in.
 // The bots, 2: what a gun aims at.
 
 // RETURNS true if a unit of side with figures, other than v, stands next
 // to unit v.
 function friendNear(side, v) {
+  for (var i = 0; i < B.units.length; i++) {
+    var w = B.units[i];
+    if (w !== v && w.side === side && w.n > 0 && dist(w.x, w.y, v.x, v.y) === 1) return true;
+  }
   return false;
 }
 
 // RETURNS the square [x, y] gun g aims at for style st, or null.
 function aimFor(g, st) {
-  return null;
+  var best = null;
+  var bs = 0;
+  for (var i = 0; i < B.units.length; i++) {
+    var v = B.units[i];
+    if (v.side === g.side || v.n === 0 || !canAim(g, v.x, v.y)) continue;
+    var s = shotValue(g, v.x, v.y);
+    if (s <= 0) continue;
+    if (st.aim !== "best") { if (friendNear(g.side, v)) continue; s = st.aim === "nearest" ? -dist(g.x, g.y, v.x, v.y) : v.n + (st.aim === "guns" && isGun(v) ? 100 : 0); }
+    if (best === null || s > bs) { best = [v.x, v.y]; bs = s; }
+  }
+  return best;
 }
 PHASE_OK[21] = true;
 // ==== PHASE 21 END ====
 </script>
 <script>
 // ==== PHASE 22 START ====
-// STUBS for now - PHASE 22 fills them in.
 // The bots, 3: where a unit is heading.
 
 // RETURNS the stepsFrom grid toward where unit u is heading, for style st.
 function headGrid(u, st) {
-  return stepsFrom([]);
+  var side = u.side;
+  if (B.raid !== null && B.raid.by !== side) return stepsFrom(backLine(side, "all"));
+  if (u.arm === "cav" && B.row.type === "rear") return stepsFrom(backLine(other(side), B.row.rear));
+  if (u.arm === "cav" && B.row.type === "defend" && B.row.defender !== side) return stepsFrom(backLine(B.row.defender, "all"));
+  var guns = [];
+  var foes = [];
+  var threats = [];
+  var near = 999;
+  for (var i = 0; i < B.units.length; i++) {
+    var v = B.units[i];
+    if (v.side !== side) {
+      if (isGun(v)) guns.push([v.x, v.y]);
+      if (v.n > 0) {
+        foes.push([v.x, v.y]);
+        if (v.arm !== "esc" && Math.abs(v.y - backY(side)) < B.H / 2) threats.push([v.x, v.y]);
+        var dd = dist(u.x, u.y, v.x, v.y);
+        if (dd < near) near = dd;
+      }
+    }
+  }
+  if (threats.length > 0 && (B.row.type === "rear" || B.row.defender === side)) return stepsFrom(threats);
+  if (st.groups > 0 && u.goal !== "" && near > st.groups) return stepsFrom([sq(u.goal)]);
+  if (st.hunt === "guns" && u.arm === "cav" && guns.length > 0) return stepsFrom(guns);
+  return stepsFrom(foes);
 }
 PHASE_OK[22] = true;
 // ==== PHASE 22 END ====
 </script>
 <script>
 // ==== PHASE 23 START ====
-// STUBS for now - PHASE 23 fills them in.
 // The bots, 4: how good a square is to end a move on.
 
 // RETURNS the score of unit u ending its move on (x, y), for style st,
-// heading along the grid g (from headGrid).
+// heading along the grid g (from headGrid). Higher is better.
 function moveScore(u, x, y, st, g) {
-  return 0;
+  var s = -st.advance * g[y][x];
+  if (isGun(u) && !(B.raid !== null && B.raid.by !== u.side)) {
+    s = 0;
+    for (var vi = 0; vi < B.units.length; vi++) {
+      var v = B.units[vi];
+      var d = dist(x, y, v.x, v.y);
+      if (v.side !== u.side && v.n > 0 && d >= 1 && d <= RULES.range && lineOfFire(x, y, v.x, v.y)) s += st.advance;
+    }
+  }
+  var p = pieceAt(x, y);
+  if (p.cover || p.hill) {
+    s += st.cover;
+    if (x === u.x && y === u.y && !B.firedOn[u.side]) s += st.hold;
+  }
+  var friends = 0;
+  var danger = false;
+  for (var vi2 = 0; vi2 < B.units.length; vi2++) {
+    var v = B.units[vi2];
+    if (v === u || v.arm === "esc") continue;
+    var d = dist(v.x, v.y, x, y);
+    if (v.side !== u.side && v.n > 0 && d <= ARMS[v.arm].move + 1) danger = true;
+    if (v.side === u.side && d <= RULES.isolation) friends += v.n;
+    if (v.side === u.side && d === 1 && isGun(v) && v.n < RULES.crew) s += st.guard;
+  }
+  if (friends === 0) s -= st.together;
+  if (danger && friends * 2 < u.n) s -= st.guard;
+  return s;
 }
 PHASE_OK[23] = true;
 // ==== PHASE 23 END ====
 </script>
 <script>
 // ==== PHASE 24 START ====
-// STUBS for now - PHASE 24 fills them in.
 // The bots, 5: when a unit may charge, and the square it picks.
 
 // RETURNS true if style st lets unit u move into contact on (x, y): u is
 // put on (x, y) for a moment, and the melee it would be in there is judged.
 function chargeOk(u, x, y, st) {
-  return false;
+  var ox = u.x;
+  var oy = u.y;
+  u.x = x;
+  u.y = y;
+  var m = null;
+  var meleeList = findMelees();
+  for (var mi = 0; mi < meleeList.length; mi++) {
+    if (meleeList[mi].indexOf(u) >= 0) { m = meleeList[mi]; break; }
+  }
+  var ok = false;
+  if (m !== null) {
+    var me = meleeCount(m, u.side);
+    var foe = meleeCount(m, other(u.side));
+    var r = meleeOutcome(m);
+    if (st.charge === "twice") ok = me >= 2 * foe;
+    else if (st.charge === "more") ok = me > foe && (me > u.n || supportCount(u.side, m) > 0);
+    else if (st.charge === "isolated") ok = me > foe && isolated(other(u.side), m);
+    else if (st.charge === "even") ok = me >= foe;
+    else ok = r[other(u.side)].fall + r[other(u.side)].taken > r[u.side].fall + r[u.side].taken;
+  }
+  u.x = ox;
+  u.y = oy;
+  return ok;
 }
 
 // RETURNS the square [x, y] unit u ends its move on, for style st: where
 // it stands or a square of reach(u), the best by moveScore.
 function bestSquare(u, st) {
-  return [u.x, u.y];
+  var g = headGrid(u, st);
+  var c = [[u.x, u.y]];
+  var squares = reach(u);
+  for (var ri = 0; ri < squares.length; ri++) c.push([squares[ri].x, squares[ri].y]);
+  var plain = st.slip > 0 && rng() * 100 < st.slip;
+  var best = null;
+  var bs = 0;
+  for (var si = 0; si < c.length; si++) {
+    var s = c[si];
+    var moved = (s[0] !== u.x || s[1] !== u.y);
+    if (moved && enemyNear(u.side, s[0], s[1]) && (isGun(u) || !chargeOk(u, s[0], s[1], st))) continue;
+    var v = -g[s[1]][s[0]];
+    if (!plain) v = moveScore(u, s[0], s[1], st, g);
+    if (best === null || v > bs) { best = s; bs = v; }
+  }
+  return best;
 }
 PHASE_OK[24] = true;
 // ==== PHASE 24 END ====
 </script>
 <script>
 // ==== PHASE 25 START ====
-// STUBS for now - PHASE 25 fills them in.
 // The bots, 6: the next action of a bot's turn.
 
 // RETURNS the bot's next action for side, or null to end its turn:
 // {kind: "fire", u, x, y}, {kind: "move", u, x, y} or {kind: "leave", u}.
 function botNext(side) {
+  var key = B.round + side;
+  if (B.botKey !== key) { B.botKey = key; B.botDone = []; }
+  var st = botStyle(side);
+  var back = B.raid !== null && B.raid.by !== side;
+  for (var gi = 0; gi <= 1; gi++) {
+    var guns = gi === 0;
+    for (var i = 0; i < B.units.length; i++) {
+      var u = B.units[i];
+      if (u.side !== side || isGun(u) !== guns || B.botDone.indexOf(u.id) >= 0) continue;
+      B.botDone.push(u.id);
+      if (back && canLeave(u)) return { kind: "leave", u: u };
+      if (canFire(u)) {
+        var t = aimFor(u, st);
+        if (t !== null) return { kind: "fire", u: u, x: t[0], y: t[1] };
+      }
+      if (canMove(u)) {
+        var s = bestSquare(u, st);
+        if (s[0] !== u.x || s[1] !== u.y) return { kind: "move", u: u, x: s[0], y: s[1] };
+      }
+    }
+  }
   return null;
 }
 PHASE_OK[25] = true;
