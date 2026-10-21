@@ -17,20 +17,20 @@
 ============================================================================
 
 LINE MAP (for read tools that take a line range)
-  rules, game, files, API, traps, numbers: lines 96-419
-  PHASE 2 (armies): 443-482   PHASE 3 (steps and contact): 484-517
-  PHASE 4 (reach): 519-558   PHASE 5 (moving units): 560-599
-  PHASE 6 (line of fire): 601-641   PHASE 7 (crews and support): 643-677
-  PHASE 8 (gunfire): 679-725   PHASE 9 (who fights): 727-759
-  PHASE 10 (melee results): 761-788   PHASE 11 (losses): 790-826
-  PHASE 12 (escorts): 828-863   PHASE 13 (fighting): 865-905
-  PHASE 14 (escorts walk): 907-940   PHASE 15 (End Turn): 942-979
-  PHASE 16 (raid): 981-1004   PHASE 17 (result): 1006-1038
-  PHASE 18 (points): 1040-1072   PHASE 19 (outcomes): 1074-1098
-  PHASE 20 (bots 1): 1100-1126   PHASE 21 (bots 2): 1128-1156
-  PHASE 22 (bots 3): 1158-1190   PHASE 23 (bots 4): 1192-1223
-  PHASE 24 (bots 5): 1225-1264   PHASE 25 (bots 6): 1266-1299
-  fixer prompt: 1301-1432
+  rules, game, files, API, traps, numbers: lines 96-422
+  PHASE 2 (armies): 446-485   PHASE 3 (steps and contact): 487-520
+  PHASE 4 (reach): 522-561   PHASE 5 (moving units): 563-602
+  PHASE 6 (line of fire): 604-644   PHASE 7 (crews and support): 646-680
+  PHASE 8 (gunfire): 682-728   PHASE 9 (who fights): 730-762
+  PHASE 10 (melee results): 764-791   PHASE 11 (losses): 793-829
+  PHASE 12 (escorts): 831-866   PHASE 13 (fighting): 868-908
+  PHASE 14 (escorts walk): 910-943   PHASE 15 (End Turn): 945-982
+  PHASE 16 (raid): 984-1007   PHASE 17 (result): 1009-1041
+  PHASE 18 (points): 1043-1075   PHASE 19 (outcomes): 1077-1101
+  PHASE 20 (bots 1): 1103-1129   PHASE 21 (bots 2): 1131-1159
+  PHASE 22 (bots 3): 1161-1193   PHASE 23 (bots 4): 1195-1226
+  PHASE 24 (bots 5): 1228-1267   PHASE 25 (bots 6): 1269-1302
+  fixer prompt: 1304-1435
   (If you edit this spec, these numbers go stale - run python3 dev/linemap.py.)
 
 HOW THE HUMAN RUNS IT
@@ -141,9 +141,11 @@ HOW THE GAME WORKS (read before any phase)
   - the paint is all that differs - and whether the tutorial is played.
   Then eleven battles in order: battle 0 is the tutorial, Hook's Farm
   (it scores nothing); battles 1-9 are three acts of three; battle 10 is
-  the finale. A story knot plays before each battle (the skeleton plays
-  them); each scene_ knot sends an OUTCOME that changes the next battle
-  (phase 19). Only points carry over: the campaign score is the sum of
+  the finale. Two story knots play before each battle 1-10 (the skeleton
+  plays them): a foe_ knot, whose OUTCOME is a bot style for their side,
+  then a scene_ knot, whose OUTCOME changes the battle in another way
+  (both through applyOutcome, phase 19; the skeleton applies the foe_
+  knot's by setting row.knot to row.foe for the call). Only points carry over: the campaign score is the sum of
   your points in battles 1-10.
   THE BOARD: a grid of squares, W columns by H rows. In the code a square
   is (x, y): x = 0 is the left column, y = 0 the TOP row. The top row is
@@ -238,7 +240,7 @@ API - everything the phase blocks can use (all already exist)
            row      its row of the level table, with the story's outcome
                     applied: {lv, part, type, country, first, curtain,
                     youRows, themRows, rounds, drawLine, bot, rear,
-                    defender, knot, target, scout, horseGun, extra,
+                    defender, foe, knot, target, scout, horseGun, extra,
                     pieces}. type "finish", "rear" or "defend"; first
                     "you" or "them"; youRows / themRows each side's set-up
                     rows; rounds the round limit; drawLine; bot the style
@@ -342,7 +344,8 @@ API - everything the phase blocks can use (all already exist)
   PIECES      the pieces by letter (above).
   LEVELS      the eleven battle rows; ARMIES, one line per unit:
               {lv, side, arm, at, goal} (at and goal are square names).
-  EFFECTS     each scene_ knot's outcomes, each a list of steps:
+  EFFECTS     each scene_ and foe_ knot's outcomes (a foe_ knot's are
+              the bot styles, each [["style", <it>]]), each a list of steps:
               ["first", "you"], ["scout"], ["rear", "west"],
               ["piece", "wall"], ["horseGun"], ["setupRows", 3],
               ["unit", "cav"], ["rounds", 2], ["style", "cautious"].

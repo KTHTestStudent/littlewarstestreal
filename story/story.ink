@@ -13,8 +13,9 @@
 // ink won't compile a knot with nothing in it - replace it when you write
 // the knot.
 //
-// knotcheck FAILS until the scene_ knots are written: its FAIL list
-// ("ends without calling sceneDone") is the list of knots still to write.
+// knotcheck FAILS until the foe_ and scene_ knots are written: its FAIL
+// list ("ends without calling foeDone / sceneDone") is the list of knots
+// still to write.
 // It also WARNS that intro, tutorial and ending send no outcome - that is
 // expected and breaks nothing. The game plays the whole time: a knot with
 // nothing to show is skipped, the game uses that knot's DEFAULT outcome
@@ -27,6 +28,11 @@
 //   ... set it on the paths through the knot ...
 //   = finish
 //   ~ sceneDone("scene_4", scene_4_outcome)
+//   -> DONE
+//   A foe_ knot does the same with foeDone:
+//   VAR foe_4_outcome = "steady"              above the knot
+//   = finish
+//   ~ foeDone("foe_4", foe_4_outcome)
 //   -> DONE
 //   Send exactly ONE outcome, once, from the finish stitch. A second one
 //   is refused: the first stands, and the red banner says so. A last
@@ -48,18 +54,34 @@
 //     tutorial    (no outcome) before battle 0, Hook's Farm - only when
 //                 the tutorial is on; Hook's Farm scores no campaign
 //                 points, so playing it or not leaves the same campaign
-//     scene_1     before battle 1     ... scene_9 before battle 9, each
-//                 after the battle before it and its result screen, so
-//                 it can look back (last_result) and ahead
-//     scene_10    before battle 10, the finale
+//     foe_1, then scene_1   before battle 1 ... foe_9, scene_9 before
+//                 battle 9, each pair after the battle before it and its
+//                 result screen, so it can look back (last_result) and
+//                 ahead. Two knots before each battle, one outcome each
+//                 (the author's call, 2026-10-21).
+//     foe_10, then scene_10   before battle 10, the finale
 //     ending      (no outcome) after the finale; then the end screen
 //                 shows the campaign score. There is one ending: the
 //                 score never picks a knot.
 //
-//   STORY -> GAME: each scene_ knot's outcome changes the battle AFTER it
-//   (EFFECTS in data.js). The two outcomes of a knot give different kinds
-//   of help, about even (a sidegrade, GDD 5.2) - the bot runs keep each
-//   pair even, and may change a number in them before the design freeze.
+//   STORY -> GAME: each foe_ knot picks how their side plays the battle
+//   AFTER it; each scene_ knot's outcome changes that battle too
+//   (EFFECTS in data.js).
+//     foe_1 ... foe_10   their bot for battles 1-10, one of:
+//               "steady"    keeps together, aims at the biggest unit
+//               "cautious"  holds cover and hills, aims at guns first
+//               "bold"      rides at your back line and guns, charges
+//                           at even numbers
+//               "clever"    keeps its guns supported, counts a melee
+//                           before it charges
+//               DEFAULT (while the knot is not written): the battle's
+//               own bot - foe_1-4 steady, foe_5 bold, foe_6 cautious,
+//               foe_7 and foe_8 clever, foe_9 cautious, foe_10 clever.
+//               This is a choice of how hard, not a sidegrade: the four
+//               differ a lot.
+//   The two outcomes of a scene_ knot give different kinds of help,
+//   about even (a sidegrade, GDD 5.2) - the bot runs keep each pair
+//   even, and may change a number in them before the design freeze.
 //   * = the DEFAULT, used while the knot is not written.
 //     scene_1   battle 1, The Two Hills, Fight to the Finish
 //               "scout"         you see their set-up while you arrange
@@ -93,8 +115,9 @@
 //               "wood"          a wood stands in the middle
 //     scene_9   battle 9, The Two Fords, Blow at the Rear (the whole
 //               line)
-//               "foe_cautious"  their side plays cautious        DEFAULT
-//               "foe_bold"      their side plays bold
+//               "scout"         you see their set-up while you arrange
+//                               yours                            DEFAULT
+//               "forward"       your set-up zone is your back 3 rows
 //     scene_10  battle 10, the finale, The Whole Floor, Fight to the
 //               Finish
 //               "extra_troop"   you have a cavalry troop more    DEFAULT
@@ -144,29 +167,49 @@ VAR wins = 0
 VAR draws = 0
 VAR losses = 0
 
-// The hook: the scene_ knots SEND their outcome to the game with it.
+// The hooks: the scene_ knots SEND their outcome to the game with
+// sceneDone, the foe_ knots with foeDone.
 EXTERNAL sceneDone(name, outcome)
+EXTERNAL foeDone(name, outcome)
 
 // Inky's preview starts here. The game never plays this part.
 -> preview
 === preview ===
 + [intro] -> intro
 + [tutorial] -> tutorial
-+ [scene_1] -> scene_1
++ [foe_1] -> foe_1
 + [More...] -> preview_2
 = preview_2
++ [scene_1] -> scene_1
++ [foe_2] -> foe_2
 + [scene_2] -> scene_2
-+ [scene_3] -> scene_3
-+ [scene_4] -> scene_4
 + [More...] -> preview_3
 = preview_3
-+ [scene_5] -> scene_5
-+ [scene_6] -> scene_6
-+ [scene_7] -> scene_7
++ [foe_3] -> foe_3
++ [scene_3] -> scene_3
++ [foe_4] -> foe_4
 + [More...] -> preview_4
 = preview_4
++ [scene_4] -> scene_4
++ [foe_5] -> foe_5
++ [scene_5] -> scene_5
++ [More...] -> preview_5
+= preview_5
++ [foe_6] -> foe_6
++ [scene_6] -> scene_6
++ [foe_7] -> foe_7
++ [More...] -> preview_6
+= preview_6
++ [scene_7] -> scene_7
++ [foe_8] -> foe_8
 + [scene_8] -> scene_8
++ [More...] -> preview_7
+= preview_7
++ [foe_9] -> foe_9
 + [scene_9] -> scene_9
++ [foe_10] -> foe_10
++ [More...] -> preview_8
+= preview_8
 + [scene_10] -> scene_10
 + [ending] -> ending
 
@@ -185,6 +228,14 @@ EXTERNAL sceneDone(name, outcome)
 -> DONE
 
 
+=== foe_1 ===
+// SUMMARY: just before scene_1, for battle 1: how their side plays it.
+// POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
+//   (the contract above says how each plays). DEFAULT: "steady" (the
+//   battle's own bot).
+-> DONE
+
+
 === scene_1 ===
 // SUMMARY: before battle 1, The Two Hills - Act I's Fight to the Finish
 // (12 x 10, the first curtain battle). Comes after Hook's Farm's result,
@@ -193,6 +244,14 @@ EXTERNAL sceneDone(name, outcome)
 //   "scout"       game: you see their set-up while you arrange yours
 //                                                            DEFAULT
 //   "move_first"  game: you move first
+-> DONE
+
+
+=== foe_2 ===
+// SUMMARY: just before scene_2, for battle 2: how their side plays it.
+// POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
+//   (the contract above says how each plays). DEFAULT: "steady" (the
+//   battle's own bot).
 -> DONE
 
 
@@ -207,6 +266,14 @@ EXTERNAL sceneDone(name, outcome)
 -> DONE
 
 
+=== foe_3 ===
+// SUMMARY: just before scene_3, for battle 3: how their side plays it.
+// POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
+//   (the contract above says how each plays). DEFAULT: "steady" (the
+//   battle's own bot).
+-> DONE
+
+
 === scene_3 ===
 // SUMMARY: after battle 2, before battle 3, The Cottages - Act I's
 // Defensive Game (12 x 10). You defend, with two-thirds of their force.
@@ -217,12 +284,28 @@ EXTERNAL sceneDone(name, outcome)
 -> DONE
 
 
+=== foe_4 ===
+// SUMMARY: just before scene_4, for battle 4: how their side plays it.
+// POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
+//   (the contract above says how each plays). DEFAULT: "steady" (the
+//   battle's own bot).
+-> DONE
+
+
 === scene_4 ===
 // SUMMARY: after battle 3, before battle 4, The Chalk Brook - Act II's
 // Fight to the Finish (14 x 10): a brook across the middle.
 // POTENTIAL OUTCOMES (sceneDone):
 //   "bridge"      game: a second bridge over the brook       DEFAULT
 //   "horse_gun"   game: your gun section is a horse gun (moves 4)
+-> DONE
+
+
+=== foe_5 ===
+// SUMMARY: just before scene_5, for battle 5: how their side plays it.
+// POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
+//   (the contract above says how each plays). DEFAULT: "bold" (the
+//   battle's own bot).
 -> DONE
 
 
@@ -236,12 +319,28 @@ EXTERNAL sceneDone(name, outcome)
 -> DONE
 
 
+=== foe_6 ===
+// SUMMARY: just before scene_6, for battle 6: how their side plays it.
+// POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
+//   (the contract above says how each plays). DEFAULT: "cautious" (the
+//   battle's own bot).
+-> DONE
+
+
 === scene_6 ===
 // SUMMARY: after battle 5, before battle 6, The Mill Hill - Act II's
 // Defensive Game (14 x 10). You attack their hill.
 // POTENTIAL OUTCOMES (sceneDone):
 //   "more_rounds"  game: the round limit is 2 more           DEFAULT
 //   "horse_gun"    game: your gun section is a horse gun
+-> DONE
+
+
+=== foe_7 ===
+// SUMMARY: just before scene_7, for battle 7: how their side plays it.
+// POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
+//   (the contract above says how each plays). DEFAULT: "clever" (the
+//   battle's own bot).
 -> DONE
 
 
@@ -254,6 +353,14 @@ EXTERNAL sceneDone(name, outcome)
 -> DONE
 
 
+=== foe_8 ===
+// SUMMARY: just before scene_8, for battle 8: how their side plays it.
+// POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
+//   (the contract above says how each plays). DEFAULT: "clever" (the
+//   battle's own bot).
+-> DONE
+
+
 === scene_8 ===
 // SUMMARY: after battle 7, before battle 8, The Village - Act III's
 // Defensive Game (16 x 12). You attack.
@@ -263,12 +370,29 @@ EXTERNAL sceneDone(name, outcome)
 -> DONE
 
 
+=== foe_9 ===
+// SUMMARY: just before scene_9, for battle 9: how their side plays it.
+// POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
+//   (the contract above says how each plays). DEFAULT: "cautious" (the
+//   battle's own bot).
+-> DONE
+
+
 === scene_9 ===
 // SUMMARY: after battle 8, before battle 9, The Two Fords - Act III's
 // Blow at the Rear (16 x 12), the whole line.
 // POTENTIAL OUTCOMES (sceneDone):
-//   "foe_cautious"  game: their side plays cautious          DEFAULT
-//   "foe_bold"      game: their side plays bold
+//   "scout"       game: you see their set-up while you arrange yours
+//                                                            DEFAULT
+//   "forward"     game: your set-up zone is your back 3 rows
+-> DONE
+
+
+=== foe_10 ===
+// SUMMARY: just before scene_10, for battle 10: how their side plays it.
+// POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
+//   (the contract above says how each plays). DEFAULT: "clever" (the
+//   battle's own bot).
 -> DONE
 
 

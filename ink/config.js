@@ -4,15 +4,16 @@
 // (and story/CONTRACT.txt, the writer's one-page copy).
 var INK_CONFIG = {
   // Game functions the story may call (ink EXTERNAL). The game defines it.
-  hooks: ["sceneDone"],
+  hooks: ["sceneDone", "foeDone"],
 
   // The hooks that only ASK and change nothing: none.
   asks: [],
 
   // The ONE-OUTCOME rule: every scene_ knot sends one outcome with
-  // sceneDone. intro, tutorial and ending have no prefix here: they send
-  // nothing (knotcheck warns about each one - that is expected).
-  outcomes: { scene_: "sceneDone" },
+  // sceneDone, every foe_ knot one with foeDone (a battle has a knot of
+  // each, foe_ first). intro, tutorial and ending have no prefix here:
+  // they send nothing (knotcheck warns about each one - that is expected).
+  outcomes: { scene_: "sceneDone", foe_: "foeDone" },
 
   // The outcome values the game handles, knot by knot. knotcheck FAILS if
   // the story can send a value that isn't here. What each one does: the
@@ -26,13 +27,24 @@ var INK_CONFIG = {
     scene_6: ["more_rounds", "horse_gun"],
     scene_7: ["head_start", "extra_squad"],
     scene_8: ["more_rounds", "wood"],
-    scene_9: ["foe_cautious", "foe_bold"],
-    scene_10: ["extra_troop", "extra_gun"]
+    scene_9: ["scout", "forward"],
+    scene_10: ["extra_troop", "extra_gun"],
+    foe_1: ["steady", "cautious", "bold", "clever"],
+    foe_2: ["steady", "cautious", "bold", "clever"],
+    foe_3: ["steady", "cautious", "bold", "clever"],
+    foe_4: ["steady", "cautious", "bold", "clever"],
+    foe_5: ["steady", "cautious", "bold", "clever"],
+    foe_6: ["steady", "cautious", "bold", "clever"],
+    foe_7: ["steady", "cautious", "bold", "clever"],
+    foe_8: ["steady", "cautious", "bold", "clever"],
+    foe_9: ["steady", "cautious", "bold", "clever"],
+    foe_10: ["steady", "cautious", "bold", "clever"]
   },
 
   // Knots the game starts by name, in the order they play.
-  knots: ["intro", "tutorial", "scene_1", "scene_2", "scene_3", "scene_4", "scene_5",
-          "scene_6", "scene_7", "scene_8", "scene_9", "scene_10", "ending"],
+  knots: ["intro", "tutorial", "foe_1", "scene_1", "foe_2", "scene_2", "foe_3", "scene_3",
+          "foe_4", "scene_4", "foe_5", "scene_5", "foe_6", "scene_6", "foe_7", "scene_7",
+          "foe_8", "scene_8", "foe_9", "scene_9", "foe_10", "scene_10", "ending"],
 
   // Story VARs the game sets just before every knot (GDD 7.5).
   vars: ["player_side", "played_tutorial", "battles_done", "last_result", "last_points",

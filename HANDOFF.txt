@@ -38,6 +38,12 @@ START HERE
   Qwen 3.6 and Qwen 3.8 and adds "Code hand-edits by Kenton Howard.";
   disclosure.jsonc's "known" explains e387a76 and 90af1ad; the check says
   OK (exit 0).
+  Two knots before each battle (decision 13, 2026-10-21, same session): a
+  foe_ knot picks their bot (steady, cautious, bold or clever), then the
+  scene_ knot sends its other outcome; scene_9 is now scout / forward.
+  Skeleton, data.js, story contract, GDD and spec text only - no PHASE
+  block changed, so no rebuild: 42/42 with the same replay lines, and on
+  reference all 25 phase builds OK and 64 of 64 planted bugs caught.
   NEXT 5b and 5c are done as runs, dev/outcomes.js and five questions
   (2026-10-21, Opus 5.5): the Defensive Game and the Blow at the Rear
   need rule decisions before data tuning makes sense.
@@ -294,7 +300,13 @@ NEXT
         10 extra_troop 84 / extra_gun 88  ok
       A unit more is worth 35-42 points against help of another kind
       (5, 7): a pair with one should have one on both sides, or the
-      other side's help made bigger.
+      other side's help made bigger. (scene_9's pair is now scout /
+      forward, decision 13: the bots set up from ARMIES, so neither
+      changes a bot run - 69 / 69 - and the same holds for scout on 1
+      and 3. Judging those needs playtests, or a set-up rule for the
+      newcomer bot.) outcomes.js also plays each foe_ knot's four styles
+      (decision 13), not judged: the spread is 31-69 points in most
+      battles (8: none - every style loses to the dash).
     d Next, once the author has answered the questions: an Opus 5.5
       session (high, for spec steps) writes any rule change he chose into
       the spec, the reference and a stub commit - then the runner and a
@@ -324,6 +336,10 @@ QUESTIONS FOR THE AUTHOR (NEXT 5b; his calls - answer in the next session)
      change (a unit may cross into contact at a ford or bridge after N
      rounds with no melee - spec and runner), or maps with more crossings
      (data)?
+  Q3b With the foe_ knots (decision 13) the player's story choices pick
+     how hard each battle is. Should the part's target (75 / 65 / 55 /
+     50) hold for the row's own bot - the default, as now - or for the
+     easiest or an average of the four?
   Q5 Outcome pairs: may the data session change what an outcome does
      (keeping its name, so the story doesn't change) - e.g. extra_troop
      against forward on 5 - or would he rather rename and rewrite pairs?
@@ -402,6 +418,13 @@ THE AUTHOR'S DECISIONS (2026-10-20)
     (His two points; Claude placed the hand-edits sentence after the model
     list. He may reword or reorder it.) A later hand fix to a block goes
     into disclosure.jsonc's "known" with its hash.
+  13 (2026-10-21) Two knots before each battle 1-10: foe_N (hook foeDone)
+    picks their bot from all four styles - a choice of how hard, not a
+    sidegrade - then scene_N (sceneDone) sends the other outcome, one
+    outcome per knot (Knotwork 3.8-alpha's rule; he picked two knots
+    over one call carrying two values or changing the kit). A foe_
+    knot's default is the row's bot. scene_9's foe_cautious / foe_bold
+    became scout / forward (Claude's pick from the existing effects).
 
 THE FILES
   CLAUDE.md          rules for Claude sessions (line 1 is the runner's
@@ -575,3 +598,12 @@ HISTORY
               written (1,000 seeds: five WIDE pairs). No data.js change:
               the Defensive Game and Blow at the Rear need the author's
               rule calls first (QUESTIONS FOR THE AUTHOR).
+  2026-10-21  Decision 13 (same session): foe_1-10 knots and foeDone in
+              data.js (LEVELS foe, EFFECTS foe_N), game.html's skeleton
+              (newBattle's foe, talkBefore, foeFor, foeDone, the tables'
+              checks, the row probe, scene_9's replay outcome), story.ink
+              (empty foe_ knots), ink/story.js (inkc.sh), ink/config.js,
+              CONTRACT.txt, GDD 5.2/6.1/7/10, the spec's API text,
+              hand-edits.txt, outcomes.js; reference game in step (pushed
+              to reference). knotcheck: the FAIL list now names the foe_
+              knots too.

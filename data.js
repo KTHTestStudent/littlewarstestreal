@@ -336,24 +336,29 @@ const SWITCHES = [
 //   rounds    the round limit
 //   drawLine  finish and rear: both sides under this many figures at the
 //             end of a turn is a draw (0 in a Defensive Game)
-//   bot       their bot's style (BOT_STYLES)
+//   bot       their bot's style (BOT_STYLES), unless the foe knot picks
+//             another
 //   rear      rear: the half of a back line a raid must reach: "west",
 //             "east" or "all" ("" in the other types)
 //   defender  defend: "you" or "them" ("" in the other types)
-//   knot      the story knot that plays before it (story/story.ink)
+//   foe       the story knot that picks their bot for it, one of
+//             BOT_STYLES (EFFECTS below); it plays first, then knot. ""
+//             for the tutorial. Until it is written, their bot is bot.
+//   knot      the story knot that plays before it, after foe
+//             (story/story.ink)
 //   target    your side's win rate the bot runs aim at, percent (GDD 5.2)
 const LEVELS = [
-  { lv: 0, part: "tutorial", type: "finish", country: "hooks", first: "them", curtain: false, youRows: 2, themRows: 2, rounds: 8, drawLine: 4, bot: "gentle", rear: "", defender: "", knot: "tutorial", target: 90 },
-  { lv: 1, part: "act1", type: "finish", country: "twohills", first: "them", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "steady", rear: "", defender: "", knot: "scene_1", target: 75 },
-  { lv: 2, part: "act1", type: "rear", country: "longwall", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "steady", rear: "west", defender: "", knot: "scene_2", target: 75 },
-  { lv: 3, part: "act1", type: "defend", country: "cottages", first: "them", curtain: true, youRows: 3, themRows: 2, rounds: 10, drawLine: 0, bot: "steady", rear: "", defender: "you", knot: "scene_3", target: 75 },
-  { lv: 4, part: "act2", type: "finish", country: "chalkbrook", first: "them", curtain: true, youRows: 2, themRows: 2, rounds: 11, drawLine: 4, bot: "steady", rear: "", defender: "", knot: "scene_4", target: 65 },
-  { lv: 5, part: "act2", type: "rear", country: "orchard", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "bold", rear: "west", defender: "", knot: "scene_5", target: 65 },
-  { lv: 6, part: "act2", type: "defend", country: "millhill", first: "you", curtain: true, youRows: 2, themRows: 3, rounds: 10, drawLine: 0, bot: "cautious", rear: "", defender: "them", knot: "scene_6", target: 65 },
-  { lv: 7, part: "act3", type: "finish", country: "ridge", first: "them", curtain: true, youRows: 2, themRows: 2, rounds: 12, drawLine: 5, bot: "clever", rear: "", defender: "", knot: "scene_7", target: 55 },
-  { lv: 8, part: "act3", type: "defend", country: "village", first: "you", curtain: true, youRows: 2, themRows: 4, rounds: 12, drawLine: 0, bot: "clever", rear: "", defender: "them", knot: "scene_8", target: 55 },
-  { lv: 9, part: "act3", type: "rear", country: "twofords", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 12, drawLine: 5, bot: "cautious", rear: "all", defender: "", knot: "scene_9", target: 55 },
-  { lv: 10, part: "finale", type: "finish", country: "wholefloor", first: "them", curtain: true, youRows: 3, themRows: 3, rounds: 18, drawLine: 7, bot: "clever", rear: "", defender: "", knot: "scene_10", target: 50 }
+  { lv: 0, part: "tutorial", type: "finish", country: "hooks", first: "them", curtain: false, youRows: 2, themRows: 2, rounds: 8, drawLine: 4, bot: "gentle", rear: "", defender: "", foe: "", knot: "tutorial", target: 90 },
+  { lv: 1, part: "act1", type: "finish", country: "twohills", first: "them", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "steady", rear: "", defender: "", foe: "foe_1", knot: "scene_1", target: 75 },
+  { lv: 2, part: "act1", type: "rear", country: "longwall", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "steady", rear: "west", defender: "", foe: "foe_2", knot: "scene_2", target: 75 },
+  { lv: 3, part: "act1", type: "defend", country: "cottages", first: "them", curtain: true, youRows: 3, themRows: 2, rounds: 10, drawLine: 0, bot: "steady", rear: "", defender: "you", foe: "foe_3", knot: "scene_3", target: 75 },
+  { lv: 4, part: "act2", type: "finish", country: "chalkbrook", first: "them", curtain: true, youRows: 2, themRows: 2, rounds: 11, drawLine: 4, bot: "steady", rear: "", defender: "", foe: "foe_4", knot: "scene_4", target: 65 },
+  { lv: 5, part: "act2", type: "rear", country: "orchard", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "bold", rear: "west", defender: "", foe: "foe_5", knot: "scene_5", target: 65 },
+  { lv: 6, part: "act2", type: "defend", country: "millhill", first: "you", curtain: true, youRows: 2, themRows: 3, rounds: 10, drawLine: 0, bot: "cautious", rear: "", defender: "them", foe: "foe_6", knot: "scene_6", target: 65 },
+  { lv: 7, part: "act3", type: "finish", country: "ridge", first: "them", curtain: true, youRows: 2, themRows: 2, rounds: 12, drawLine: 5, bot: "clever", rear: "", defender: "", foe: "foe_7", knot: "scene_7", target: 55 },
+  { lv: 8, part: "act3", type: "defend", country: "village", first: "you", curtain: true, youRows: 2, themRows: 4, rounds: 12, drawLine: 0, bot: "clever", rear: "", defender: "them", foe: "foe_8", knot: "scene_8", target: 55 },
+  { lv: 9, part: "act3", type: "rear", country: "twofords", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 12, drawLine: 5, bot: "cautious", rear: "all", defender: "", foe: "foe_9", knot: "scene_9", target: 55 },
+  { lv: 10, part: "finale", type: "finish", country: "wholefloor", first: "them", curtain: true, youRows: 3, themRows: 3, rounds: 18, drawLine: 7, bot: "clever", rear: "", defender: "", foe: "foe_10", knot: "scene_10", target: 50 }
 ];
 
 // ---- THE ARMIES: each battle's units and their default set-up ----
@@ -512,8 +517,12 @@ const ARMIES = [
 //   ["style", "cautious"]   their bot plays that style (BOT_STYLES)
 // The outcome names are the story's (story/story.ink, ink/config.js,
 // story/CONTRACT.txt): change a name in all four places. intro, tutorial
-// and ending send no outcome. A pair should stay a sidegrade: different
-// help, about the same win rate (GDD 5.2) - the bot runs check it.
+// and ending send no outcome. A scene_ pair should stay a sidegrade:
+// different help, about the same win rate (GDD 5.2) - the bot runs check
+// it. The foe_ knots (one before each scene_ knot) pick their bot for
+// the battle, from all four styles (the author's call, 2026-10-21: a
+// choice of how hard, not a sidegrade); while one is not written, their
+// bot is the row's (LEVELS bot), so foe_ knots have no DEFAULTS line.
 const EFFECTS = {
   scene_1: { scout: [["scout"]], move_first: [["first", "you"]] },
   scene_2: { rear_west: [["rear", "west"]], rear_east: [["rear", "east"]] },
@@ -523,14 +532,25 @@ const EFFECTS = {
   scene_6: { more_rounds: [["rounds", 2]], horse_gun: [["horseGun"]] },
   scene_7: { head_start: [["first", "you"], ["scout"]], extra_squad: [["unit", "inf"]] },
   scene_8: { more_rounds: [["rounds", 2]], wood: [["piece", "wood"]] },
-  scene_9: { foe_cautious: [["style", "cautious"]], foe_bold: [["style", "bold"]] },
-  scene_10: { extra_troop: [["unit", "cav"]], extra_gun: [["unit", "gun"]] }
+  scene_9: { scout: [["scout"]], forward: [["setupRows", 3]] },
+  scene_10: { extra_troop: [["unit", "cav"]], extra_gun: [["unit", "gun"]] },
+  foe_1: { steady: [["style", "steady"]], cautious: [["style", "cautious"]], bold: [["style", "bold"]], clever: [["style", "clever"]] },
+  foe_2: { steady: [["style", "steady"]], cautious: [["style", "cautious"]], bold: [["style", "bold"]], clever: [["style", "clever"]] },
+  foe_3: { steady: [["style", "steady"]], cautious: [["style", "cautious"]], bold: [["style", "bold"]], clever: [["style", "clever"]] },
+  foe_4: { steady: [["style", "steady"]], cautious: [["style", "cautious"]], bold: [["style", "bold"]], clever: [["style", "clever"]] },
+  foe_5: { steady: [["style", "steady"]], cautious: [["style", "cautious"]], bold: [["style", "bold"]], clever: [["style", "clever"]] },
+  foe_6: { steady: [["style", "steady"]], cautious: [["style", "cautious"]], bold: [["style", "bold"]], clever: [["style", "clever"]] },
+  foe_7: { steady: [["style", "steady"]], cautious: [["style", "cautious"]], bold: [["style", "bold"]], clever: [["style", "clever"]] },
+  foe_8: { steady: [["style", "steady"]], cautious: [["style", "cautious"]], bold: [["style", "bold"]], clever: [["style", "clever"]] },
+  foe_9: { steady: [["style", "steady"]], cautious: [["style", "cautious"]], bold: [["style", "bold"]], clever: [["style", "clever"]] },
+  foe_10: { steady: [["style", "steady"]], cautious: [["style", "cautious"]], bold: [["style", "bold"]], clever: [["style", "clever"]] }
 };
-// What the game uses when a knot is not written yet (it shows nothing) or
-// ends without sending its outcome: one of that knot's outcomes above.
+// What the game uses when a scene_ knot is not written yet (it shows
+// nothing) or ends without sending its outcome: one of that knot's
+// outcomes above. (A foe_ knot's default is the row's bot, LEVELS.)
 const DEFAULTS = {
   scene_1: "scout", scene_2: "rear_west", scene_3: "scout", scene_4: "bridge", scene_5: "forward",
-  scene_6: "more_rounds", scene_7: "head_start", scene_8: "more_rounds", scene_9: "foe_cautious", scene_10: "extra_troop"
+  scene_6: "more_rounds", scene_7: "head_start", scene_8: "more_rounds", scene_9: "scout", scene_10: "extra_troop"
 };
 
 // ---- THE BOTS (GDD 6.4) ----

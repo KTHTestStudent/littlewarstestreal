@@ -9,10 +9,13 @@
 // as half (the GDD 5.2 target beside it), the median rounds against the
 // limit and the share that reached it, and how battles ended (as
 // dev/bots.js). The DEFAULT outcome is marked *. Under each battle: the gap
-// between its outcomes' scores, "ok" when it is within GDD 5.2's 5 points
-// (a sidegrade), "WIDE" when not. 1,000 seeds give a score about 1.5
+// between its scene_ outcomes' scores, "ok" when it is within GDD 5.2's 5
+// points (a sidegrade), "WIDE" when not. Then each foe_ knot's bot styles
+// in that battle (with the scene_ knot's DEFAULT), the row's own bot
+// marked *, and their spread - shown, not judged: the foe_ knots choose
+// how hard (the author's call, 2026-10-21), so they are no sidegrade. 1,000 seeds give a score about 1.5
 // points either way, so a gap near 5 needs more seeds before it is called.
-// Needs every PHASE block built. Exit code 0 when every gap is ok.
+// Needs every PHASE block built. Exit code 0 when every scene_ gap is ok.
 const path = require("path");
 const { pathToFileURL } = require("url");
 const { chromium } = require("playwright");
@@ -33,11 +36,17 @@ const { chromium } = require("playwright");
       if (a.only && a.only.indexOf(lv) < 0) continue;
       const k = LEVELS[lv].knot;
       if (!EFFECTS[k]) continue; // the tutorial's knot sends nothing
-      for (const outcome of Object.keys(EFFECTS[k])) {
-        const r = { lv: lv, knot: k, outcome: outcome, dflt: DEFAULTS[k] === outcome, target: LEVELS[lv].target, won: 0, drawn: 0, lost: 0, why: {}, rounds: [], limit: 0, rows: 0, stuck: 0 };
+      const f = LEVELS[lv].foe;
+      const plays = Object.keys(EFFECTS[k]).map(function (o) { return { knot: k, outcome: o, foe: "", dflt: DEFAULTS[k] === o }; });
+      if (f && EFFECTS[f]) {
+        for (const st of Object.keys(EFFECTS[f])) plays.push({ knot: f, outcome: DEFAULTS[k], foe: st, dflt: st === LEVELS[lv].bot });
+      }
+      for (const pl of plays) {
+        const outcome = pl.foe || pl.outcome;
+        const r = { lv: lv, knot: pl.knot, outcome: outcome, dflt: pl.dflt, target: LEVELS[lv].target, won: 0, drawn: 0, lost: 0, why: {}, rounds: [], limit: 0, rows: 0, stuck: 0 };
         for (let s = 1; s <= a.runs; s++) {
           rseed = 1000 * lv + s;
-          newBattle(lv, outcome);
+          newBattle(lv, pl.outcome, pl.foe);
           r.rows = B.row.rounds;
           autoBattle();
           if (!B.result) {
@@ -77,12 +86,16 @@ const { chromium } = require("playwright");
       "   " + String(med).padStart(6) + "/" + String(r.rows).padEnd(5) + "   " + String(pct(r.limit, n)).padStart(6) + "%" +
       "  " + why + (r.stuck ? "  STUCK " + r.stuck : ""));
     const next = rows[i + 1];
-    if (!next || next.lv !== r.lv) {
-      const mine = rows.filter(x => x.lv === r.lv).map(score);
+    if (!next || next.lv !== r.lv || next.knot !== r.knot) {
+      const mine = rows.filter(x => x.lv === r.lv && x.knot === r.knot).map(score);
       const gap = Math.max.apply(null, mine) - Math.min.apply(null, mine);
-      const ok = gap <= 5;
-      if (!ok) wide += 1;
-      console.log("        gap " + gap.toFixed(1) + " points: " + (ok ? "ok" : "WIDE (GDD 5.2: within about 5)"));
+      if (r.knot.indexOf("foe_") === 0) {
+        console.log("        their bot's spread " + gap.toFixed(1) + " points (a choice of how hard, not judged)");
+      } else {
+        const ok = gap <= 5;
+        if (!ok) wide += 1;
+        console.log("        gap " + gap.toFixed(1) + " points: " + (ok ? "ok" : "WIDE (GDD 5.2: within about 5)"));
+      }
     }
   }
   if (errs.length) console.log(errs.join("\n"));
