@@ -827,18 +827,52 @@ PHASE_OK[12] = true;
 </script>
 <script>
 // ==== PHASE 13 START ====
-// STUBS for now - PHASE 13 fills them in.
 // Fighting: every melee at once, and empty guns taken.
 
 // RETURNS nothing. Fights every melee on the board for the side whose turn
 // it is: all are judged on the board as it stands, then fought in order.
 function fightMelees() {
+  var ms = findMelees();
+  var rs = [];
+  for (var i = 0; i < ms.length; i++) rs.push(meleeOutcome(ms[i]));
+  var sides = [B.side, other(B.side)];
+  for (i = 0; i < ms.length; i++) {
+    var taken = {};
+    for (var j = 0; j < sides.length; j++) {
+      var s = sides[j];
+      var list = lossOrder(ms[i], s);
+      taken[s] = takeFigures(list, rs[i][s].taken);
+      B.T[s].fallen += takeFigures(list, rs[i][s].fall).length;
+    }
+    say(words(LOG_WORDS.melee, {a: rs[i].you.fall + rs[i].you.taken, b: rs[i].them.fall + rs[i].them.taken}));
+    for (j = 0; j < sides.length; j++) {
+      s = sides[j];
+      if (taken[s].length > 0) {
+        say(words(LOG_WORDS.taken, {n: taken[s].length}));
+        makeEscorts(ms[i], other(s), taken[s]);
+      }
+    }
+  }
 }
 
 // RETURNS nothing. At the end of side's turn, side takes each empty gun of
 // the other side that has no figure of its own side next to it and a unit
 // of side (not an escort) with RULES.crew or more figures next to it.
 function takeGuns(side) {
+  for (var i = 0; i < B.units.length; i++) {
+    var g = B.units[i];
+    if (!isGun(g) || g.n > 0 || g.side === side) continue;
+    var theirs = false;
+    var ours = false;
+    for (var j = 0; j < B.units.length; j++) {
+      var v = B.units[j];
+      if (v.n > 0 && dist(v.x, v.y, g.x, g.y) === 1) {
+        if (v.side === g.side) theirs = true;
+        else if (v.arm !== "esc" && v.n >= RULES.crew) ours = true;
+      }
+    }
+    if (!theirs && ours) { g.side = side; say(words(LOG_WORDS.gunTaken, {name: g.name})); }
+  }
 }
 PHASE_OK[13] = true;
 // ==== PHASE 13 END ====
