@@ -782,24 +782,45 @@ PHASE_OK[11] = true;
 </script>
 <script>
 // ==== PHASE 12 START ====
-// STUBS for now - PHASE 12 fills them in.
 // Escorts: which unit gives the escort, and making the escorts.
 
 // RETURNS true if unit a should give an escort before unit b: not a gun
 // before a gun, then more figures, then infantry before anything else.
 function betterEscort(a, b) {
-  return false;
+  if (isGun(a) !== isGun(b)) return !isGun(a);
+  if (a.n !== b.n) return a.n > b.n;
+  return a.arm === "inf" && b.arm !== "inf";
 }
 
 // RETURNS the unit of side in melee m that gives a figure to be an escort,
 // or null if it has none.
 function escortFrom(m, side) {
-  return null;
+  var best = null;
+  for (var i = 0; i < m.length; i++) {
+    var u = m[i];
+    if (u.side !== side || u.n === 0 || u.arm === "esc") continue;
+    if (best === null || betterEscort(u, best)) best = u;
+  }
+  return best;
 }
 
 // RETURNS nothing. side takes the prisoners whose points are in vals, from
 // melee m: one escort for every RULES.perEscort of them.
 function makeEscorts(m, side, vals) {
+  for (var i = 0; i < vals.length; i += RULES.perEscort) {
+    var part = vals.slice(i, i + RULES.perEscort);
+    var pv = 0;
+    for (var j = 0; j < part.length; j++) pv += part[j];
+    var u = escortFrom(m, side);
+    var s = null;
+    if (u !== null) s = escortSquare(u, side);
+    if (s === null) { B.T[side].held += part.length; continue; }
+    u.n -= 1;
+    var e = addUnit(side, "esc", s[0], s[1], "");
+    e.of = u.arm;
+    e.pn = part.length;
+    e.pv = pv;
+  }
 }
 PHASE_OK[12] = true;
 // ==== PHASE 12 END ====
