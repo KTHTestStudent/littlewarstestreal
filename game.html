@@ -1043,18 +1043,41 @@ PHASE_OK[17] = true;
 </script>
 <script>
 // ==== PHASE 18 START ====
-// STUBS for now - PHASE 18 fills them in.
 // Points and the campaign: a battle's points, a battle recorded.
 
 // RETURNS side's points for the finished battle B (B.result is set).
 function battlePoints(side) {
-  return 0;
+  var w = B.result.winner;
+  var p = w === side ? RULES.win : (w === "draw" ? RULES.draw : 0);
+  var prisoners = B.T.you.held + B.T.them.held;
+  for (var i = 0; i < B.units.length; i++) {
+    var u = B.units[i];
+    if (u.off) continue;
+    if (u.arm === "esc") prisoners += u.pn;
+    if (u.side === side) {
+      p += u.n * figVal(u);
+      if (isGun(u)) p += RULES.gunPts;
+    }
+  }
+  p += B.T[side].gunsOff * RULES.gunPts + B.T[side].safe + B.T[side].freed;
+  return p + prisoners * RULES.prisonerPts;
 }
 
 // RETURNS your points in the finished battle B, after adding the battle
 // to the campaign CAMP.
 function recordBattle() {
-  return 0;
+  var pts = battlePoints("you");
+  var w = B.result.winner;
+  var res = w === "you" ? "won" : (w === "draw" ? "drawn" : "lost");
+  B.last = { result: res, points: pts };
+  if (B.lv > 0) {
+    CAMP.points += pts;
+    CAMP.done += 1;
+    if (res === "won") CAMP.wins += 1;
+    else if (res === "drawn") CAMP.draws += 1;
+    else CAMP.losses += 1;
+  }
+  return pts;
 }
 PHASE_OK[18] = true;
 // ==== PHASE 18 END ====
