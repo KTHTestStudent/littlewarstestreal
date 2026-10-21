@@ -359,25 +359,43 @@ function escortSquare(u, side) {
 </script>
 <script>
 // ==== PHASE 2 START ====
-// STUBS for now - PHASE 2 fills them in.
 // The armies: set-up zones, each side's units, their armed figures.
 
 // RETURNS true if the square (x, y) is in side's set-up zone: its back
 // B.row.youRows rows for "you", its back B.row.themRows rows for "them".
 function inZone(side, x, y) {
-  return false;
+  if (side === "you") return y >= B.H - B.row.youRows;
+  return y < B.row.themRows;
 }
 
 // RETURNS nothing. Makes side's units for the battle B.lv: its ARMIES
 // lines, in order, then (for "you" only) one unit for each arm in
 // B.row.extra.
 function makeArmy(side) {
+  var horse = side === "you" && B.row.horseGun;
+  for (var i = 0; i < ARMIES.length; i++) {
+    var a = ARMIES[i];
+    if (a.lv !== B.lv || a.side !== side) continue;
+    var arm = a.arm;
+    if (horse && arm === "gun") { arm = "hgun"; horse = false; }
+    var s = sq(a.at);
+    addUnit(side, arm, s[0], s[1], a.goal);
+  }
+  if (side !== "you") return;
+  for (var j = 0; j < B.row.extra.length; j++) {
+    var s2 = freeSquare(side);
+    if (s2 !== null) addUnit(side, B.row.extra[j], s2[0], s2[1], "");
+  }
 }
 
 // RETURNS side's armed figures on the field: the n of each of its units,
 // escorts left out.
 function armed(side) {
-  return 0;
+  var n = 0;
+  for (var v of B.units) {
+    if (v.side === side && v.arm !== "esc") n += v.n;
+  }
+  return n;
 }
 PHASE_OK[2] = true;
 // ==== PHASE 2 END ====
