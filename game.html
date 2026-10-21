@@ -556,31 +556,49 @@ PHASE_OK[6] = true;
 </script>
 <script>
 // ==== PHASE 7 START ====
-// STUBS for now - PHASE 7 fills them in.
 // Crews and support: guns in action, and isolation in a melee.
 
 // RETURNS the figures that count at gun g: its own crew (g.n), plus the
 // figures of every other unit of its side next to it (not escorts).
 function crewAt(g) {
-  return 0;
+  var n = g.n;
+  for (var vi = 0; vi < B.units.length; vi++) {
+    var v = B.units[vi];
+    if (v !== g && v.side === g.side && v.arm !== "esc" && dist(v.x, v.y, g.x, g.y) === 1) n += v.n;
+  }
+  return n;
 }
 
 // RETURNS true if gun g is in action: RULES.crew or more figures count at it.
 function inAction(g) {
-  return false;
+  return crewAt(g) >= RULES.crew;
 }
 
 // RETURNS the figures of side outside melee m (an array of units) in units
 // within RULES.isolation squares of one of side's units in m (escorts left
 // out).
 function supportCount(side, m) {
-  return 0;
+  var n = 0;
+  for (var vi = 0; vi < B.units.length; vi++) {
+    var v = B.units[vi];
+    if (v.side !== side || v.arm === "esc" || m.indexOf(v) >= 0) continue;
+    for (var mi = 0; mi < m.length; mi++) {
+      var w = m[mi];
+      if (w.side === side && dist(v.x, v.y, w.x, w.y) <= RULES.isolation) { n += v.n; break; }
+    }
+  }
+  return n;
 }
 
 // RETURNS true if side is isolated in melee m: its support is fewer than
 // half of its own figures in m.
 function isolated(side, m) {
-  return false;
+  var own = 0;
+  for (var i = 0; i < m.length; i++) {
+    var w = m[i];
+    if (w.side === side) own += w.n;
+  }
+  return supportCount(side, m) * 2 < own;
 }
 PHASE_OK[7] = true;
 // ==== PHASE 7 END ====
