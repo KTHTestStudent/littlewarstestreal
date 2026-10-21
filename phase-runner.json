@@ -1,0 +1,10 @@
+{
+  "spec": "specs/LITTLEWARS-SPEC.txt",
+  "phaseFile": "game.html",
+  "selftest": "node dev/selftest.js",
+  "disclosure": "node dev/disclosure.js",
+  "protectedBranches": ["working", "main", "working-claude", "reference"],
+  "builderMinutes": 10,
+  "fixerMinutes": 30,
+  "fixerTries": 2
+}

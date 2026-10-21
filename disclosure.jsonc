@@ -7,7 +7,8 @@
 // Set up 2026-10-20 with the author's wording, before any game code. The
 // design session (2026-10-20) set "code" and "story" to the layout in
 // GDD.md section 11. The Knotwork step (2026-10-20) added the author's
-// sentence naming Knotwork and inkjs (decision 9) and CREDITS.txt.
+// sentence naming Knotwork and inkjs (decision 9) and CREDITS.txt. The
+// skeleton (2026-10-20) added game.html to the files that hold the line.
 {
   // The code the line's model list covers (git pathspecs, forward slashes):
   // game.html, data.js, ink/ (this game's config.js) and dev/. Not counted:
@@ -34,9 +35,9 @@
     // after a version number.
     "prefix": "AI Disclosure: code by",
     // The files that hold the line, each with the model list on ONE line.
-    // The first is the one --apply makes the others match. The title screen
-    // (game.html) joins here with the skeleton.
-    "files": ["README.md", "CLAUDE.md", "CREDITS.txt"],
+    // The first is the one --apply makes the others match. game.html (the
+    // title screen's DISCLOSURE) joined with the skeleton, 2026-10-20.
+    "files": ["README.md", "CLAUDE.md", "CREDITS.txt", "game.html"],
     // Names --apply may add on its own: Claude models only. Any other name
     // goes in only on the author's word.
     "autoAdd": "^Claude ",
