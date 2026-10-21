@@ -39,7 +39,27 @@ START HERE
       edit uncommitted. If the edit is whole and gives 38/42 FAIL: charge
       pick botturn, the author commits it by hand as fixer try 2 (the
       fixer wrote 23); if not, a cloud triage (STARTER PROMPTS).
-    * Next on the laptop: phases 24-25 (prompts/plan.txt, from 24).
+    * Phase 24: the builder, first try (139f0fc), 6.2 minutes, DONE PHASE
+      24, but 39/42 FAIL: pick botturn replay (the plan says 40/42 FAIL:
+      botturn replay). Fixer try 1 ran its 60 minutes and was stopped. A
+      cloud session (Sonnet 5.5, 2026-10-21) put the pasted block into a
+      copy of the reference game.html: same 39/42 line, so the block is
+      wrong, not the spec or another phase. Cause: bestSquare has
+      "var reach = reach(u);" - the local hides the reach() function (var
+      hoisting), so the call throws and the self-test catches it. The
+      spec's step 2 names no variable. Fix, two lines in the PHASE 24
+      block: "var squares = reach(u);" and the loop over squares instead
+      of reach. Tested: the reference game with that block 42/42 PASS,
+      replay lines the reference's; stub + reference phases 2-23 + that
+      block gives 40/42 FAIL: botturn replay, the plan's line. The author
+      makes the edit by hand on the laptop (git checkout -- game.html
+      first), commits it as its own commit ("phase 24: reach renamed
+      (shadowed by a local), fixed by hand, <line>", no Local-Model line,
+      like phase 18's e387a76), then runs plan line 25 alone. The VS Code
+      autocomplete model was on during the phase 24 runs; it suggested
+      nothing (the author, 2026-10-21).
+    * Next on the laptop: the hand fix to 24, then phase 25
+      (prompts/plan.txt, line 25 only).
     * On working and working-claude: everything through NEXT 3 (the
       skeleton, stubs, spec, data, contract, GDD v0.5).
     * On reference (cloud sessions only - never on the laptop):
@@ -94,7 +114,8 @@ NEXT
           git branch -r               no origin/reference in the list
           node dev/selftest.js        SELF-TEST 1/42 FAIL: army extra armed
                                       (exit 1 - expected: all stubs)
-      3 Ollama running from the tray, Continue's autocomplete off, heavy
+      3 Ollama running from the tray, autocomplete off in VS Code (it was
+        on during phase 24, though it suggested nothing), heavy
         apps closed, the laptop kept awake (24 phases: about 2-3 hours).
       4 The throwaway branch, the check, the batch:
           git checkout -b build-phases
@@ -214,7 +235,7 @@ NEXT
       place of Claude's and run the self-test there (42/42 = the block
       is right in itself). Read closely the blocks committed by hand or
       written by the fixer - 13, 16, 18 (its hand fix included), 19, 20,
-      23 - and check each phase commit's Local-Model line names the model
+      23, 24 (its hand fix included) - and check each phase commit's Local-Model line names the model
       that wrote it. Known wrong subjects (leave the history; note them
       in HISTORY): 6fe7b73 (phase 18) carries phase 17's line; a55cac4
       (19) and 386d312 (20) carry the plan's lines, but record was
@@ -222,7 +243,7 @@ NEXT
     a2 The disclosure, at the end of the review (decision 11): run node
       dev/disclosure.js, show the author which models wrote which blocks
       (builder: every block it committed; fixer: 16 and 19, 23 if fixer
-      try 2 was committed, and any other fixer commit; the author: the one-word hand fix in 18), and
+      try 2 was committed, and any other fixer commit; the author: the one-word hand fix in 18 and the two-line hand fix in 24, both commits with no model named, which dev/disclosure.js lists), and
       ask for his words. Apply them in README.md, CLAUDE.md,
       CREDITS.txt (who wrote what) and game.html's title screen, then add
       the names or ids to disclosure.jsonc only as he says, and run the
