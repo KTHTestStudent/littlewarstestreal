@@ -854,7 +854,7 @@ tables a person can hand-edit.
 | `ink/dialogue.js`, `tools/` (knotcheck, viewer, pack) | unedited copies from Knotwork 3.8-alpha, brought in before the skeleton (section 9, step 3) | Knotwork (its own AI disclosure) |
 | `story/story.ink` | the story. The skeleton writes only the contract header and empty knots with their summaries | the author |
 | `story/CONTRACT.txt` | the contract on one page, for the writer | Claude |
-| `dev/` | headless checks: `selftest.js` (prints the SELF-TEST line), `bots.js` (the bot runs), `linemap.py` (the spec's LINE MAP), `inkc.sh` (compiles ink as Inky does), `README.txt`; `outcomes.js` and `playruns.js` when the bot runs and the story need them (Knotwork's `tools/knotcheck.js` runs headless as it is); and `disclosure.js`, the Auto-Disclosure-Tool's unedited copy | Claude |
+| `dev/` | headless checks: `selftest.js` (prints the SELF-TEST line), `bots.js` (the bot runs), `linemap.py` (the spec's LINE MAP), `inkc.sh` (compiles ink as Inky does), `README.txt`; `outcomes.js` (the outcome measure, 5.3) and `tryout.js` (bot runs with a table changed for one run); `playruns.js` when the story needs it (Knotwork's `tools/knotcheck.js` runs headless as it is); and `disclosure.js`, the Auto-Disclosure-Tool's unedited copy | Claude |
 | `specs/LITTLEWARS-SPEC.txt` | the builder's spec: steps per phase, EXPECTED self-test lines, CHECK walks, FIXER PROMPT, LINE MAP | Claude |
 | `CREDITS.txt` | who made what, the disclosure line, Knotwork's version and repository, inkjs's licence (from the Knotwork step on) | Claude (the author's words where he gives them) |
 | `hand-edits.txt` | the author's hand-edit guide to data.js (from the skeleton on) | Claude |

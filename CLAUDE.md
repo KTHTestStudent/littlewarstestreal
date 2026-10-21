@@ -100,8 +100,10 @@ out and why. In short:
 - After a spec edit: `python3 dev/linemap.py specs/LITTLEWARS-SPEC.txt`
   (the LINE MAP the builder and fixer read by).
 - After a rule, map, army or bot change in data.js: `node dev/bots.js .
-  200` (win rates, rounds and actions against GDD section 5), and bring the
-  probes and replay lines in step.
+  200` (win rates, rounds and actions against GDD section 5) and `node
+  dev/outcomes.js . 1000` (the sidegrade gaps), and bring the probes and
+  replay lines in step. `node dev/tryout.js` tries a table change for one
+  run without editing data.js.
 - When the skeleton or a PHASE block's steps change: the phase builds and
   the planted bugs on the reference branch (dev-reference/README.txt),
   and the reference game there. Only a cloud session touches that branch.

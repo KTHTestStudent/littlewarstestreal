@@ -35,6 +35,17 @@ THE TOOLS
       the limit, your actions a turn (a stand-in for clicks), their bot's
       turn at normal playback, and how battles ended. Needs every PHASE
       block built. node dev/bots.js . 200
+  outcomes.js [folder] [runs per outcome] [battles]
+      The outcome measure (GDD 5.2, 5.3): each scene_ knot's outcomes
+      played in the battle after it, on the same seeds, with each
+      battle's gap between its outcomes - "ok" within 5 points (a
+      sidegrade), "WIDE" when not. Exit code 0 when every gap is ok.
+      node dev/outcomes.js . 1000 (about 2 minutes)
+  tryout.js <changes.js | -> [runs] [battles] [all]
+      Bot runs with data.js's tables changed for the run only (a file of
+      plain JavaScript table edits, such as RULES.throughSize = 5), to try
+      a lever before editing data.js. Writes nothing. Table edits only: a
+      changed game function is a rule change for the spec.
   linemap.py [spec]
       Writes the LINE MAP at the top of specs/LITTLEWARS-SPEC.txt. Run it
       after every edit of the spec.
@@ -60,7 +71,8 @@ WHICH CHECK WHEN
   Any change                  selftest.js (42/42 PASS)
   The spec edited             linemap.py
   A rule, map, army or bot    selftest.js (probes and replay lines change on
-  change in data.js           purpose: bring them in step), bots.js
+  change in data.js           purpose: bring them in step), bots.js,
+                              outcomes.js (tryout.js first, to try it)
   A story export (story.js)   node tools/knotcheck.js .
   A session that committed    disclosure.js
   code
