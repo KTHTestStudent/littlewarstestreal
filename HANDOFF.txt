@@ -30,7 +30,16 @@ START HERE
       block 21 passes 42/42 in the reference game); the author fixed the
       one word by hand ("phase 18: CAMP.last, not B.last ...") and the
       tree gave phase 21's line.
-    * Next on the laptop: phases 22-25 (prompts/plan.txt, from 22).
+    * Phase 22: the builder, first try (e0aec95).
+    * Phase 23: the builder (ef99c27) and fixer try 1 (da51f65) both left
+      the score probe failing (37/42 FAIL: score charge pick). Fixer try
+      2 ran 39 minutes and named a cause - st.hold added whenever the
+      unit stays put, not only on cover or a hill (step 3) - but its
+      answer didn't end DONE PHASE 23, so the runner stopped with its
+      edit uncommitted. If the edit is whole and gives 38/42 FAIL: charge
+      pick botturn, the author commits it by hand as fixer try 2 (the
+      fixer wrote 23); if not, a cloud triage (STARTER PROMPTS).
+    * Next on the laptop: phases 24-25 (prompts/plan.txt, from 24).
     * On working and working-claude: everything through NEXT 3 (the
       skeleton, stubs, spec, data, contract, GDD v0.5).
     * On reference (cloud sessions only - never on the laptop):
@@ -56,6 +65,16 @@ going on in a long conversation - it reads less)
   (Opus 5.5, medium). Start from origin/working-claude (merge origin/working
   into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 5b and
   5c (the bot runs for balance and battle length, and dev/outcomes.js).
+  For a triage after a stop (a block the fixer couldn't fix):
+  Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
+  (Sonnet 5.5, medium). Start from origin/working-claude (merge origin/working
+  into it first). Read CLAUDE.md and HANDOFF.txt first, then help with NEXT 4:
+  phase N stopped after its fixer tries. I'll paste the runner's report, the
+  self-test output and the PHASE N block. Use NEXT 5a's quick test (the block
+  in a copy of the reference game) to see whether the block itself is wrong,
+  and give me the smallest fix and who should make it. If the fault is in the
+  spec or another phase, write it into HANDOFF.txt for an Opus session instead
+  of fixing it.
   For help while a batch runs: the same first three sentences (Opus 5.5,
   medium), then "help with NEXT 4 (the runner on my laptop - I'll paste
   what it says)".
@@ -132,9 +151,12 @@ NEXT
           the subject decides it for dev/disclosure.js:
             builder:  "phase N: builder, first try, <self-test line>"
             fixer:    "phase N: fixer try K, <self-test line>"
-          <self-test line> is copied from what node dev/selftest.js just
-          printed - never the plan's line typed in (18, 19 and 20 were,
-          and hid phase 18's bug for three phases).
+          <self-test line> is what node dev/selftest.js prints - never
+          the plan's line typed in (18, 19 and 20 were, and hid phase 18's
+          bug for three phases). Let the shell take it:
+            L=$(node dev/selftest.js | grep -m1 '^SELF-TEST')
+            echo "$L"
+          then "phase N: builder, first try, $L" in the commit.
           with a body ("Stopped at the M-minute limit with its edit whole;
           committed by hand by Kenton Howard. Only the PHASE N block of
           game.html changed. The spec's expected line.") and the right
@@ -191,16 +213,16 @@ NEXT
       one built block: put it into a copy of the reference game.html in
       place of Claude's and run the self-test there (42/42 = the block
       is right in itself). Read closely the blocks committed by hand or
-      written by the fixer - 13, 16, 18 (its hand fix included), 19, 20
-      - and check each phase commit's Local-Model line names the model
+      written by the fixer - 13, 16, 18 (its hand fix included), 19, 20,
+      23 - and check each phase commit's Local-Model line names the model
       that wrote it. Known wrong subjects (leave the history; note them
       in HISTORY): 6fe7b73 (phase 18) carries phase 17's line; a55cac4
       (19) and 386d312 (20) carry the plan's lines, but record was
       failing then (the true lines had one more FAIL, record first).
     a2 The disclosure, at the end of the review (decision 11): run node
       dev/disclosure.js, show the author which models wrote which blocks
-      (builder: every block it committed; fixer: 16 and 19, and any
-      other fixer commit; the author: the one-word hand fix in 18), and
+      (builder: every block it committed; fixer: 16 and 19, 23 if fixer
+      try 2 was committed, and any other fixer commit; the author: the one-word hand fix in 18), and
       ask for his words. Apply them in README.md, CLAUDE.md,
       CREDITS.txt (who wrote what) and game.html's title screen, then add
       the names or ids to disclosure.jsonc only as he says, and run the
@@ -363,7 +385,12 @@ OPEN ITEMS (the author, by hand)
     if not. It would have stopped phase 21 at once ("the tree gives 34/42
     FAIL: record botaim head, not phase 20's line") instead of sending the
     fixer to a correct block for 60 minutes, and it catches a hand commit
-    with the wrong line at the next phase. Small fixes too: the report
+    with the wrong line at the next phase. The same goes for an answer
+    that misses its DONE PHASE N line (phase 23's fixer try 2, 39
+    minutes, named a cause but ended on it): run the self-test anyway and
+    commit when the line is the plan's. And the hand-commit recipe could
+    take the subject's line straight from the self-test's output, as in
+    NEXT 4 step 5b's commands. Small fixes too: the report
     says "no fixer calls" after a fixer run; and when a settings file
     changes during a run, say so plainly.
   * The route-check skill (on claude.ai) still gives the laptop limits as
