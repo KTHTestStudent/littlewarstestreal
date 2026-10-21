@@ -1213,13 +1213,36 @@ PHASE_OK[22] = true;
 </script>
 <script>
 // ==== PHASE 23 START ====
-// STUBS for now - PHASE 23 fills them in.
 // The bots, 4: how good a square is to end a move on.
 
 // RETURNS the score of unit u ending its move on (x, y), for style st,
-// heading along the grid g (from headGrid).
+// heading along the grid g (from headGrid). Higher is better.
 function moveScore(u, x, y, st, g) {
-  return 0;
+  var s = -st.advance * g[y][x];
+  if (isGun(u) && !(B.raid !== null && B.raid.by !== u.side)) {
+    s = 0;
+    for (var vi = 0; vi < B.units.length; vi++) {
+      var v = B.units[vi];
+      var d = dist(x, y, v.x, v.y);
+      if (v.side !== u.side && v.n > 0 && d >= 1 && d <= RULES.range && lineOfFire(x, y, v.x, v.y)) s += st.advance;
+    }
+  }
+  var p = pieceAt(x, y);
+  if (p.cover || p.hill) s += st.cover;
+  if (x === u.x && y === u.y && !B.firedOn[u.side]) s += st.hold;
+  var friends = 0;
+  var danger = false;
+  for (var vi2 = 0; vi2 < B.units.length; vi2++) {
+    var v = B.units[vi2];
+    if (v === u || v.arm === "esc") continue;
+    var d = dist(v.x, v.y, x, y);
+    if (v.side !== u.side && v.n > 0 && d <= ARMS[v.arm].move + 1) danger = true;
+    if (d <= RULES.isolation) friends += v.n;
+    if (d === 1 && isGun(v) && v.n < RULES.crew) s += st.guard;
+  }
+  if (friends === 0) s -= st.together;
+  if (danger && friends * 2 < u.n) s -= st.guard;
+  return s;
 }
 PHASE_OK[23] = true;
 // ==== PHASE 23 END ====
