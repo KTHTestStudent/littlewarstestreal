@@ -438,14 +438,44 @@ PHASE_OK[3] = true;
 </script>
 <script>
 // ==== PHASE 4 START ====
-// STUBS for now - PHASE 4 fills them in.
 // Moving: the squares a unit can reach this turn.
 
 // RETURNS the squares unit u can move to this turn, as an array of
 // {x, y, cost} - cost is the fewest move points it takes - top row first,
 // each row from the left.
 function reach(u) {
-  return [];
+  var mp = ARMS[u.arm].move;
+  var best = {};
+  var k0 = u.x + "," + u.y;
+  best[k0] = 0;
+  var open = [[u.x, u.y]];
+  while (open.length > 0) {
+    var s = open.shift();
+    var c = best[s[0] + "," + s[1]];
+    var sk = s[0] + "," + s[1];
+    if ((s[0] !== u.x || s[1] !== u.y) && (pieceAt(s[0], s[1]).ford || enemyNear(u.side, s[0], s[1]))) continue;
+    for (var di = 0; di < DIRS.length; di++) {
+      var d = DIRS[di];
+      var x = s[0] + d[0];
+      var y = s[1] + d[1];
+      if (!canStep(s[0], s[1], x, y)) continue;
+      var o = unitAt(x, y);
+      if (o !== null && (o.side !== u.side || isGun(o))) continue;
+      var nc = c + pieceAt(x, y).cost;
+      var nk = x + "," + y;
+      if (nc > mp || (best[nk] !== undefined && best[nk] <= nc)) continue;
+      best[nk] = nc;
+      open.push([x, y]);
+    }
+  }
+  var out = [];
+  for (var yy = 0; yy < B.H; yy++) {
+    for (var xx = 0; xx < B.W; xx++) {
+      var kk = xx + "," + yy;
+      if (best[kk] !== undefined && unitAt(xx, yy) === null) out.push({x: xx, y: yy, cost: best[kk]});
+    }
+  }
+  return out;
 }
 PHASE_OK[4] = true;
 // ==== PHASE 4 END ====
