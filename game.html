@@ -1069,7 +1069,7 @@ function recordBattle() {
   var pts = battlePoints("you");
   var w = B.result.winner;
   var res = w === "you" ? "won" : (w === "draw" ? "drawn" : "lost");
-  B.last = { result: res, points: pts };
+  CAMP.last = { result: res, points: pts };
   if (B.lv > 0) {
     CAMP.points += pts;
     CAMP.done += 1;
