@@ -1148,18 +1148,31 @@ PHASE_OK[20] = true;
 </script>
 <script>
 // ==== PHASE 21 START ====
-// STUBS for now - PHASE 21 fills them in.
 // The bots, 2: what a gun aims at.
 
 // RETURNS true if a unit of side with figures, other than v, stands next
 // to unit v.
 function friendNear(side, v) {
+  for (var i = 0; i < B.units.length; i++) {
+    var w = B.units[i];
+    if (w !== v && w.side === side && w.n > 0 && dist(w.x, w.y, v.x, v.y) === 1) return true;
+  }
   return false;
 }
 
 // RETURNS the square [x, y] gun g aims at for style st, or null.
 function aimFor(g, st) {
-  return null;
+  var best = null;
+  var bs = 0;
+  for (var i = 0; i < B.units.length; i++) {
+    var v = B.units[i];
+    if (v.side === g.side || v.n === 0 || !canAim(g, v.x, v.y)) continue;
+    var s = shotValue(g, v.x, v.y);
+    if (s <= 0) continue;
+    if (st.aim !== "best") { if (friendNear(g.side, v)) continue; s = st.aim === "nearest" ? -dist(g.x, g.y, v.x, v.y) : v.n + (st.aim === "guns" && isGun(v) ? 100 : 0); }
+    if (best === null || s > bs) { best = [v.x, v.y]; bs = s; }
+  }
+  return best;
 }
 PHASE_OK[21] = true;
 // ==== PHASE 21 END ====
