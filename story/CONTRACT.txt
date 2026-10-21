@@ -6,12 +6,13 @@
  where it was designed.
 ============================================================================
 
-SENDING AN OUTCOME (each scene_ knot sends exactly ONE)
+SENDING AN OUTCOME (each foe_ and scene_ knot sends exactly ONE)
   VAR scene_4_outcome = "bridge"            (above the knot: the default)
   ... set it on the paths through the knot ...
   = finish
   ~ sceneDone("scene_4", scene_4_outcome)
   -> DONE
+  A foe_ knot the same way: ~ foeDone("foe_4", foe_4_outcome)
   intro, tutorial and ending send nothing (knotcheck WARNs - expected).
   A last line may run into finish: + [Leave] Goodbye. -> finish
   (the game hears the outcome once that line is read). Nothing AFTER the
@@ -23,6 +24,17 @@ THE KNOTS (when they play; outcomes; what each does to the NEXT battle)
   intro       a new campaign starts                    no outcome
   tutorial    before battle 0, Hook's Farm - only with   no outcome
               the tutorial on (it scores no campaign points)
+  foe_1 ... foe_10   just before scene_1 ... scene_10: how their side
+              plays the next battle (the author's call, 2026-10-21)
+              steady         keeps together, aims at the biggest unit
+              cautious       holds cover and hills, aims at guns first
+              bold           rides at your back line and guns, charges
+                             at even numbers
+              clever         keeps its guns supported, counts a melee
+                             before it charges
+             *the battle's own bot: foe_1-4 steady, foe_5 bold, foe_6
+              cautious, foe_7-8 clever, foe_9 cautious, foe_10 clever
+              A choice of how hard, not a sidegrade: the four differ a lot.
   scene_1     before battle 1, The Two Hills, Fight to the Finish
              *scout          you see their set-up while you arrange yours
               move_first     you move first
@@ -48,14 +60,14 @@ THE KNOTS (when they play; outcomes; what each does to the NEXT battle)
              *more_rounds    the round limit is 2 more
               wood           a wood stands in the middle
   scene_9     before battle 9, The Two Fords, Blow at the Rear (whole line)
-             *foe_cautious   their side plays cautious
-              foe_bold       their side plays bold
+             *scout          you see their set-up while you arrange yours
+              forward        your set-up zone is your back 3 rows
   scene_10    before battle 10, the finale, The Whole Floor
              *extra_troop    you have a cavalry troop more
               extra_gun      you have a gun section more
   ending      after the finale's result screen; then   no outcome
               the end screen with the campaign score (one ending)
-  Each pair is a sidegrade: different kinds of help, about even (the bot
+  Each scene_ pair is a sidegrade: different kinds of help, about even (the bot
   runs check it and may change a number before the design freeze).
   Battle names are working names (data.js COUNTRY_NAMES, the author's).
 

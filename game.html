@@ -206,7 +206,9 @@ function mapFor(row) {
 }
 
 // Sets up the battle lv as B, with the story outcome (one of its knot's
-// outcomes, or "") applied, and both armies made (them first). B:
+// outcomes, or "") applied, then foe (one of its foe_ knot's outcomes - a
+// bot style - or "": the row's own bot), and both armies made (them
+// first). B:
 //   lv, row     the battle's number and its row (baseRow + applyOutcome)
 //   W, H, map   the board's size and its rows of PIECES letters, their
 //               back line first (map[y][x] is a letter)
@@ -221,9 +223,16 @@ function mapFor(row) {
 //   result      null, or {winner, why} when the battle is over
 //   start       each side's armed figures when the battle starts
 //   botKey, botDone   the bots' memory of this turn (phase 25)
-function newBattle(lv, outcome) {
+function newBattle(lv, outcome, foe) {
   const row = baseRow(lv);
   applyOutcome(row, outcome || "");
+  if (foe && row.foe) {
+    // the foe_ knot's outcome, through the same steps (EFFECTS[row.foe])
+    const k = row.knot;
+    row.knot = row.foe;
+    applyOutcome(row, foe);
+    row.knot = k;
+  }
   const map = mapFor(row);
   B = {
     lv: lv, row: row, W: map[0].length, H: map.length, map: map, units: [], nextId: 1,
@@ -1389,7 +1398,19 @@ function startCampaign(paint) {
 
 function afterIntro() {
   const lv = CAMP.tutorial ? 0 : 1;
-  talk(LEVELS[lv].knot, function () { startLevel(lv); });
+  talkBefore(lv, function () { startLevel(lv); });
+}
+
+// The knots before battle lv - its foe_ knot (none before the tutorial),
+// then its scene_ knot - then then().
+function talkBefore(lv, then) {
+  const r = LEVELS[lv];
+  NOTE = "";
+  if (!r.foe) {
+    talk(r.knot, then);
+    return;
+  }
+  talk(r.foe, function () { talk(r.knot, then); });
 }
 
 // The outcome a battle's knot sent, or its DEFAULT (the tutorial: none).
@@ -1399,6 +1420,13 @@ function outcomeFor(lv) {
   return DEFAULTS[k] || "";
 }
 
+// The bot style a battle's foe_ knot sent, or "" (their bot is the
+// row's).
+function foeFor(lv) {
+  const k = LEVELS[lv].foe;
+  return k && CAMP.outcomes[k] ? CAMP.outcomes[k] : "";
+}
+
 function battleSeed(lv) {
   return (CAMP.seed * 100 + lv) | 0;
 }
@@ -1406,7 +1434,7 @@ function battleSeed(lv) {
 function startLevel(lv) {
   LOG = [];
   rseed = battleSeed(lv);
-  newBattle(lv, outcomeFor(lv));
+  newBattle(lv, outcomeFor(lv), foeFor(lv));
   if (lv === 0) CAMP.played = true;
   SEL = -1;
   UNDO = [];
@@ -1528,7 +1556,7 @@ function afterResult() {
   TIPQ = [];
   const next = B.lv + 1;
   if (next < LEVELS.length) {
-    talk(LEVELS[next].knot, function () { startLevel(next); });
+    talkBefore(next, function () { startLevel(next); });
   } else {
     talk("ending", function () {
       screen = "end";
@@ -1555,7 +1583,8 @@ function storyVars() {
 
 // Sets the story's VARs, then opens the knot; then() runs when it closes.
 // A knot with nothing to show is skipped: the game uses its DEFAULT and
-// says so at the bottom of the screen.
+// says so at the bottom of the screen (both of a battle's knots, when
+// neither is written).
 function talk(knot, then) {
   TALK = { knot: knot, then: then, got: false };
   if (typeof dlgStart === "function") {
@@ -1567,7 +1596,8 @@ function talk(knot, then) {
     }
   }
   TALK = null;
-  NOTE = "(" + knot + " is not written yet)";
+  const m = /^\((.*) (is|are) not written yet\)$/.exec(NOTE);
+  NOTE = m ? "(" + m[1] + " and " + knot + " are not written yet)" : "(" + knot + " is not written yet)";
   then();
 }
 
@@ -1578,11 +1608,21 @@ function dlgEnded(knot) {
   if (t && t.then) t.then();
 }
 
-// THE HOOK: every scene_ knot ends with ~ sceneDone("scene_4", scene_4_outcome)
+// THE HOOKS: every scene_ knot ends with ~ sceneDone("scene_4", scene_4_outcome),
+// every foe_ knot with ~ foeDone("foe_4", foe_4_outcome). The game handles
+// both alike: one outcome per knot, one of EFFECTS[name].
 function sceneDone(name, outcome) {
+  return outcomeSent("sceneDone", "scene_", name, outcome);
+}
+
+function foeDone(name, outcome) {
+  return outcomeSent("foeDone", "foe_", name, outcome);
+}
+
+function outcomeSent(hook, prefix, name, outcome) {
   const open = typeof dlgView === "function" ? dlgView().knot : "";
-  if (!TALK || name !== TALK.knot || name !== open) {
-    ERRORS.push("sceneDone(\"" + name + "\") was sent by the knot " + (open || "(none)") + " - fix the name in story.ink");
+  if (!TALK || name !== TALK.knot || name !== open || name.indexOf(prefix) !== 0) {
+    ERRORS.push(hook + "(\"" + name + "\") was sent by the knot " + (open || "(none)") + " - fix the name in story.ink (" + prefix + " knots send " + hook + ")");
     return false;
   }
   if (TALK.got) {
@@ -1645,7 +1685,7 @@ function continueGame() {
     screen = "end";
     return;
   }
-  talk(LEVELS[CAMP.next].knot, function () { startLevel(CAMP.next); });
+  talkBefore(CAMP.next, function () { startLevel(CAMP.next); });
 }
 
 // ---- the player's actions in a battle ----
@@ -1916,7 +1956,7 @@ const OPEN8 = [
 // you, the row's style for them), and what they gave on 2026-10-20. A RULE
 // edit in data.js changes them on purpose: update these with the new lines
 // (dev/selftest.js prints them) once the change is meant.
-const REPLAY_RUNS = [[0, 5, ""], [2, 11, "rear_west"], [6, 23, "more_rounds"], [9, 8, "foe_cautious"], [10, 3, "extra_troop"]];
+const REPLAY_RUNS = [[0, 5, ""], [2, 11, "rear_west"], [6, 23, "more_rounds"], [9, 8, "scout"], [10, 3, "extra_troop"]];
 const REPLAY_EXPECT = [
   "lv0 s5 you/none r6 you 121.5 them 13 acts 31 #tb3lnp",
   "lv2 s11 them/raid r5 you 8.5 them 136.5 acts 34 #uk38f4",
@@ -2476,8 +2516,8 @@ function selfTest() {
     applyOutcome(r2, "extra_troop");
     const r3 = baseRow(6);
     applyOutcome(r3, "more_rounds");
-    const r4 = baseRow(9);
-    applyOutcome(r4, "foe_bold");
+    const r4 = Object.assign(baseRow(9), { knot: "foe_9" });
+    applyOutcome(r4, "bold");
     const r5 = baseRow(3);
     applyOutcome(r5, "wall");
     const r6 = baseRow(2);
@@ -2737,6 +2777,10 @@ function checkLevels() {
     if (!(r.rounds >= 1) || !(r.youRows >= 1) || !(r.themRows >= 1)) bad(w + "rounds, youRows and themRows must be 1 or more.");
     if (knots.indexOf(r.knot) >= 0) bad(w + "the knot " + r.knot + " is used twice.");
     knots.push(r.knot);
+    if (i === 0 && r.foe) bad(w + "the tutorial has no foe knot (foe: \"\").");
+    if (i > 0 && !/^foe_/.test(r.foe || "")) bad(w + "foe must be a foe_ knot (foe_" + i + ").");
+    if (r.foe && knots.indexOf(r.foe) >= 0) bad(w + "the knot " + r.foe + " is used twice.");
+    if (r.foe) knots.push(r.foe);
   });
 }
 
@@ -2772,8 +2816,15 @@ const STEP_KINDS = { first: 1, scout: 0, rear: 1, piece: 1, horseGun: 0, setupRo
 
 function checkEffects() {
   for (const k in EFFECTS) {
-    const r = LEVELS.find(function (l) { return l.knot === k; });
+    const r = LEVELS.find(function (l) { return l.knot === k || l.foe === k; });
     if (!r) bad("data.js EFFECTS: " + k + " is not a knot in LEVELS.");
+    if (/^foe_/.test(k)) {
+      for (const o in EFFECTS[k]) {
+        if (!BOT_STYLES[o] || EFFECTS[k][o].length !== 1 || EFFECTS[k][o][0][0] !== "style" || EFFECTS[k][o][0][1] !== o) bad("data.js EFFECTS " + k + " " + o + ": a foe_ knot's outcome is a bot style, [[\"style\", \"" + o + "\"]].");
+      }
+      if (r && !EFFECTS[k][r.bot]) bad("data.js EFFECTS " + k + ": list the row's own bot, " + r.bot + ", among its outcomes (it is the default).");
+      continue;
+    }
     for (const o in EFFECTS[k]) {
       for (const s of EFFECTS[k][o]) {
         if (!(s[0] in STEP_KINDS)) bad("data.js EFFECTS " + k + " " + o + ": no step kind \"" + s[0] + "\".");

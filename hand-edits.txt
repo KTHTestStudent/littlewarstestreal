@@ -63,12 +63,15 @@ THE TABLES, IN FILE ORDER
   LEVELS  (RULE)  the eleven battles, in order: type, country, who moves
          first, the curtain, each side's set-up rows, the round limit, the
          draw line, their bot's style, a raid's half, the defender, the
-         knot before it, and the target win rate. Keep lv in order (0-10).
+         two knots before it (foe: the one that picks their bot; knot: the
+         scene_ knot), and the target win rate. Keep lv in order (0-10).
   ARMIES  (RULE)  every unit of every battle with its square (and the
          gentle bot's goal square). A side's units of one arm get their
          names in this order.
   EFFECTS, DEFAULTS  (RULE)  what each scene_ knot's outcomes do to the
-         next battle, and the default used while a knot is unwritten. The
+         next battle, and the default used while a knot is unwritten; and
+         each foe_ knot's bot styles (its default is the row's bot, so it
+         has no DEFAULTS line - keep that style among its outcomes). The
          outcome NAMES are also in story/story.ink, ink/config.js and
          story/CONTRACT.txt: rename one in all four places (a cloud session
          can do it).

@@ -354,6 +354,11 @@ counts as half a win.
   game too): each `scene_` knot's two outcomes give different kinds of
   help, and in bot runs the next battle's win rate with each is within
   about 5 points of the other.
+- **The `foe_` knots are not sidegrades** (the author's call, 2026-10-21):
+  each picks one of four bot styles for their side, a choice of how hard
+  the battle is. dev/outcomes.js shows each style's win rate and their
+  spread, and judges only the `scene_` pairs. The row's own bot (its
+  default) is the one the part's target is measured with.
 
 ### 5.3 How it is checked
 
@@ -404,24 +409,24 @@ Fight to the Finish and Blow at the Rear (section 4). Country names are
 working names: the author may rename any of them by hand in data.js
 (COUNTRY_NAMES).
 
-| # | Part | Type | Country (board) | You | Them | First | Set-up | Rounds | Draw line | Their bot | Knot before | Target |
+| # | Part | Type | Country (board) | You | Them | First | Set-up | Rounds | Draw line | Their bot (`foe_` default) | Knots before | Target |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 0 | Tutorial | Fight to the Finish | Hook's Farm (12×9) | G 2I C (20) | G 2I C (20) | them | fixed (6.3), no curtain | 8 | 4 | gentle | `tutorial` (sends nothing) | 90% |
-| 1 | Act I | Fight to the Finish | The Two Hills (12×10) | G 2I C (20) | G 2I C (20) | them | curtain | 10 | 4 | steady | `scene_1` | 75% |
-| 2 | Act I | Blow at the Rear: the half `scene_2` picks | The Long Wall (12×10) | G 2I 2C (24) | G 2I 2C (24) | you | curtain | 10 | 4 | steady | `scene_2` | 75% |
-| 3 | Act I | Defensive Game: you defend | The Cottages (12×10) | G 2I (16) | G 2I 2C (24) | them | curtain; you rows 1-3, them rows 9-10 | 10 | - | steady | `scene_3` | 75% |
-| 4 | Act II | Fight to the Finish | The Chalk Brook (14×10) | G 2I 2C (24) | G 2I 2C (24) | them | curtain | 11 | 4 | steady | `scene_4` | 65% |
-| 5 | Act II | Blow at the Rear: the west half | The Orchard (14×10) | G 2I 2C (24) | G 2I 2C (24) | you | curtain | 10 | 4 | bold | `scene_5` | 65% |
-| 6 | Act II | Defensive Game: you attack | The Mill Hill (14×10) | G 2I 2C (24) | G 2I (16) | you | curtain; you rows 1-2, them rows 8-10 | 10 | - | cautious | `scene_6` | 65% |
-| 7 | Act III | Fight to the Finish | The Ridge (14×12) | G 3I 2C (30) | G 3I 2C (30) | them | curtain | 12 | 5 | clever | `scene_7` | 55% |
-| 8 | Act III | Defensive Game: you attack | The Village (16×12) | 2G 4I 2C (40) | G 3I C (26) | you | curtain; you rows 1-2, them rows 9-12 | 12 | - | clever | `scene_8` | 55% |
-| 9 | Act III | Blow at the Rear: the whole line | The Two Fords (16×12) | G 3I 2C (30) | G 3I 2C (30) | you | curtain | 12 | 5 | cautious or bold, as `scene_9` picks | `scene_9` | 55% |
-| 10 | Finale | Fight to the Finish | The Whole Floor (18×12) | 2G 4I 3C (44) | 2G 4I 3C (44) | them | curtain; each side's back 3 rows | 18 | 7 | clever | `scene_10` | 50% |
+| 1 | Act I | Fight to the Finish | The Two Hills (12×10) | G 2I C (20) | G 2I C (20) | them | curtain | 10 | 4 | steady | `foe_1`, `scene_1` | 75% |
+| 2 | Act I | Blow at the Rear: the half `scene_2` picks | The Long Wall (12×10) | G 2I 2C (24) | G 2I 2C (24) | you | curtain | 10 | 4 | steady | `foe_2`, `scene_2` | 75% |
+| 3 | Act I | Defensive Game: you defend | The Cottages (12×10) | G 2I (16) | G 2I 2C (24) | them | curtain; you rows 1-3, them rows 9-10 | 10 | - | steady | `foe_3`, `scene_3` | 75% |
+| 4 | Act II | Fight to the Finish | The Chalk Brook (14×10) | G 2I 2C (24) | G 2I 2C (24) | them | curtain | 11 | 4 | steady | `foe_4`, `scene_4` | 65% |
+| 5 | Act II | Blow at the Rear: the west half | The Orchard (14×10) | G 2I 2C (24) | G 2I 2C (24) | you | curtain | 10 | 4 | bold | `foe_5`, `scene_5` | 65% |
+| 6 | Act II | Defensive Game: you attack | The Mill Hill (14×10) | G 2I 2C (24) | G 2I (16) | you | curtain; you rows 1-2, them rows 8-10 | 10 | - | cautious | `foe_6`, `scene_6` | 65% |
+| 7 | Act III | Fight to the Finish | The Ridge (14×12) | G 3I 2C (30) | G 3I 2C (30) | them | curtain | 12 | 5 | clever | `foe_7`, `scene_7` | 55% |
+| 8 | Act III | Defensive Game: you attack | The Village (16×12) | 2G 4I 2C (40) | G 3I C (26) | you | curtain; you rows 1-2, them rows 9-12 | 12 | - | clever | `foe_8`, `scene_8` | 55% |
+| 9 | Act III | Blow at the Rear: the whole line | The Two Fords (16×12) | G 3I 2C (30) | G 3I 2C (30) | you | curtain | 12 | 5 | cautious or bold, as `scene_9` picks | `foe_9`, `scene_9` | 55% |
+| 10 | Finale | Fight to the Finish | The Whole Floor (18×12) | 2G 4I 3C (44) | 2G 4I 3C (44) | them | curtain; each side's back 3 rows | 18 | 7 | clever | `foe_10`, `scene_10` | 50% |
 
 The story outcomes (section 7) change the row of the battle after their
-knot: who moves first, the curtain, the set-up zone, a unit more, a horse
-gun, the round limit, the raid's half, their bot's style, or one of the
-row's switchable pieces.
+knots: the `foe_` knot picks their bot's style; the `scene_` knot changes
+who moves first, the curtain, the set-up zone, a unit more, a horse gun,
+the round limit, the raid's half, or one of the row's switchable pieces.
 
 The Countries, drawn as data.js maps (the skeleton drew them roughly from
 this table; the bot runs reshape them):
@@ -596,23 +601,30 @@ title     choose Red or Blue; the tutorial on or off (game screens)
 intro     a new campaign starts                        sends nothing
 tutorial  before Hook's Farm, only with the tutorial on sends nothing
           battle 0, Hook's Farm, then its result screen
-scene_1   before battle 1                              sends an outcome
+foe_1     before battle 1: how their side plays it     sends an outcome
+scene_1   just after foe_1                             sends an outcome
           battle 1, then its result screen
-...       scene_2 to scene_9, each before its battle, the same way
-scene_10  before the finale                            sends an outcome
+...       foe_2, scene_2 to foe_9, scene_9, each pair before its battle,
+          the same way
+foe_10    before the finale: how their side plays it   sends an outcome
+scene_10  just after foe_10                            sends an outcome
           battle 10, the finale, then its result screen
 ending    after the finale                             sends nothing
           the end screen: the campaign score
 ```
 
-Each `scene_` knot comes after one battle and before the next, so it can
-look back (`last_result`) and ahead. The story's frame (whose story it is,
+Each `foe_` and `scene_` knot comes after one battle and before the next,
+so it can look back (`last_result`) and ahead. A battle has two knots,
+one outcome each (the author's call, 2026-10-21): Knotwork's one-outcome
+rule stays, and the story splits into more knots rather than giving one
+knot two results. The story's frame (whose story it is,
 who speaks) is the author's.
 
 ### 7.2 The knots and their outcomes
 
-Each `scene_` knot sends one outcome, and the game applies it to the next
-battle's row. The DEFAULT, marked *, is what the game uses when the knot
+Each `foe_` and `scene_` knot sends one outcome, and the game applies it
+to the next battle's row (the `foe_` knot's with `foeDone`, the `scene_`
+knot's with `sceneDone`). The DEFAULT, marked *, is what the game uses when the knot
 isn't written yet. The outcomes are named for what they do in the game, so
 they fit any frame the author picks.
 
@@ -628,8 +640,9 @@ they fit any frame the author picks.
 | `scene_6` | 6, Defensive Game (you attack) | *"more_rounds" → the round limit is 2 more; "horse_gun" → your gun section is a horse gun | more_rounds |
 | `scene_7` | 7, Fight to the Finish | *"head_start" → you move first and see their set-up; "extra_squad" → you have an infantry squad more | head_start |
 | `scene_8` | 8, Defensive Game (you attack) | *"more_rounds" → the round limit is 2 more; "wood" → a wood stands in the middle | more_rounds |
-| `scene_9` | 9, Blow at the Rear | *"foe_cautious" → their bot plays cautious; "foe_bold" → their bot plays bold | foe_cautious |
+| `scene_9` | 9, Blow at the Rear | *"scout" → as above; "forward" → your set-up zone is your back 3 rows | scout |
 | `scene_10` | 10, the finale | *"extra_troop" → you have a cavalry troop more; "extra_gun" → you have a gun section more | extra_troop |
+| `foe_1` ... `foe_10` | 1-10, just before that battle's `scene_` knot | "steady", "cautious", "bold" or "clever" → their bot plays that style (6.4) | the row's own bot (6.1) |
 | `ending` | the end screen | none | - |
 
 - The pairs are starting pairs (the author's yes, section 10) for the bot
@@ -639,11 +652,13 @@ they fit any frame the author picks.
 - In data.js, each outcome is a list of steps (EFFECTS, with DEFAULTS),
   as in Amontillado: `["first", "you"]`, `["scout"]`, `["rear", "west"]`,
   `["piece", "wall"]`, `["horseGun"]`, `["setupRows", 3]`,
-  `["unit", "cavalry"]`, `["rounds", 2]`, `["style", "cautious"]`.
+  `["unit", "cavalry"]`, `["rounds", 2]`, `["style", "cautious"]`. A
+  `foe_` knot's four outcomes are the styles, each `[["style", <it>]]`;
+  its default is the row's bot, so it has no DEFAULTS line.
 
 ### 7.3 Rules for every knot
 
-- **One outcome per `scene_` knot**, once, from its finish stitch, with
+- **One outcome per `foe_` or `scene_` knot**, once, from its finish stitch, with
   the outcome VAR set on each path through the knot (Knotwork's usual
   pattern):
 
@@ -674,6 +689,7 @@ they fit any frame the author picks.
 | Hook | Kind | What it does |
 |---|---|---|
 | `sceneDone(name, outcome)` | sends an outcome | for the `scene_` knots |
+| `foeDone(name, outcome)` | sends an outcome | for the `foe_` knots: a bot style |
 
 There are no asking hooks: the VARs below tell the story everything it can
 know.
@@ -832,6 +848,15 @@ and numbers stay his to hand-edit in data.js.
   defaults, and the VARs.
 - The hat shapes and base marks.
 
+Decided by the author, 2026-10-21:
+
+- **Two knots before each battle:** a `foe_` knot picks their bot's style
+  from all four (steady, cautious, bold, clever), then the `scene_` knot
+  sends its other outcome. The kit's one-outcome-per-knot rule stays
+  (Knotwork 3.8-alpha's knotcheck allows one hook call per knot).
+  `scene_9`'s pair, which picked their bot before, is now "scout" /
+  "forward".
+
 Still open (later):
 
 - The author: the title, the story's frame and speakers, the Country
@@ -854,7 +879,7 @@ tables a person can hand-edit.
 | `ink/dialogue.js`, `tools/` (knotcheck, viewer, pack) | unedited copies from Knotwork 3.8-alpha, brought in before the skeleton (section 9, step 3) | Knotwork (its own AI disclosure) |
 | `story/story.ink` | the story. The skeleton writes only the contract header and empty knots with their summaries | the author |
 | `story/CONTRACT.txt` | the contract on one page, for the writer | Claude |
-| `dev/` | headless checks: `selftest.js` (prints the SELF-TEST line), `bots.js` (the bot runs), `linemap.py` (the spec's LINE MAP), `inkc.sh` (compiles ink as Inky does), `README.txt`; `outcomes.js` and `playruns.js` when the bot runs and the story need them (Knotwork's `tools/knotcheck.js` runs headless as it is); and `disclosure.js`, the Auto-Disclosure-Tool's unedited copy | Claude |
+| `dev/` | headless checks: `selftest.js` (prints the SELF-TEST line), `bots.js` (the bot runs), `linemap.py` (the spec's LINE MAP), `inkc.sh` (compiles ink as Inky does), `README.txt`; `outcomes.js` (the outcome measure, 5.3) and `tryout.js` (bot runs with a table changed for one run); `playruns.js` when the story needs it (Knotwork's `tools/knotcheck.js` runs headless as it is); and `disclosure.js`, the Auto-Disclosure-Tool's unedited copy | Claude |
 | `specs/LITTLEWARS-SPEC.txt` | the builder's spec: steps per phase, EXPECTED self-test lines, CHECK walks, FIXER PROMPT, LINE MAP | Claude |
 | `CREDITS.txt` | who made what, the disclosure line, Knotwork's version and repository, inkjs's licence (from the Knotwork step on) | Claude (the author's words where he gives them) |
 | `hand-edits.txt` | the author's hand-edit guide to data.js (from the skeleton on) | Claude |

@@ -38,7 +38,20 @@ START HERE
   Qwen 3.6 and Qwen 3.8 and adds "Code hand-edits by Kenton Howard.";
   disclosure.jsonc's "known" explains e387a76 and 90af1ad; the check says
   OK (exit 0).
-  Next: 5b and 5c in a fresh Opus session (STARTER PROMPTS).
+  Two knots before each battle (decision 13, 2026-10-21, same session): a
+  foe_ knot picks their bot (steady, cautious, bold or clever), then the
+  scene_ knot sends its other outcome; scene_9 is now scout / forward.
+  Skeleton, data.js, story contract, GDD and spec text only - no PHASE
+  block changed, so no rebuild: 42/42 with the same replay lines, and on
+  reference all 25 phase builds OK and 64 of 64 planted bugs caught.
+  NEXT 5b and 5c are done as runs, dev/outcomes.js and five questions
+  (2026-10-21, Opus 5.5): the Defensive Game and the Blow at the Rear
+  need rule decisions before data tuning makes sense.
+  The author answered the questions (decision 14, 2026-10-21): two rule
+  changes (infantry-only through with the bots' cavalry fighting; a raid
+  counts after standing a turn), then data tuning.
+  Next: NEXT 5d's rule part in a fresh Opus 5.5 high session (STARTER
+  PROMPTS), then the runner, the cloud check and the data tuning.
   On reference (cloud sessions only - never on the laptop): dev-reference/
   - Claude's reference game.html (42/42), the phase builds, 64 planted
   bugs, a block-by-block compare (it matches no builder block line for
@@ -46,21 +59,19 @@ START HERE
   for...of - style only).
   Open for the author, by hand: OPEN ITEMS below.
 
-STARTER PROMPTS (the author pastes one into a new cloud session, once
-build-phases is merged into working and pushed; start fresh rather than
-going on in a long conversation - it reads less)
-  For NEXT 5a and a2 (the check and the disclosure):
+STARTER PROMPTS (the author pastes one into a new cloud session, after
+merging working-claude into working; start fresh rather than going on in a
+long conversation - it reads less)
+  For NEXT 5d step 1 (the rule part, decision 14):
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
-  (Sonnet 5.5, medium). Start from origin/working-claude (merge origin/working
-  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 5a and
-  a2 (the cloud check of the runner's build, then the disclosure decision
-  with me). If a block needs judgment beyond the reference tools, stop and
-  write it into HANDOFF.txt for an Opus session instead of fixing it.
-  For NEXT 5b and c (the bot runs), after 5a is merged:
+  (Opus 5.5, high). Start from origin/working-claude (merge origin/working
+  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 5d
+  step 1 (the rule part, decision 14).
+  For NEXT 5d step 4 (after the runner and the cloud check):
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
   (Opus 5.5, medium). Start from origin/working-claude (merge origin/working
-  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 5b and
-  5c (the bot runs for balance and battle length, and dev/outcomes.js).
+  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 5d
+  step 4 (the data tuning, decision 14).
   For a triage after a stop (a block the fixer couldn't fix):
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
   (Sonnet 5.5, medium). Start from origin/working-claude (merge origin/working
@@ -228,9 +239,11 @@ NEXT
       CREDITS.txt (who wrote what) and game.html's title screen, then add
       the names or ids to disclosure.jsonc only as he says, and run the
       check again (exit 0).
-    b The first bot runs (Claude's reference game, node dev/bots.js . 200,
-      each knot's default outcome; your side's score counting a draw as
-      half, against GDD 5.2's target):
+    b DONE 2026-10-21 as runs and questions (Opus 5.5; HISTORY). No
+      data.js change yet: the levers that matter most are rules, so the
+      author answered the questions first (decision 14). The built
+      game's bot runs match the reference's exactly (node dev/bots.js .
+      200; your side's score, a draw counting half, against GDD 5.2):
         battle 0 Hook's Farm      88 (90)   median 5 of 8 rounds
         1 The Two Hills (finish)  47 (75)   7 of 10
         2 The Long Wall (rear)    17 (75)   their raid 77%
@@ -243,23 +256,110 @@ NEXT
         8 The Village (attack)   100 (55)   "through" 95%, round 3
         9 The Two Fords (rear)    72 (55)   your raid 62%
         10 The Whole Floor        83 (50)
-      The tutorial is on target, and the even Fights to the Finish come
-      out near even. Two things need the bot runs' levers:
-      - A Defensive Game is won by a cavalry dash: the attacker's troops
-        reach the defender's back line in about 3 rounds, past a defender
-        of two-thirds the force on a 12-16 wide board, and one unit there
-        wins (GDD 4). This is a design question for the author, not a
-        number only: levers include RULES.throughSize (the figures that
-        unit needs, now 1 - the skeleton put it in data.js for this), the
-        defender's set-up rows, the maps' walls and woods, or holding the
-        back line for a turn (a rule change: spec steps and a rebuild).
-      - A Blow at the Rear goes to whoever raids first (77% and 62% for
-        their side, 62% for yours): the same levers, plus RULES.raidSize.
-      Bot styles, maps and win-rate targets are all data.js; GDD 6.4 says
-      how the skeleton plays the styles.
-    c dev/outcomes.js (each scene_ outcome's next battle, GDD 5.2's
-      sidegrade check) is still to write - a cloud session's, with the bot
-      runs.
+      What the tries showed (dev/tryout.js, 300-400 seeds each; the
+      rule tries swapped a game function in a scratch page, never in the
+      repository):
+      - Defensive Game. Two things, not one. The cavalry dash: any unit on
+        the back line wins, and a troop gets there in round 3.
+        RULES.throughSize 4 changes nothing (the troop arrives whole); 5
+        (only infantry can win, data only) gives 3: 35 scout / 63 wall,
+        6: 43 / 25, 8: 92 / 88 - but the bots' cavalry still ride to the
+        back line and wait there, a wasted unit (PHASE 22). And the force
+        ratio: with the dash gone and the cavalry fighting instead (a
+        scratch bot change), the attacker's 3:2 wins by attrition - 3:
+        19 / 0, 6: 90 / 81, 8: 100. A turn's hold on the back line (a
+        rule try) barely helps (3: 32, 6 and 8: 97-100). So whatever
+        stops the dash, the defender also needs more: a bigger share than
+        two-thirds, more cover on its half, or a shorter round limit (it
+        wins at the limit).
+      - Blow at the Rear. The first raid wins, and it rides in on
+        cavalry. RULES.raidSize 5 (infantry only) stops raids almost
+        entirely: 48-60% of battles 2 and 9 reach the limit, a draw. A
+        rule that the raider must stand on the back line through one
+        enemy turn evens them out: 2: 40 west / 71 east, 5: 45 / 69, 9:
+        57 / 34, raids 3-28% each way, more draws (2: 29-36% at the
+        limit - over GDD 5.3's 1 in 5, so with a round more).
+      - The Long Wall's halves differ a lot: rear_west 19, rear_east 67.
+      - Fights to the Finish sit near 50 because the newcomer is as
+        strong as "steady" and stronger than "clever" at this size (the
+        finale with no outcome: 71). Their bot's style is the lever, but
+        it isn't a dial: "slip" doesn't weaken a bot (its plain move is
+        straight ahead, which is fine play); "gentle" on battle 1 gives 75
+        exactly, on 4 gives 89; "bold" is the strongest; "clever" and
+        "cautious" stall at rivers (battle 4: 86-100% at the limit) -
+        neither side crosses a ford into contact. Battle 4 with
+        horse_gun stalls the same way (91% at the limit).
+    c DONE 2026-10-21: dev/outcomes.js (and dev/tryout.js; dev/README.txt).
+      node dev/outcomes.js . 1000, as data.js stands:
+        1 scout 50 / move_first 51        ok
+        2 rear_west 19 / rear_east 67     WIDE (the map's halves)
+        3 scout 14 / wall 4               WIDE (the wall shelters them)
+        4 bridge 55 / horse_gun 53        ok (but horse_gun 91% at limit)
+        5 forward 29 / extra_troop 65     WIDE
+        6 more_rounds 100 / horse_gun 100 ok (both 100)
+        7 head_start 54 / extra_squad 96  WIDE
+        8 more_rounds 100 / wood 100      ok (both 100)
+        9 foe_cautious 69 / foe_bold 31   WIDE
+        10 extra_troop 84 / extra_gun 88  ok
+      A unit more is worth 35-42 points against help of another kind
+      (5, 7): a pair with one should have one on both sides, or the
+      other side's help made bigger. (scene_9's pair is now scout /
+      forward, decision 13: the bots set up from ARMIES, so neither
+      changes a bot run - 69 / 69 - and the same holds for scout on 1
+      and 3. Judging those needs playtests, or a set-up rule for the
+      newcomer bot.) outcomes.js also plays each foe_ knot's four styles
+      (decision 13), not judged: the spread is 31-69 points in most
+      battles (8: none - every style loses to the dash).
+    d Next (decision 14). In order:
+      1 The rule part (cloud, Opus 5.5 high): the spec's steps, the
+        reference blocks, the probes and their CHECK and EXPECTED lines,
+        phasebuilds.py and plant.py, then a stub commit of the changed
+        blocks on working-claude (and a plan file's lines in HANDOFF for
+        the runner):
+        - Defensive Game: RULES.throughSize 5 (only an infantry squad, 6
+          figures, can get through; data). The bots' cavalry in a
+          Defensive Game (attacker) no longer ride for the back line when
+          they are too few to get through (u.n < RULES.throughSize):
+          they head for the enemy as in a Fight to the Finish (PHASE 22,
+          headGrid). Check the same for a Blow at the Rear against
+          RULES.raidSize.
+        - Blow at the Rear: a raid counts only when the same unit (raidSize
+          figures or more) ended its side's turn on the back line twice
+          running - it stood there through one enemy turn, so the other
+          side can answer it (PHASE 15 onBackLine / PHASE 17 checkResult,
+          and a field in B for the units standing there; the log word
+          for a raider arriving, LOG_WORDS, is the author's to word).
+          Whether "through" gets the same hold: he chose option (a) for
+          Q1, so no.
+        The scratch tries (NEXT 5b) give the expected direction: through
+        5 alone 3: 35 / 63, 6: 43 / 25, 8: 92 / 88 (cavalry idle); the
+        cavalry fighting instead made the attacker win by attrition
+        (3: 19); the raid hold 2: 40 / 71, 5: 45 / 69, 9: 57 / 34.
+      2 The runner on the laptop builds the stubbed blocks (NEXT 4's
+        recipe); 3 the cloud check (NEXT 5a's).
+      4 The data tuning (cloud, Opus 5.5 medium), with tryout.js, bots.js
+        and outcomes.js, against GDD 5:
+        - the targets hold for the EASIEST of the four foe_ styles in each
+          battle (Q3b) - outcomes.js's foe_ lines show each;
+        - help your side first (Q3): first move, scouting, a unit more,
+          set-up rows, round limits; only then bot rows or styles;
+        - river stalls: more crossings on the maps (Q4), not a bot change;
+        - outcome pairs: an outcome's effect may change, keeping its name
+          (Q5), to bring each scene_ pair within 5 points;
+        - the Defensive Game's defender share, cover and round limits:
+          not answered yet (Q1's second half) - ask him before moving the
+          share off GDD 4's two-thirds; maps and round limits are data
+          and fine;
+        then the probes, replay lines, CHECK lines, GDD and hand-edits.txt
+        in step, and the author freezes the design.
+
+ANSWERED QUESTIONS (NEXT 5b; decision 14 has his answers)
+  Q1 the Defensive Game dash; Q2 the raid race; Q3 Fights to the Finish
+  near 50; Q3b which foe_ style the targets hold for; Q4 river stalls;
+  Q5 changing an outcome's effect. Still open: Q1's second half - may
+  the defender get more than two-thirds of the force, or more cover, or
+  fewer rounds (GDD 4 says two-thirds)?
+
   6 The author writes the story in Inky. A cloud session may review it with
     knotcheck (node tools/knotcheck.js .) and play runs.
   7 The author: playtests, the release.
@@ -334,6 +434,21 @@ THE AUTHOR'S DECISIONS (2026-10-20)
     (His two points; Claude placed the hand-edits sentence after the model
     list. He may reword or reorder it.) A later hand fix to a block goes
     into disclosure.jsonc's "known" with its hash.
+  13 (2026-10-21) Two knots before each battle 1-10: foe_N (hook foeDone)
+    picks their bot from all four styles - a choice of how hard, not a
+    sidegrade - then scene_N (sceneDone) sends the other outcome, one
+    outcome per knot (Knotwork 3.8-alpha's rule; he picked two knots
+    over one call carrying two values or changing the kit). A foe_
+    knot's default is the row's bot. scene_9's foe_cautious / foe_bold
+    became scout / forward (Claude's pick from the existing effects).
+
+  14 (2026-10-21) His answers to NEXT 5b's questions: Q1 (a) only
+    infantry can get through (throughSize 5), with the bots' cavalry
+    fighting instead of waiting on the back line; Q2 a raider on the back
+    line counts after one turn there, so the other side can answer; Q3
+    your side gets the help first; Q3b the targets hold for the easiest
+    of the four foe_ styles; Q4 more river crossings on the maps; Q5 an
+    outcome's effect may change, keeping its name.
 
 THE FILES
   CLAUDE.md          rules for Claude sessions (line 1 is the runner's
@@ -366,7 +481,8 @@ THE FILES
                      knotworkprivateprealpha, branch working, 67688c3 (no
                      3.8-alpha tag); byte for byte checked. Never edit them
                      here (CLAUDE.md)
-  dev/               selftest.js, bots.js, linemap.py, inkc.sh, README.txt;
+  dev/               selftest.js, bots.js, outcomes.js, tryout.js,
+                     linemap.py, inkc.sh, README.txt;
                      disclosure.js, an unedited copy of Auto-Disclosure-
                      Tool's disclosure.js (branch working, af06b0f)
   run-local.sh, run-phases.js, LOCAL-SUBAGENTS.md, phase-plan.example.txt
@@ -500,3 +616,20 @@ HISTORY
               in the four files and CREDITS.txt's who-wrote-what, "known"
               added for e387a76 and 90af1ad; disclosure check exit 0; the
               reference game.html's DISCLOSURE kept in step.
+  2026-10-21  NEXT 5b and 5c (cloud, Opus 5.5 medium): bot runs on the
+              built game (the same as the reference's), lever tries with
+              a scratch copy of what is now dev/tryout.js, dev/outcomes.js
+              written (1,000 seeds: five WIDE pairs). No data.js change:
+              the Defensive Game and Blow at the Rear need the author's
+              rule calls first (QUESTIONS FOR THE AUTHOR).
+  2026-10-21  Decision 13 (same session): foe_1-10 knots and foeDone in
+              data.js (LEVELS foe, EFFECTS foe_N), game.html's skeleton
+              (newBattle's foe, talkBefore, foeFor, foeDone, the tables'
+              checks, the row probe, scene_9's replay outcome), story.ink
+              (empty foe_ knots), ink/story.js (inkc.sh), ink/config.js,
+              CONTRACT.txt, GDD 5.2/6.1/7/10, the spec's API text,
+              hand-edits.txt, outcomes.js; reference game in step (pushed
+              to reference). knotcheck: the FAIL list now names the foe_
+              knots too.
+  2026-10-21  Decision 14 (same session): his answers to Q1-Q5, NEXT 5d
+              laid out (rule part, runner, cloud check, data tuning).
