@@ -19,18 +19,18 @@
 LINE MAP (for read tools that take a line range)
   rules, game, files, API, traps, numbers: lines 96-419
   PHASE 2 (armies): 443-482   PHASE 3 (steps and contact): 484-517
-  PHASE 4 (reach): 519-557   PHASE 5 (moving units): 559-598
-  PHASE 6 (line of fire): 600-640   PHASE 7 (crews and support): 642-676
-  PHASE 8 (gunfire): 678-724   PHASE 9 (who fights): 726-758
-  PHASE 10 (melee results): 760-787   PHASE 11 (losses): 789-825
-  PHASE 12 (escorts): 827-862   PHASE 13 (fighting): 864-904
-  PHASE 14 (escorts walk): 906-939   PHASE 15 (End Turn): 941-978
-  PHASE 16 (raid): 980-1003   PHASE 17 (result): 1005-1037
-  PHASE 18 (points): 1039-1071   PHASE 19 (outcomes): 1073-1097
-  PHASE 20 (bots 1): 1099-1125   PHASE 21 (bots 2): 1127-1155
-  PHASE 22 (bots 3): 1157-1189   PHASE 23 (bots 4): 1191-1222
-  PHASE 24 (bots 5): 1224-1263   PHASE 25 (bots 6): 1265-1298
-  fixer prompt: 1300-1431
+  PHASE 4 (reach): 519-558   PHASE 5 (moving units): 560-599
+  PHASE 6 (line of fire): 601-641   PHASE 7 (crews and support): 643-677
+  PHASE 8 (gunfire): 679-725   PHASE 9 (who fights): 727-759
+  PHASE 10 (melee results): 761-788   PHASE 11 (losses): 790-826
+  PHASE 12 (escorts): 828-863   PHASE 13 (fighting): 865-905
+  PHASE 14 (escorts walk): 907-940   PHASE 15 (End Turn): 942-979
+  PHASE 16 (raid): 981-1004   PHASE 17 (result): 1006-1038
+  PHASE 18 (points): 1040-1072   PHASE 19 (outcomes): 1074-1098
+  PHASE 20 (bots 1): 1100-1126   PHASE 21 (bots 2): 1128-1156
+  PHASE 22 (bots 3): 1158-1190   PHASE 23 (bots 4): 1192-1223
+  PHASE 24 (bots 5): 1225-1264   PHASE 25 (bots 6): 1266-1299
+  fixer prompt: 1301-1432
   (If you edit this spec, these numbers go stale - run python3 dev/linemap.py.)
 
 HOW THE HUMAN RUNS IT
@@ -530,8 +530,9 @@ Block: PHASE 4. Fill reach(u).
   2 While open.length > 0:
     a s = open.shift() (the FIRST of the list). c = best[s[0] + "," + s[1]].
     b If s is not u's own square AND (pieceAt(s[0], s[1]).ford OR
-      enemyNear(u.side, s[0], s[1])): go on to the next s - a move ends on
-      a ford and next to an enemy, so nothing is reached from there.
+      enemyNear(u.side, s[0], s[1])): go on to the next s - a move ends when
+      it enters a ford or a square next to an enemy, so nothing is reached
+      from there.
     c For each d of DIRS: x = s[0] + d[0]; y = s[1] + d[1].
       - If !canStep(s[0], s[1], x, y): skip this d.
       - o = unitAt(x, y). If o !== null AND (o.side !== u.side OR
