@@ -45,10 +45,12 @@
     "afterApply": "Next: note the new model in HANDOFF.txt (THE AUTHOR'S DECISIONS, 6)."
   },
 
-  // The author's sentences, word for word (2026-10-20; the second is his
-  // decision 9). Each file holds them together, in this order.
+  // The author's sentences, word for word (2026-10-20; "Includes ..." is
+  // his decision 9; "Code hand-edits ..." his words of 2026-10-21, NEXT 5
+  // a2). Each file holds them together, in this order.
   "human": {
-    "lines": ["Design and decisions by Kenton Howard.",
+    "lines": ["Code hand-edits by Kenton Howard.",
+              "Design and decisions by Kenton Howard.",
               "Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT)."]
   },
 
@@ -60,5 +62,13 @@
   "local": [
     { "role": "fixer", "name": "Qwen 3.8", "subject": "^phase \\d+: fixer|fixer try", "askFirst": true, "ids": ["3237d5585563"] },
     { "role": "builder", "name": "Qwen 3.6", "subject": "^phase \\d+: builder|written by the local builder", "ids": ["2167ff73fd1a"] }
-  ]
+  ],
+
+  // Code commits with no model named that are the author's own hand fixes
+  // to a local model's block, credited in the line as "Code hand-edits by
+  // Kenton Howard." (his words, 2026-10-21).
+  "known": {
+    "e387a76": "the author's hand fix to PHASE 18 (CAMP.last, not B.last), 2026-10-21",
+    "90af1ad": "the author's hand fix to PHASE 24 (reach renamed), 2026-10-21"
+  }
 }

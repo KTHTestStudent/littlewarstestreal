@@ -14,23 +14,32 @@ WHO DOES WHAT (as CLAUDE.md has it; the author may reword this)
   Claude (Opus 5.5): the design document from the author's direction,
   the data tables, the specs, game.html's skeleton, the headless checks
   and the docs.
-  The local builder: the code inside game.html's PHASE blocks, written
-  from Claude's step-by-step spec.
+  The local builder (Qwen 3.6) and fixer (Qwen 3.8): the code inside
+  game.html's PHASE blocks, written from Claude's step-by-step spec.
 
 GAME CODE
   game.html's skeleton (2026-10-20, Claude Opus 5.5): the red banner,
   STATE AND HELPERS, and GAME FLOW - the campaign, the screens and their
   drawing, input, the conversations' wiring, Undo, the tips, the bots'
   turn playback, saving, the tables' checks and the self-test. Its 24
-  PHASE blocks (PHASE 2-25, the rules and the bots) are stubs for the
-  local builder to write from specs/LITTLEWARS-SPEC.txt; Claude's own
-  answer code for them is kept apart, on the repository's reference
-  branch, and never reaches the builder. data.js's tables (the structure
+  PHASE blocks (PHASE 2-25, the rules and the bots) were written on the
+  author's laptop (2026-10-21) by local models from
+  specs/LITTLEWARS-SPEC.txt, through his runner (THE RUNNER, below):
+    the builder (Qwen 3.6): PHASE 2-15, 17, 18, 20-22, 24 and 25, and
+      the first tries of 16 and 23;
+    the fixer (Qwen 3.8): its fixes to PHASE 16 and 23, and PHASE 19
+      (the builder's unfinished draft, finished by the fixer);
+    Kenton Howard, by hand: one word in PHASE 18 and two lines in
+      PHASE 24 (the line's "code hand-edits").
+  Claude's own answer code for the blocks is kept apart, on the
+  repository's reference branch, and never reached the builder or the
+  fixer; a cloud Claude session (Opus 5.5) checked the built blocks
+  against it. data.js's tables (the structure
   and first values) are Claude's; their words and numbers are the
   author's to hand-edit (hand-edits.txt). ink/config.js is Claude's.
 
 AI DISCLOSURE
-  AI Disclosure: code by Claude Opus 5.5. Design and decisions by Kenton Howard. Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT).
+  AI Disclosure: code by Claude Opus 5.5, Qwen 3.6 and Qwen 3.8. Code hand-edits by Kenton Howard. Design and decisions by Kenton Howard. Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT).
   (The line above is kept on one line so dev/disclosure.js can check and
   update it; README.md, CLAUDE.md and the title screen (game.html) hold
   the same line. The author's words, 2026-10-20: the last sentence is his

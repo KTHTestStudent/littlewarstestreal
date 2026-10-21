@@ -34,8 +34,11 @@ START HERE
       record was failing then.
     * The VS Code autocomplete model was on during the phase 24 runs; it
       suggested nothing (the author). Keep it off for batches.
-  Next: NEXT 5 a2 - the disclosure words, the author's call (decision 11);
-  then 5b and 5c in a fresh Opus session (STARTER PROMPTS).
+  NEXT 5 a2 is done (decision 12): the line now names Claude Opus 5.5,
+  Qwen 3.6 and Qwen 3.8 and adds "Code hand-edits by Kenton Howard.";
+  disclosure.jsonc's "known" explains e387a76 and 90af1ad; the check says
+  OK (exit 0).
+  Next: 5b and 5c in a fresh Opus session (STARTER PROMPTS).
   On reference (cloud sessions only - never on the laptop): dev-reference/
   - Claude's reference game.html (42/42), the phase builds, 64 planted
   bugs, a block-by-block compare (it matches no builder block line for
@@ -216,7 +219,8 @@ NEXT
       in HISTORY): 6fe7b73 (phase 18) carries phase 17's line; a55cac4
       (19) and 386d312 (20) carry the plan's lines, but record was
       failing then (the true lines had one more FAIL, record first).
-    a2 The disclosure, at the end of the review (decision 11): run node
+    a2 DONE 2026-10-21 (decision 12). The disclosure, at the end of the
+      review (decision 11): run node
       dev/disclosure.js, show the author which models wrote which blocks
       (builder: every block it committed; fixer: 16 and 19, 23 if fixer
       try 2 was committed, and any other fixer commit; the author: the one-word hand fix in 18 and the two-line hand fix in 24, both commits with no model named, which dev/disclosure.js lists), and
@@ -322,6 +326,14 @@ THE AUTHOR'S DECISIONS (2026-10-20)
     wrote it (NEXT 4 step 5). Whether Qwen 3.6 and Qwen 3.8 go into the
     disclosure line is decided at the end of NEXT 5's code review
     (NEXT 5 a2) - until then the line stays as it is.
+  12 (2026-10-21, NEXT 5 a2) The disclosure names both local models, the
+    builder and the fixer, since both wrote code, and his hand fixes (18,
+    24) as "code hand-edits by Kenton Howard". The line, applied in
+    README.md, CLAUDE.md, CREDITS.txt and game.html's title screen:
+    AI Disclosure: code by Claude Opus 5.5, Qwen 3.6 and Qwen 3.8. Code hand-edits by Kenton Howard. Design and decisions by Kenton Howard. Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT).
+    (His two points; Claude placed the hand-edits sentence after the model
+    list. He may reword or reorder it.) A later hand fix to a block goes
+    into disclosure.jsonc's "known" with its hash.
 
 THE FILES
   CLAUDE.md          rules for Claude sessions (line 1 is the runner's
@@ -483,3 +495,8 @@ HISTORY
               the reference, skeleton the stub's, no extra globals, phase
               builds and 64 planted bugs OK, Local-Model lines right. No
               fixes. Who wrote what: START HERE.
+  2026-10-21  NEXT 5 a2 (same session): the author's decision 12 - the line
+              names Qwen 3.6 and Qwen 3.8 and his code hand-edits; applied
+              in the four files and CREDITS.txt's who-wrote-what, "known"
+              added for e387a76 and 90af1ad; disclosure check exit 0; the
+              reference game.html's DISCLOSURE kept in step.
