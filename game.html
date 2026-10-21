@@ -1251,19 +1251,55 @@ PHASE_OK[23] = true;
 </script>
 <script>
 // ==== PHASE 24 START ====
-// STUBS for now - PHASE 24 fills them in.
 // The bots, 5: when a unit may charge, and the square it picks.
 
 // RETURNS true if style st lets unit u move into contact on (x, y): u is
 // put on (x, y) for a moment, and the melee it would be in there is judged.
 function chargeOk(u, x, y, st) {
-  return false;
+  var ox = u.x;
+  var oy = u.y;
+  u.x = x;
+  u.y = y;
+  var m = null;
+  var meleeList = findMelees();
+  for (var mi = 0; mi < meleeList.length; mi++) {
+    if (meleeList[mi].indexOf(u) >= 0) { m = meleeList[mi]; break; }
+  }
+  var ok = false;
+  if (m !== null) {
+    var me = meleeCount(m, u.side);
+    var foe = meleeCount(m, other(u.side));
+    var r = meleeOutcome(m);
+    if (st.charge === "twice") ok = me >= 2 * foe;
+    else if (st.charge === "more") ok = me > foe && (me > u.n || supportCount(u.side, m) > 0);
+    else if (st.charge === "isolated") ok = me > foe && isolated(other(u.side), m);
+    else if (st.charge === "even") ok = me >= foe;
+    else ok = r[other(u.side)].fall + r[other(u.side)].taken > r[u.side].fall + r[u.side].taken;
+  }
+  u.x = ox;
+  u.y = oy;
+  return ok;
 }
 
 // RETURNS the square [x, y] unit u ends its move on, for style st: where
 // it stands or a square of reach(u), the best by moveScore.
 function bestSquare(u, st) {
-  return [u.x, u.y];
+  var g = headGrid(u, st);
+  var c = [[u.x, u.y]];
+  var reach = reach(u);
+  for (var ri = 0; ri < reach.length; ri++) c.push([reach[ri].x, reach[ri].y]);
+  var plain = st.slip > 0 && rng() * 100 < st.slip;
+  var best = null;
+  var bs = 0;
+  for (var si = 0; si < c.length; si++) {
+    var s = c[si];
+    var moved = (s[0] !== u.x || s[1] !== u.y);
+    if (moved && enemyNear(u.side, s[0], s[1]) && (isGun(u) || !chargeOk(u, s[0], s[1], st))) continue;
+    var v = -g[s[1]][s[0]];
+    if (!plain) v = moveScore(u, s[0], s[1], st, g);
+    if (best === null || v > bs) { best = s; bs = v; }
+  }
+  return best;
 }
 PHASE_OK[24] = true;
 // ==== PHASE 24 END ====
