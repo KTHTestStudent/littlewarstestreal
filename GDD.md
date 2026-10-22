@@ -7,7 +7,9 @@ the tuning could not reach is in section 5.2's last list. Later the same
 day: the playing pieces drawn to stand out from the board (section 8,
 "Pieces, not scenery"; HANDOFF NEXT 3), for the author to judge.
 Also: section 5.2 now has a table of your side's score against each `foe_`
-style in every battle, easiest to hardest (bot runs, no data change).
+style in every battle, easiest to hardest, and a table of your side's points
+in each battle against the easiest style, with the most each could give
+(bot runs and dev/points.js, no data change).
 
 v0.6, 2026-10-21: v0.5 with the author's decision 14 (section 10)
 - in a Defensive Game only an infantry squad gets through, and a raid
@@ -420,6 +422,41 @@ counts as half a win.
   `foe_` knot is a real choice of difficulty in most battles. The hardest
   styles are close to unwinnable for the newcomer bot: bold in 3 and 5
   (0 and 5), cautious in 6 and 10 (7 each).
+
+- **Your side's points in each battle (2026-10-22, 1,000 seeds,
+  `node dev/points.js . 1000`).** Section 3.9's points, with the newcomer
+  bot on your side against the easiest `foe_` style (the one in the table
+  above; the row's bot where it is the easiest) and the knot's default
+  outcome. "Max possible" is the ceiling a battle could give: a win (100),
+  10 for every gun on the board (both sides'), every figure of yours alive
+  at its arm's points, and half a point for every enemy figure as a
+  prisoner. No run gets there: the best of 1,000 is shown.
+
+| # | Country | Easiest style | Average | In a win | In a loss | Best run | Max possible | Average / max |
+|---|---|---|---|---|---|---|---|---|
+| 0 | Hook's Farm | gentle | 115.2 | 131.5 | 15.1 | 151 | 152 | 76% |
+| 1 | The Two Hills | clever | 99.6 | 120.9 | 12.6 | 142.5 | 152 | 66% |
+| 2 | The Long Wall | cautious | 115.3 | 142.1 | 16.3 | 160 | 166 | 69% |
+| 3 | The Cottages | clever | 99.2 | 117.2 | 9.0 | 124 | 148 | 67% |
+| 4 | The Chalk Brook | clever | 76.4 | 118.1 | 12.7 | 125.5 | 160 | 48% |
+| 5 | The Orchard | clever | 85.7 | 122.3 | 11.5 | 136 | 154 | 56% |
+| 6 | The Mill Hill | steady | 97.0 | 132.4 | 16.4 | 147.5 | 160 | 61% |
+| 7 | The Ridge | cautious | 98.6 | 132.5 | 12.1 | 160.5 | 169 | 58% |
+| 8 | The Village | steady | 78.6 | 130.2 | 23.3 | 158.5 | 161 | 49% |
+| 9 | The Two Fords | cautious | 73.9 | 129.4 | 13.4 | 153.5 | 169 | 44% |
+| 10 | The Whole Floor | clever | 73.6 | 141.6 | 24.1 | 166.5 | 212 | 35% |
+| 1-10 | the campaign | | 897.8 | | | | 1,651 | 54% |
+
+  - The tutorial scores nothing in the campaign (3.9), so battle 0 is left
+    out of the last row. In battle 4 steady and clever are within a point
+    (steady, the row's bot, averages 75.8).
+  - An average is mostly the win rate: a win is worth 117 to 142 points on
+    average and a loss 9 to 24, so a battle with a lower win rate (4, 8,
+    9, 10) averages lower however well the wins go. A win reaches 74% to
+    87% of the ceiling in battles 0-9; in battle 10, with 4 guns and 88
+    figures, 67%.
+  - A campaign of easiest-style battles gives about 900 points of 1,651
+    (54%). The score doesn't change the ending (3.9).
 
 ### 5.3 How it is checked
 

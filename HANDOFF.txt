@@ -106,6 +106,8 @@ NUMBERS FOR THE TUNING (2026-10-22, after NEXT 2; 1,000 seeds)
     10 The Whole Floor 43 (50)   clever (the easiest)
   The score against every foe_ style, easiest to hardest, is in GDD 5.2
   (a table, 2026-10-22). In 2 and 7 the default is not the easiest style.
+  The points per battle against the easiest style, with the most each battle
+  could give, are in GDD 5.2 too (dev/points.js).
   node dev/outcomes.js . 1000 - the scene_ pairs with the row's bot:
     1 scout 80 / move_first 80 ok   (both unseen by bots now)
     2 rear_west 72 / rear_east 75 ok
@@ -298,7 +300,7 @@ THE FILES
                      knotworkprivateprealpha, branch working, 67688c3 (no
                      3.8-alpha tag). Never edit them here (CLAUDE.md)
   dev/               selftest.js, bots.js, outcomes.js, tryout.js,
-                     shots.js, linemap.py, inkc.sh, README.txt;
+                     points.js, shots.js, linemap.py, inkc.sh, README.txt;
                      disclosure.js, an unedited copy of Auto-Disclosure-
                      Tool's disclosure.js (branch working, af06b0f)
   run-local.sh, run-phases.js, LOCAL-SUBAGENTS.md, phase-plan.example.txt

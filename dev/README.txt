@@ -45,6 +45,14 @@ THE TOOLS
       ARMIES, so "scout" and "forward" (setupRows) change nothing in bot
       runs: only a player sees or uses them.
       node dev/outcomes.js . 1000 (about 6 minutes)
+  points.js [folder] [runs per battle] [battles]
+      Your side's points (GDD 3.9) in each battle against the easiest of the
+      four foe_ styles (the best score for your side; a tie goes to the
+      row's bot): the average over all runs, in a win and in a loss, the
+      best run, the most points the battle could give (a win, every gun on
+      the board, all your figures alive, every enemy figure a prisoner) and
+      the average as a share of that. Needs every PHASE block built.
+      node dev/points.js . 1000 (about 10 minutes; it plays all four styles)
   tryout.js <changes.js | -> [runs] [battles] [all]
       Bot runs with data.js's tables changed for the run only (a file of
       plain JavaScript table edits, such as RULES.withdraw = 4), to try
