@@ -2,7 +2,7 @@
 // lever before editing data.js (nothing is written to any file).
 //   node dev/tryout.js <changes.js | -> [runs] [battles] [all]
 //   node dev/tryout.js - 400 3,6,8 all          as data.js stands
-//   echo "RULES.throughSize = 5" > /tmp/t.js
+//   echo "RULES.withdraw = 4" > /tmp/t.js
 //   node dev/tryout.js /tmp/t.js 400 3,6,8 all  with that change
 // changes.js is plain JavaScript run in the page after it loads and
 // before the runs, on the tables only (RULES, LEVELS, ARMIES, COUNTRIES,

@@ -17,20 +17,20 @@
 ============================================================================
 
 LINE MAP (for read tools that take a line range)
-  rules, game, files, API, traps, numbers: lines 96-422
-  PHASE 2 (armies): 446-485   PHASE 3 (steps and contact): 487-520
-  PHASE 4 (reach): 522-561   PHASE 5 (moving units): 563-602
-  PHASE 6 (line of fire): 604-644   PHASE 7 (crews and support): 646-680
-  PHASE 8 (gunfire): 682-728   PHASE 9 (who fights): 730-762
-  PHASE 10 (melee results): 764-791   PHASE 11 (losses): 793-829
-  PHASE 12 (escorts): 831-866   PHASE 13 (fighting): 868-908
-  PHASE 14 (escorts walk): 910-943   PHASE 15 (End Turn): 945-982
-  PHASE 16 (raid): 984-1007   PHASE 17 (result): 1009-1041
-  PHASE 18 (points): 1043-1075   PHASE 19 (outcomes): 1077-1101
-  PHASE 20 (bots 1): 1103-1129   PHASE 21 (bots 2): 1131-1159
-  PHASE 22 (bots 3): 1161-1193   PHASE 23 (bots 4): 1195-1226
-  PHASE 24 (bots 5): 1228-1267   PHASE 25 (bots 6): 1269-1302
-  fixer prompt: 1304-1435
+  rules, game, files, API, traps, numbers: lines 96-428
+  PHASE 2 (armies): 452-491   PHASE 3 (steps and contact): 493-526
+  PHASE 4 (reach): 528-567   PHASE 5 (moving units): 569-608
+  PHASE 6 (line of fire): 610-650   PHASE 7 (crews and support): 652-686
+  PHASE 8 (gunfire): 688-734   PHASE 9 (who fights): 736-768
+  PHASE 10 (melee results): 770-797   PHASE 11 (losses): 799-835
+  PHASE 12 (escorts): 837-872   PHASE 13 (fighting): 874-914
+  PHASE 14 (escorts walk): 916-949   PHASE 15 (End Turn): 951-988
+  PHASE 16 (raid): 990-1013   PHASE 17 (result): 1015-1068
+  PHASE 18 (points): 1070-1102   PHASE 19 (outcomes): 1104-1128
+  PHASE 20 (bots 1): 1130-1156   PHASE 21 (bots 2): 1158-1186
+  PHASE 22 (bots 3): 1188-1222   PHASE 23 (bots 4): 1224-1255
+  PHASE 24 (bots 5): 1257-1296   PHASE 25 (bots 6): 1298-1331
+  fixer prompt: 1333-1471
   (If you edit this spec, these numbers go stale - run python3 dev/linemap.py.)
 
 HOW THE HUMAN RUNS IT
@@ -199,10 +199,11 @@ HOW THE GAME WORKS (read before any phase)
   line with an escort; if the escort falls, they go free.
   BATTLE TYPES (GDD 4): Fight to the Finish ("finish"); Blow at the Rear
   ("rear": a unit of 3+ figures on their back line - or the row's half of
-  it - wins, after a 3-turn withdrawal); Defensive Game ("defend": the
-  attacker wins on the defender's back line, the defender at the round
-  limit or when the attacker is under a quarter of its figures). A side
-  with no armed figures left loses.
+  it - at the end of two of its side's turns running wins, after a 3-turn
+  withdrawal); Defensive Game ("defend": the attacker wins with a unit of
+  5+ figures - an infantry squad - on the defender's back line, the
+  defender at the round limit or when the attacker is under a quarter of
+  its figures). A side with no armed figures left loses.
   POINTS (GDD 3.9): 100 for a win (50 each for a draw), 10 a gun held, 1
   an infantry figure alive, 1.5 a cavalry one, 0.5 each prisoner for both
   sides.
@@ -264,6 +265,9 @@ API - everything the phase blocks can use (all already exist)
            firedOn  {you, them}: true if that side's units were fired at
                     in the other side's last turn (the bots read it)
            raid     null, or {by, left} once a raid has got through
+           standing {you, them}: the ids of that side's raiders (phase 17)
+                    at the end of its last turn - a raid counts when one
+                    of them is still there at the end of its next turn
            result   null, or {winner, why} when the battle is over
            start    {you, them}: each side's armed figures at the start
            botKey, botDone   the bots' memory of the turn (phase 25)
@@ -331,7 +335,7 @@ API - everything the phase blocks can use (all already exist)
   The tables (data.js - read them, never copy their values into code):
   RULES       {range: 10, shots: 4, crew: 4, cover: 50, isolation: 2,
               perEscort: 7, escortWalk: 2, raidSize: 3, withdraw: 3,
-              throughSize: 1, quarter: 25, win: 100, draw: 50, gunPts: 10,
+              throughSize: 5, quarter: 25, win: 100, draw: 50, gunPts: 10,
               prisonerPts: 0.5}
   ON_TARGET   [{upTo: 3, pct: 60}, {upTo: 6, pct: 45}, {upTo: 10, pct: 30}]
   ARMS        {inf: {figures: 6, move: 2, pts: 1, gun: false},
@@ -370,7 +374,7 @@ API - everything the phase blocks can use (all already exist)
     phase14: escortStep(e, g), walkEscorts(side)
     phase15: endTurn(), onBackLine(side, size, half)
     phase16: surrender(side), raidOver()
-    phase17: checkResult()
+    phase17: raiders(side), checkResult()
     phase18: battlePoints(side), recordBattle()
     phase19: applyOutcome(row, outcome)
     phase20: botStyle(side), shotValue(g, x, y)
@@ -414,9 +418,11 @@ SHARED NUMBERS (all from data.js - read the tables, never write them in)
   7-10; cover 50%; a gun is in action with 4 figures counting at it, and
   moves only with 4 of its own crew.
   Isolation distance 2 squares. 7 prisoners per escort.
-  Blow at the Rear: a unit of 3 figures on the back line; 3 turns to
-  withdraw. Defensive Game: the attacker needs a unit of 1 figure on the
-  defender's back line and a quarter (25%) of its starting figures.
+  Blow at the Rear: a unit of 3 figures on the back line at the end of two
+  of its side's turns running; 3 turns to withdraw. Defensive Game: the
+  attacker needs a unit of 5 figures (only an infantry squad has that
+  many) on the defender's back line and a quarter (25%) of its starting
+  figures.
   Points: win 100, draw 50 each, a gun 10, a figure its arm's pts
   (infantry 1, cavalry 1.5, crew as their arm), 0.5 each prisoner.
 
@@ -1009,7 +1015,19 @@ EXPECTED SELF-TEST (the FAILs named are later phases):
 ============================================================================
  PHASE 17 - the result
 ============================================================================
-Block: PHASE 17. Fill checkResult().
+Block: PHASE 17. Fill raiders(side) and checkResult().
+
+  raiders(side): side's raiders - a NEW array of its units (not escorts)
+  with RULES.raidSize or more figures on the other side's back line, in
+  the row's half (B.row.rear), in B.units order.
+  1 out = [].
+  2 For each unit u of B.units:
+    - skip it if u.side !== side OR u.arm === "esc" OR u.n <
+      RULES.raidSize OR u.y !== backY(other(side));
+    - skip it if B.row.rear === "west" AND u.x >= B.W / 2;
+    - skip it if B.row.rear === "east" AND u.x < B.W / 2;
+    - otherwise out.push(u).
+  3 Return out.
 
   checkResult(): null while the battle goes on, or {winner, why} - winner
   "you", "them" or "draw". Called at the end of B.side's turn. In order:
@@ -1019,9 +1037,18 @@ Block: PHASE 17. Fill checkResult().
     "them" if b > 0, otherwise "draw"; why: "none"}.
   4 If t !== "defend" AND a < B.row.drawLine AND b < B.row.drawLine:
     return {winner: "draw", why: "few"}.
-  5 If t === "rear" AND onBackLine(s, RULES.raidSize, B.row.rear):
-    B.raid = {by: s, left: RULES.withdraw};
-    say(words(LOG_WORDS.raid, { n: RULES.withdraw })); return null.
+  5 If t === "rear": a raid counts only when the SAME unit is one of s's
+    raiders at the end of two of s's turns running - it stood there
+    through the other side's turn, which could answer it:
+    a now = raiders(s).
+    b For each unit u of now, in order: if B.standing[s].indexOf(u.id) >=
+      0: B.raid = {by: s, left: RULES.withdraw};
+      say(words(LOG_WORDS.raid, { n: RULES.withdraw })); return null.
+    c B.standing[s] = [] (a new, empty array). Then for each unit u of
+      now, in order: B.standing[s].push(u.id); say(words(LOG_WORDS.holdYou,
+      { name: u.name })) if s === "you", otherwise
+      say(words(LOG_WORDS.holdThem, { name: u.name })).
+    (No return after c: go on to step 6.)
   6 If t === "defend": att = other(B.row.defender).
     a If armed(att) * 100 < B.start[att] * RULES.quarter: return
       {winner: B.row.defender, why: "quarter"}.
@@ -1167,10 +1194,12 @@ Block: PHASE 22. Fill headGrid(u, st).
   style st. The first of these that applies:
   1 side = u.side. If B.raid !== null AND B.raid.by !== side (its side
     lost a raid and withdraws): return stepsFrom(backLine(side, "all")).
-  2 If u.arm === "cav" AND B.row.type === "rear": return
-    stepsFrom(backLine(other(side), B.row.rear)).
-  3 If u.arm === "cav" AND B.row.type === "defend" AND B.row.defender !==
-    side: return stepsFrom(backLine(B.row.defender, "all")).
+  2 If u.arm === "cav" AND u.n >= RULES.raidSize AND B.row.type ===
+    "rear": return stepsFrom(backLine(other(side), B.row.rear)).
+  3 If u.arm === "cav" AND u.n >= RULES.throughSize AND B.row.type ===
+    "defend" AND B.row.defender !== side: return
+    stepsFrom(backLine(B.row.defender, "all")).
+    (Cavalry too few to win there head for the enemy instead, below.)
   4 Make three new arrays and a number from the units v of B.units with
     v.side !== side, in order:
       guns     [v.x, v.y] of each v with isGun(v) (crewed or empty);
@@ -1400,8 +1429,13 @@ EXPECTED SELF-TEST (the FAILs named are later phases):
                                         raider's turns counted down too
     [result] [rear] (17)             -> the tests in another order (the
                                         quarter before "through"), <=
-                                        instead of <, or the round limit
-                                        checked after the first side
+                                        instead of <, the round limit
+                                        checked after the first side, a
+                                        raid counted when its unit first
+                                        arrives (it must be the same unit
+                                        at the end of two turns running),
+                                        B.standing[s] not made a new array,
+                                        or the half left out of raiders
     [points] [record] (18)           -> units that left the field counted,
                                         prisoners scored for one side only,
                                         or the tutorial added to CAMP
@@ -1412,9 +1446,11 @@ EXPECTED SELF-TEST (the FAILs named are later phases):
     [botaim] (21)                    -> friendNear not checked for the
                                         simple aims, or "nearest" scored
                                         the wrong way round
-    [head] (22)                      -> the checks in another order, or
+    [head] (22)                      -> the checks in another order,
                                         threats not limited to the side's
-                                        own half
+                                        own half, or the cavalry's figure
+                                        test (u.n >= RULES.raidSize /
+                                        RULES.throughSize) left out
     [score] (23)                     -> a step left out or a gun scored by
                                         the grid, guard not added for EACH
                                         gun short of crew next to it

@@ -47,7 +47,7 @@ THE TOOLS
       node dev/outcomes.js . 1000 (about 6 minutes)
   tryout.js <changes.js | -> [runs] [battles] [all]
       Bot runs with data.js's tables changed for the run only (a file of
-      plain JavaScript table edits, such as RULES.throughSize = 5), to try
+      plain JavaScript table edits, such as RULES.withdraw = 4), to try
       a lever before editing data.js. Writes nothing. Table edits only: a
       changed game function is a rule change for the spec.
   linemap.py [spec]

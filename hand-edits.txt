@@ -33,8 +33,12 @@ IF THE PAGE GOES WRONG AFTER AN EDIT
 THE TABLES, IN FILE ORDER
   RULES  (RULE)  the rules' numbers (GDD 3.10): gun range, shots, crew,
          cover %, isolation distance, prisoners per escort, escort walk,
-         raid size, withdrawal turns, the Defensive Game's throughSize and
-         quarter %, and the points (win, draw, a gun, a prisoner). Whole
+         raid size (a raider must stand on the back line through one
+         enemy turn), withdrawal turns, the Defensive Game's throughSize
+         (5: only an infantry squad gets through - the author's decision
+         14; the bots' cavalry also read raidSize and throughSize to decide
+         whether to ride for a back line) and quarter %, and the points
+         (win, draw, a gun, a prisoner). Whole
          numbers of 1 or more, except cover and quarter (percents, 0-100)
          and prisonerPts (0 or more).
   ON_TARGET  (RULE)  how often a shot lands on the aimed square, by range:
@@ -83,7 +87,10 @@ THE TABLES, IN FILE ORDER
          many names as a side ever has of that arm (5 inf, 4 cav, 3 gun).
   LOG_WORDS  (SAFE)  the log's lines (about 70 letters). Keep the {names}
          in braces: {n}, {a}, {b}, {max} are numbers, {name} a unit,
-         {country} a battle, {type} a battle type.
+         {country} a battle, {type} a battle type. holdYou and holdThem
+         are Claude's drafts (2026-10-21) for a raider arriving on the
+         back line, one turn before its raid counts - the author's to
+         word.
   SCREEN_WORDS  (SAFE)  the words on every screen, one group per screen.
          A letter in brackets - (E), (U), (L) - is the key that does it;
          the key itself is in the code, so keep the letter. The title is
