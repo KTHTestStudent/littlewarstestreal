@@ -1015,7 +1015,6 @@ PHASE_OK[16] = true;
 </script>
 <script>
 // ==== PHASE 17 START ====
-// STUBS for now - PHASE 17 fills them in.
 // The result: is the battle over, and who won.
 
 // RETURNS a new array of side's raiders: its units (not escorts) with
@@ -1023,12 +1022,64 @@ PHASE_OK[16] = true;
 // row's half (B.row.rear: "west" x < B.W / 2, "east" x >= B.W / 2,
 // anything else the whole line), in B.units order.
 function raiders(side) {
-  return [];
+  var out = [];
+  for (var i = 0; i < B.units.length; i++) {
+    var u = B.units[i];
+    if (u.side !== side || u.arm === "esc" || u.n < RULES.raidSize || u.y !== backY(other(side))) continue;
+    if (B.row.rear === "west" && u.x >= B.W / 2) continue;
+    if (B.row.rear === "east" && u.x < B.W / 2) continue;
+    out.push(u);
+  }
+  return out;
 }
 
 // RETURNS null while the battle goes on, or {winner, why} - winner "you",
 // "them" or "draw". Called at the end of B.side's turn.
 function checkResult() {
+  if (B.raid !== null) return raidOver();
+  var s = B.side;
+  var t = B.row.type;
+  var a = armed("you");
+  var b = armed("them");
+  if (a === 0 || b === 0) {
+    return {winner: a > 0 ? "you" : (b > 0 ? "them" : "draw"), why: "none"};
+  }
+  if (t !== "defend" && a < B.row.drawLine && b < B.row.drawLine) {
+    return {winner: "draw", why: "few"};
+  }
+  if (t === "rear") {
+    var now = raiders(s);
+    for (var ni = 0; ni < now.length; ni++) {
+      var u = now[ni];
+      if (B.standing[s].indexOf(u.id) >= 0) {
+        B.raid = {by: s, left: RULES.withdraw};
+        say(words(LOG_WORDS.raid, {n: RULES.withdraw}));
+        return null;
+      }
+    }
+    B.standing[s] = [];
+    for (var ni2 = 0; ni2 < now.length; ni2++) {
+      var u2 = now[ni2];
+      B.standing[s].push(u2.id);
+      if (s === "you") {
+        say(words(LOG_WORDS.holdYou, {name: u2.name}));
+      } else {
+        say(words(LOG_WORDS.holdThem, {name: u2.name}));
+      }
+    }
+  }
+  if (t === "defend") {
+    var att = other(B.row.defender);
+    if (armed(att) * 100 < B.start[att] * RULES.quarter) {
+      return {winner: B.row.defender, why: "quarter"};
+    }
+    if (s === att && onBackLine(att, RULES.throughSize, "all")) {
+      return {winner: att, why: "through"};
+    }
+  }
+  if (B.round >= B.row.rounds && s !== B.row.first) {
+    return {winner: t === "defend" ? B.row.defender : "draw", why: "rounds"};
+  }
   return null;
 }
 PHASE_OK[17] = true;
