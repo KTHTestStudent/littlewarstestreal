@@ -1990,17 +1990,17 @@ const OPEN8 = [
 ];
 
 // The replay probe's five battles (bots on both sides: the newcomer for
-// you, the row's style for them), and what they gave on 2026-10-21 (the
-// author's decision 14: throughSize 5, the bots' cavalry, the raid's hold).
+// you, the row's style for them), and what they gave on 2026-10-22 (NEXT
+// 2's data tuning, after the author's decision 14).
 // A RULE edit in data.js changes them on purpose: update these with the new
 // lines (dev/selftest.js prints them) once the change is meant.
 const REPLAY_RUNS = [[0, 5, ""], [2, 11, "rear_west"], [6, 23, "more_rounds"], [9, 8, "scout"], [10, 3, "extra_troop"]];
 const REPLAY_EXPECT = [
   "lv0 s5 you/none r6 you 121.5 them 13 acts 31 #tb3lnp",
-  "lv2 s11 them/raid r6 you 5.5 them 136.5 acts 35 #119x75s",
-  "lv6 s23 you/none r4 you 136 them 2 acts 25 #1up7bqt",
-  "lv9 s8 you/none r11 you 128 them 15 acts 78 #1un0bzj",
-  "lv10 s3 you/none r7 you 147 them 22.5 acts 79 #wm9xcf"
+  "lv2 s11 you/none r10 you 144.5 them 2.5 acts 58 #140qcja",
+  "lv6 s23 them/quarter r4 you 13.5 them 118.5 acts 31 #1744nd2",
+  "lv9 s8 them/raid r12 you 4.5 them 133.5 acts 82 #1oqyu3j",
+  "lv10 s3 draw/few r12 you 78 them 79 acts 84 #1j9uhl0"
 ];
 
 function selfTest() {
@@ -2056,7 +2056,7 @@ function selfTest() {
     B.row.extra = ["gun"];
     makeArmy("you");
     const last = B.units[B.units.length - 1];
-    const k = B.units.length === 10 && last.arm === "gun" && sqName(last.x, last.y) === "I1" && last.name === UNIT_NAMES.gun[2] && last.id === 10;
+    const k = B.units.length === 9 && last.arm === "gun" && sqName(last.x, last.y) === "I1" && last.name === UNIT_NAMES.gun[2] && last.id === 9;
     newBattle(4, "");
     B.units = [];
     B.nextId = 1;
@@ -2587,9 +2587,9 @@ function selfTest() {
     applyOutcome(r8, "horse_gun");
     const r9 = baseRow(2);
     applyOutcome(r9, "rear_east");
-    return r1.first === "you" && r1.scout && r2.extra.join() === "cav" && r3.rounds === 12 && r4.bot === "bold" && r5.pieces.join() === "wall" &&
+    return r1.first === "you" && r1.scout && r2.extra.join() === "cav" && r2.first === "them" && r3.rounds === 12 && r4.bot === "bold" && r5.pieces.join() === "wall" &&
       r6.rear === "west" && !r6.scout && r7.youRows === 3 && r8.horseGun && !r8.scout && r9.rear === "east" &&
-      LEVELS[6].rounds === 10 && LEVELS[5].youRows === 2 && LEVELS[7].first === "them";
+      LEVELS[6].rounds === 10 && LEVELS[5].youRows === 2 && LEVELS[5].first === "you";
   });
   // ---- phase 20: the bots, 1 ----
   T("style", function () {
