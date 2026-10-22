@@ -50,10 +50,21 @@ START HERE
   The author answered the questions (decision 14, 2026-10-21): two rule
   changes (infantry-only through with the bots' cavalry fighting; a raid
   counts after standing a turn), then data tuning.
-  Next: NEXT 5d's rule part in a fresh Opus 5.5 high session (STARTER
-  PROMPTS), then the runner, the cloud check and the data tuning.
+  NEXT 5d step 1 is done (Opus 5.5 high, 2026-10-21 evening): the rules
+  are in data.js (throughSize 5, two new LOG_WORDS lines - Claude's
+  drafts, the author's to word), the skeleton (B.standing), the spec
+  (PHASE 17: a new raiders(side) and checkResult's step 5; PHASE 22:
+  steps 2-3), the probes (result, rear, head) and the replay lines, and
+  on reference (42/42; all 25 phase builds give the spec's lines, which
+  did not move; 75 of 75 planted bugs caught). PHASE 17 and 22 are back
+  to stubs on working-claude (the stub commit), so the self-test there
+  says SELF-TEST 36/42 FAIL: result rear head until the runner rebuilds
+  them.
+  Next: NEXT 5d step 2, the runner on the laptop (no Claude session):
+  phase-plan-5d.txt; then step 3, the cloud check (STARTER PROMPTS); then
+  step 4, the data tuning.
   On reference (cloud sessions only - never on the laptop): dev-reference/
-  - Claude's reference game.html (42/42), the phase builds, 64 planted
+  - Claude's reference game.html (42/42), the phase builds, 75 planted
   bugs, a block-by-block compare (it matches no builder block line for
   line: the builder writes var and index loops, the reference const and
   for...of - style only).
@@ -62,11 +73,11 @@ START HERE
 STARTER PROMPTS (the author pastes one into a new cloud session, after
 merging working-claude into working; start fresh rather than going on in a
 long conversation - it reads less)
-  For NEXT 5d step 1 (the rule part, decision 14):
+  For NEXT 5d step 3 (the cloud check, after the runner's rebuild):
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
-  (Opus 5.5, high). Start from origin/working-claude (merge origin/working
+  (Opus 5.5, medium). Start from origin/working-claude (merge origin/working
   into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 5d
-  step 1 (the rule part, decision 14).
+  step 3 (the cloud check of the rebuilt PHASE 17 and 22).
   For NEXT 5d step 4 (after the runner and the cloud check):
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
   (Opus 5.5, medium). Start from origin/working-claude (merge origin/working
@@ -311,11 +322,27 @@ NEXT
       (decision 13), not judged: the spread is 31-69 points in most
       battles (8: none - every style loses to the dash).
     d Next (decision 14). In order:
-      1 The rule part (cloud, Opus 5.5 high): the spec's steps, the
-        reference blocks, the probes and their CHECK and EXPECTED lines,
-        phasebuilds.py and plant.py, then a stub commit of the changed
-        blocks on working-claude (and a plan file's lines in HANDOFF for
-        the runner):
+      1 DONE 2026-10-21 (Opus 5.5 high; HISTORY). As planned below, with
+        these choices: the raid's hold is a new raiders(side) in PHASE 17
+        (PHASE 15's onBackLine is unchanged, so 15 needs no rebuild) and
+        B.standing {you, them}, the ids of each side's raiders at the end
+        of its last turn; a raid counts when one of them is a raider again
+        at the end of the side's next turn. When a unit arrives the log
+        says LOG_WORDS.holdYou or holdThem (Claude's drafts: OPEN ITEMS).
+        No new probe (still 42): result, rear and head test the new rules,
+        with 11 new planted bugs on reference. The EXPECTED lines did not
+        move. The plan (lines computed with the reference's 17 and 22 in
+        the stub commit's game.html - not the spec's lines, as 22 is still
+        a stub when 17 is built): phase-plan-5d.txt.
+        The rules' effect, the built game with the reference's 17 and 22
+        (node dev/bots.js . 200; your score against GDD 5.2, before ->
+        now): 2 Long Wall 17 -> 33 (75), raids 77% -> 27%; 3 Cottages
+        10 -> 18 (75), the attacker now wins by wiping you out (quarter
+        18, none 82); 5 Orchard 32 -> 47 (65); 6 Mill Hill 100 -> 91 (65),
+        by attrition now; 8 Village 100 -> 100 (55), the same; 9 Two Fords
+        72 -> 59 (55), 36% at the limit; the rest unchanged. outcomes.js:
+        OUTCOMES-5D below.
+        What was planned:
         - Defensive Game: RULES.throughSize 5 (only an infantry squad, 6
           figures, can get through; data). The bots' cavalry in a
           Defensive Game (attacker) no longer ride for the back line when
@@ -335,8 +362,46 @@ NEXT
         5 alone 3: 35 / 63, 6: 43 / 25, 8: 92 / 88 (cavalry idle); the
         cavalry fighting instead made the attacker win by attrition
         (3: 19); the raid hold 2: 40 / 71, 5: 45 / 69, 9: 57 / 34.
-      2 The runner on the laptop builds the stubbed blocks (NEXT 4's
-        recipe); 3 the cloud check (NEXT 5a's).
+      2 The runner on the laptop (no Claude session) builds PHASE 17 and
+        22 from the stub commit. In Git Bash in C:\Git\littlewarstestreal,
+        after merging the pull request on GitHub:
+          git checkout working
+          git pull
+          git branch -r               no origin/reference in the list
+          node dev/selftest.js        SELF-TEST 36/42 FAIL: result rear head
+                                      (exit 1 - expected: 17 and 22 stubs)
+        Ollama running, autocomplete off in VS Code, heavy apps closed.
+          git checkout -b build-5d
+          node run-phases.js phase-plan-5d.txt --dry-run
+          node run-phases.js phase-plan-5d.txt
+        The plan's lines:
+          17  SELF-TEST 38/42 FAIL: head pick botturn
+          22  SELF-TEST 42/42 PASS
+        The last line includes the replay probe (the new replay lines are
+        the reference's). PHASE 17 is now about 60 lines, 22 about 45;
+        one builder run each, so well under an hour.
+        If it stops: NEXT 4 step 5 (a-e) with phase-plan-5d.txt in place
+        of phase-plan.txt. One trap: a fixer sent to phase 17 sees the
+        plan's line (38/42 FAIL: head pick botturn), not the spec's
+        EXPECTED line for 17 (30/42 FAIL: points record row - 18-25 are
+        stubs in the spec's order, not here). If it answers SPEC MISMATCH
+        for that reason, the block may be fine: check it as in step 5a
+        (whole edit, only PHASE 17, the plan's line) and commit it by
+        hand as the builder's, or bring it to the cloud check.
+        After the batch: the runner runs node dev/disclosure.js - the
+        builder (Qwen 3.6) and fixer (Qwen 3.8) are in the line already,
+        so it should say OK. Then:
+          git checkout working
+          git merge build-5d
+          git push
+      3 The cloud check (cloud, Opus 5.5 medium; STARTER PROMPTS), as
+        NEXT 5a for the two blocks: node dev/selftest.js (42/42 PASS, the
+        replay lines the reference's); on reference: compare.py on the
+        built game.html (17 and 22), phasebuilds.py with
+        dev-reference/stub.html (the skeleton with every block a stub -
+        the stub commit's game.html has the builder's other blocks, so it
+        can't serve), plant.py (75 of 75); each phase commit's
+        Local-Model line; read the two blocks closely.
       4 The data tuning (cloud, Opus 5.5 medium), with tryout.js, bots.js
         and outcomes.js, against GDD 5:
         - the targets hold for the EASIEST of the four foe_ styles in each
@@ -352,6 +417,38 @@ NEXT
           and fine;
         then the probes, replay lines, CHECK lines, GDD and hand-edits.txt
         in step, and the author freezes the design.
+
+OUTCOMES-5D (node dev/outcomes.js . 1000 under the new rules, 2026-10-21,
+for step 4 - the built game with the reference's 17 and 22)
+  battle   scene_ pair (score)               gap    foe_ styles (score;
+                                                     * the row's bot)
+  1        scout 50 / move_first 51          ok     steady* 50, cautious
+                                                     51, bold 8, clever 49
+  2        rear_west 38 / rear_east 71       WIDE   steady* 38, cautious 49,
+                                                     bold 41, clever 60
+  3        scout 18 / wall 1                 WIDE   steady* 18, cautious 32,
+                                                     bold 0, clever 83
+  4        bridge 55 / horse_gun 53          ok     steady* 55, cautious 50
+           (horse_gun 91% at the limit)              (100% at limit), bold 15,
+                                                     clever 49 (88% at limit)
+  5        forward 42 / extra_troop 69       WIDE   steady 69, cautious 71,
+                                                     bold* 42, clever 94
+  6        more_rounds 89 / horse_gun 81     WIDE   steady 51, cautious* 89,
+                                                     bold 56, clever 27
+  7        head_start 54 / extra_squad 96    WIDE   steady 56, cautious 83,
+                                                     bold 53, clever* 54
+  8        more_rounds 100 / wood 100        ok     every style 100
+  9        scout 59 / forward 59             ok     steady 65, cautious* 59,
+                                                     bold 35, clever 45
+  10       extra_troop 84 / extra_gun 88     ok     steady 27, cautious 16,
+                                                     bold 15, clever* 84
+  Read for step 4: the targets hold for the easiest style (Q3b), so the
+  battle to fix first is 3 (easiest: clever 83, but steady, the row's,
+  18 - the attacker wins by attrition now; Q1's second half is open), then
+  8 (100 with every style - the Village needs a stronger defender or a
+  smaller attack), 2 (rear_west), and the WIDE pairs 5 and 7 (a unit more
+  against other help). "clever" is the easiest bot in 3, 5 and 10 and the
+  hardest in 6: the styles are not ordered the same way battle to battle.
 
 ANSWERED QUESTIONS (NEXT 5b; decision 14 has his answers)
   Q1 the Defensive Game dash; Q2 the raid race; Q3 Fights to the Finish
@@ -469,6 +566,8 @@ THE FILES
                      steps, CHECK walks and EXPECTED lines, the FIXER
                      PROMPT, the LINE MAP (python3 dev/linemap.py)
   phase-plan.txt     the runner's plan for PHASE 2-25 (NEXT 4)
+  phase-plan-5d.txt  the runner's plan for the rebuild of PHASE 17 and 22
+                     (NEXT 5d step 2); delete it once that is merged
   phase-runner.json  run-phases.js's settings for this game (the spec's
                      path; the author's limits)
   story/story.ink    the story: the contract and empty knots (the author's
@@ -493,9 +592,17 @@ THE FILES
   .gitignore         the runner's output folders, node_modules and Claude
                      Code's laptop settings
   On the reference branch only: dev-reference/ (README.txt, game.html,
-  blocks.py, phasebuilds.py, plant.py, compare.py).
+  stub.html, blocks.py, phasebuilds.py, plant.py, compare.py).
 
 OPEN ITEMS (the author, by hand)
+  * data.js LOG_WORDS holdYou and holdThem (decision 14's raid hold: a
+    raider has arrived on the back line, and its raid counts if it is
+    still there at the end of its side's next turn) are Claude's drafts.
+    Reword them as you like - a SAFE edit; keep {name}:
+      holdYou:  "{name} is on their back line: still there after their
+                turn, it's a raid."
+      holdThem: "Their {name} is on your back line: attack it this turn,
+                or it's a raid."
   * An idea for the runner, his call (a cloud session on
     localsubagentresults, then copied here): three of today's stops were
     a time limit with the edit already whole. run-phases.js could, on a
@@ -633,3 +740,14 @@ HISTORY
               knots too.
   2026-10-21  Decision 14 (same session): his answers to Q1-Q5, NEXT 5d
               laid out (rule part, runner, cloud check, data tuning).
+  2026-10-21  NEXT 5d step 1 (a fresh Opus 5.5 high session): decision
+              14's rules - data.js (throughSize 5, LOG_WORDS holdYou /
+              holdThem as drafts), the skeleton (B.standing, the tables'
+              word check, the result / rear / head probes, the replay
+              lines), the spec (PHASE 17 raiders + step 5, PHASE 22 steps
+              2-3, API, numbers, fixer hints, LINE MAP), GDD v0.6,
+              hand-edits.txt; the stub commit of 17 and 22 with
+              phase-plan-5d.txt. Reference: game.html's 17 and 22,
+              stub.html (new), plant.py 64 -> 75 (the result probe got a
+              case so "through before the quarter" is still caught with
+              throughSize 5); 42/42, 25 phase builds OK, 75 of 75 caught.

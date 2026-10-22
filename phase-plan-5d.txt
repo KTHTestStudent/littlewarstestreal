@@ -1,0 +1,11 @@
+# Little Wars - the plan for run-phases.js for NEXT 5d step 2: the rebuild of
+# PHASE 17 and PHASE 22 after the author's decision 14 (only infantry gets
+# through a Defensive Game, the bots' cavalry fight instead, a raid counts
+# after its unit has stood a turn on the back line). Built from the stub
+# commit, where every other block is already built. These lines are NOT the
+# spec's EXPECTED lines: here 22 is still a stub when 17 is built, so the
+# self-test prints a different line after 17 (HANDOFF.txt, NEXT 5d).
+#   node run-phases.js phase-plan-5d.txt --dry-run
+#   node run-phases.js phase-plan-5d.txt
+17  SELF-TEST 38/42 FAIL: head pick botturn
+22  SELF-TEST 42/42 PASS

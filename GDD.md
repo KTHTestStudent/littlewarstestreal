@@ -1,6 +1,11 @@
-# Little Wars (working title) - Game Design Document, v0.5
+# Little Wars (working title) - Game Design Document, v0.6
 
-Status: v0.5, 2026-10-20, after the skeleton (section 9, step 4): the
+Status: v0.6, 2026-10-21: v0.5 with the author's decision 14 (section 10)
+- in a Defensive Game only an infantry squad gets through, and a raid
+counts only after its unit has stood a turn on the back line; the data
+tuning against section 5 comes next.
+
+v0.5, 2026-10-20, after the skeleton (section 9, step 4): the
 rules, the tables, the story contract and the targets as in v0.4 (the
 design session, the Knotwork step and the author's yes to all of Claude's
 proposals), now built as a runner-ready skeleton - data.js holds every
@@ -253,9 +258,9 @@ ending plays (the author's decision, 2026-10-20).
 | Figures that keep a gun in action | 4 | W11 |
 | Isolation distance | 2 squares | W16 |
 | Prisoners per escort / escort walk | 7 / 2 squares | W23 |
-| Raid size (Blow at the Rear) | 3 figures | W28 |
+| Raid size (Blow at the Rear) | 3 figures, standing through one enemy turn | W28; the hold is the author's decision 14 |
 | Withdrawal after a raid | 3 turns | W28 gives six |
-| Figures a unit of the attacker needs on the defender's back line (Defensive Game) | 1 (any unit, as section 4 says) | - |
+| Figures a unit of the attacker needs on the defender's back line (Defensive Game) | 5 (only an infantry squad) | the author's decision 14 |
 | Defender's share (Defensive Game) | two-thirds | W29 |
 | Attacker's quarter (Defensive Game) | a quarter | W29 |
 | Set-up rows | 2 | - |
@@ -289,9 +294,11 @@ both sides have none at once, it is a draw.
 - **Fight to the Finish.** Remove, capture or drive off the whole enemy
   force. If both sides are under the row's draw line at the end of a turn,
   the battle is a draw. A battle still going at the round limit is a draw.
-- **Blow at the Rear.** A side wins when, at the end of its turn, one of
-  its units with at least 3 figures stands on the other side's back line
-  (or on the half of it that the row marks). The loser then has 3 turns to
+- **Blow at the Rear.** A side wins when one of its units with at least 3
+  figures stands on the other side's back line (or on the half of it that
+  the row marks) at the end of two of its turns running: it has stood
+  there through one enemy turn, so the other side can answer it (the log
+  says so when it arrives). The loser then has 3 turns to
   take its units off the field over its own back line, and the winner
   plays those turns too; they may run past the round limit. Whatever of
   the loser is still on the field after them surrenders: its figures
@@ -299,7 +306,8 @@ both sides have none at once, it is a draw.
   free. With no raid by the round limit, it is a draw.
 - **Defensive Game.** The defender has two-thirds of the attacker's force
   (as near as whole units allow), sets up as 3.8 says, and may fire from its first turn. The attacker wins
-  when, at the end of its turn, one of its units stands on the defender's
+  when, at the end of its turn, one of its units with at least 5 figures
+  (an infantry squad: a cavalry troop has 4) stands on the defender's
   back line while the attacker still has at least a quarter of its
   starting figures on the field. The defender wins at the round limit, or
   as soon as the attacker is under that quarter.
@@ -555,7 +563,9 @@ style; the phase steps in the spec say it exactly):
   land on, its own figures counting against.
 - Where a unit heads: home when its side withdraws after a lost raid;
   cavalry at the back line in a Blow at the Rear (the row's half), and at
-  the defender's when attacking in a Defensive Game; in a Blow at the Rear,
+  the defender's when attacking in a Defensive Game, but only with enough
+  figures to win there (raidSize, throughSize - with throughSize 5 the
+  attacker's cavalry fight instead); in a Blow at the Rear,
   and for the defender, the enemy units in its own half (raiders) first; a
   gentle unit for its group's goal square (ARMIES) while no enemy is within
   `groups` squares; bold cavalry at the enemy's guns; otherwise the nearest
@@ -856,6 +866,21 @@ Decided by the author, 2026-10-21:
   (Knotwork 3.8-alpha's knotcheck allows one hook call per knot).
   `scene_9`'s pair, which picked their bot before, is now "scout" /
   "forward".
+
+Decided by the author, 2026-10-21 (decision 14, his answers to the first
+bot runs' questions):
+
+- **Defensive Game:** only infantry can get through (throughSize 5), and
+  the bots' cavalry fight instead of waiting on the back line.
+- **Blow at the Rear:** a raider counts after one turn on the back line,
+  so the other side can answer it. "Through" in a Defensive Game gets no
+  such hold.
+- **Tuning:** your side gets the help first; the balance targets hold for
+  the easiest of the four `foe_` styles in each battle; river stalls are
+  fixed with more crossings on the maps, not in the bots; an outcome's
+  effect may change, keeping its name.
+- Still open: whether the defender may get more than two-thirds of the
+  force, more cover, or fewer rounds (section 4 says two-thirds).
 
 Still open (later):
 

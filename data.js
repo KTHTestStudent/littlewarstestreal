@@ -26,10 +26,15 @@
 //   perEscort   prisoners one escort can take
 //   escortWalk  squares an escort walks at the end of its side's turn
 //   raidSize    figures a unit needs on the other side's back line to win
-//               a Blow at the Rear
+//               a Blow at the Rear - standing there at the end of two of
+//               its side's turns running, so the other side can answer it
 //   withdraw    turns the loser of a raid has to take its units off
 //   throughSize figures a unit of the attacker needs on the defender's
-//               back line to win a Defensive Game (1: any unit, as GDD 4)
+//               back line to win a Defensive Game (5: only an infantry
+//               squad, 6 figures, can get through - the author's decision
+//               14; 1 would be any unit). The bots' cavalry ride for that
+//               back line only when they have this many figures, and for
+//               a raid's back line only with raidSize.
 //   quarter     percent of its starting figures the attacker in a
 //               Defensive Game must keep on the field
 //   win, draw, gunPts, prisonerPts   points (GDD 3.9); a figure's points
@@ -44,7 +49,7 @@ const RULES = {
   escortWalk: 2,
   raidSize: 3,
   withdraw: 3,
-  throughSize: 1,
+  throughSize: 5,
   quarter: 25,
   win: 100,
   draw: 50,
@@ -629,6 +634,9 @@ const LOG_WORDS = {
   freed: "{n} prisoners go free.",
   gunTaken: "{name} is taken.",
   leftField: "{name} leaves the field.",
+  // a raider on the back line, one turn before its raid counts (phase 17)
+  holdYou: "{name} is on their back line: still there after their turn, it's a raid.",
+  holdThem: "Their {name} is on your back line: attack it this turn, or it's a raid.",
   raid: "A raid gets through! {n} turns to withdraw.",
   // the end of a battle
   won: "You win!",
