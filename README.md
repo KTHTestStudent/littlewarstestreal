@@ -22,7 +22,7 @@ be read at Project Gutenberg (eBook #3691).
 
 ## AI disclosure
 
-AI Disclosure: code by Claude Opus 5.5, Qwen 3.6 and Qwen 3.8. Code hand-edits by Kenton Howard. Design and decisions by Kenton Howard. Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT).
+AI Disclosure: code by Claude Opus 5.5, Claude Sonnet 5.5, Qwen 3.6 and Qwen 3.8. Code hand-edits by Kenton Howard. Design and decisions by Kenton Howard. Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT).
 
 `dev/disclosure.js`, which checks this line against the project's git
 history, is an unedited copy of KTHTestStudent/Auto-Disclosure-Tool and is

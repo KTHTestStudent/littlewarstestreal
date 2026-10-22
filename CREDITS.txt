@@ -39,7 +39,7 @@ GAME CODE
   author's to hand-edit (hand-edits.txt). ink/config.js is Claude's.
 
 AI DISCLOSURE
-  AI Disclosure: code by Claude Opus 5.5, Qwen 3.6 and Qwen 3.8. Code hand-edits by Kenton Howard. Design and decisions by Kenton Howard. Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT).
+  AI Disclosure: code by Claude Opus 5.5, Claude Sonnet 5.5, Qwen 3.6 and Qwen 3.8. Code hand-edits by Kenton Howard. Design and decisions by Kenton Howard. Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT).
   (The line above is kept on one line so dev/disclosure.js can check and
   update it; README.md, CLAUDE.md and the title screen (game.html) hold
   the same line. The author's words, 2026-10-20: the last sentence is his

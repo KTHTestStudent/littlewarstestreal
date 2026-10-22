@@ -265,6 +265,10 @@ THE AUTHOR'S DECISIONS (2026-10-20)
     outcome's effect may change, keeping its name.
   15 (2026-10-22) Q1b: the Defensive Game's defender may get more than
     two-thirds of the force and more cover on its half; not fewer rounds.
+  16 (2026-10-22) A cloud session ran on Sonnet 5.5, and he said updating
+    the disclosure for it is fine: the line now reads "code by Claude Opus
+    5.5, Claude Sonnet 5.5, Qwen 3.6 and Qwen 3.8" (dev/disclosure.js
+    --apply) in README.md, CLAUDE.md, CREDITS.txt and game.html.
 
 
 THE FILES

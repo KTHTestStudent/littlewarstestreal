@@ -19,7 +19,7 @@ are the author's.
 - The line, in the author's words (2026-10-20; the last sentence is his
   decision 9), on one line in README.md, CREDITS.txt and here (and on the
   title screen once game.html exists):
-  AI Disclosure: code by Claude Opus 5.5, Qwen 3.6 and Qwen 3.8. Code hand-edits by Kenton Howard. Design and decisions by Kenton Howard. Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT).
+  AI Disclosure: code by Claude Opus 5.5, Claude Sonnet 5.5, Qwen 3.6 and Qwen 3.8. Code hand-edits by Kenton Howard. Design and decisions by Kenton Howard. Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT).
 - `node dev/disclosure.js` checks it against the stamps in the commits
   (exit 0 = OK). Run it at the end of every session that commits code. If it
   names a missing Claude model, run it with `--apply`. A local model's name
