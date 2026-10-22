@@ -3,7 +3,9 @@
 Status: v0.7, 2026-10-22: the data tuning against section 5 (HANDOFF NEXT
 2), with the author's answer to Q1b (section 10): the armies, first moves,
 their bots, three maps and four outcome effects changed (6.1, 7.2); what
-the tuning could not reach is in section 5.2's last list.
+the tuning could not reach is in section 5.2's last list. Later the same
+day: the playing pieces drawn to stand out from the board (section 8,
+"Pieces, not scenery"; HANDOFF NEXT 3), for the author to judge.
 
 v0.6, 2026-10-21: v0.5 with the author's decision 14 (section 10)
 - in a Defensive Game only an infantry squad gets through, and a raid
@@ -758,6 +760,20 @@ twigs for trees, brick-block houses, and chalk lines for rivers and roads.
 Fallen figures tip over and go to a box at the side. Prisoners face away and
 walk to the back line with their escort.
 
+**Pieces, not scenery** (HANDOFF NEXT 3, 2026-10-22; the author decides,
+and each part is a switch in THEME's pieces group). Every unit, both
+sides, must read at a glance as a playing piece, apart from the Country.
+The pieces get what the board doesn't have: a dark outline round each
+unit; more detail (a gloss on the enamel, rifles, horses with four legs
+and a tail, guns with the trail painted in the side's dark and a rim on
+the wheel); a solid painted stand with a soft shadow under it. The paints
+are brighter and kept away from the board's brick and river, which are a
+little quieter. A unit of yours that has acted keeps its colours and gets
+a tick on its stand (it used to fade into the floor). A raider holding the
+other side's back line flies a small flag, and the side panel says the
+raid comes next turn. The figure count sits on a small badge in the
+side's colours.
+
 **Telling the sides apart.** Red and Blue are Wells's own sides (Hook's Farm,
 and the examples in his rules). Each side also gets its own hat silhouette
 and base marking, so the board reads without colour. Taken (the author's
@@ -916,7 +932,7 @@ tables a person can hand-edit.
 | File | What it holds | Written by |
 |---|---|---|
 | `game.html` | all the code: a red-banner script at the very top, STATE AND HELPERS (canvas, state, seeded `rng`, words), the PHASE blocks (the rules), GAME FLOW (the campaign, screens, conversations, input, drawing, the bots' turn playback, the tables' banner checks, the in-game self-test), and the title screen's AI disclosure | Claude's skeleton; the local builder's PHASE blocks |
-| `data.js` | tables and their comments only, last line `DATA_OK`: RULES, LOSS_ORDER, ARMS, PIECES, COUNTRIES (the maps), COUNTRY_NAMES, LEVELS (the eleven rows), EFFECTS and DEFAULTS (the story's outcomes), BOT_STYLES, the words (SCREEN_WORDS, TIPS, LOG_WORDS, UNIT_NAMES), THEME (colours, hats, base marks) | Claude; the author's hand edits |
+| `data.js` | tables and their comments only, last line `DATA_OK`: RULES, LOSS_ORDER, ARMS, PIECES, COUNTRIES (the maps), COUNTRY_NAMES, LEVELS (the eleven rows), EFFECTS and DEFAULTS (the story's outcomes), BOT_STYLES, the words (SCREEN_WORDS, TIPS, LOG_WORDS, UNIT_NAMES), THEME (colours, hats, base marks, the pieces' look switches) | Claude; the author's hand edits |
 | `ink/config.js` | this game's contract, for the kit and knotcheck | Claude |
 | `ink/story.js` | the compiled story (Inky's export) | the author |
 | `ink/ink.js`, `LICENSE-INKJS.txt` | inkjs and its licence, unedited, as Knotwork ships them | inkle (MIT) |

@@ -3,3 +3,4 @@ prompts/
 node_modules/
 # Claude Code's own settings on the laptop
 .claude/settings.local.json
+shots/

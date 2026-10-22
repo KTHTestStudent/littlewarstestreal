@@ -63,7 +63,10 @@ window.addEventListener("load", function () {
 const VW = 480;
 const VH = 320;
 const cv = document.getElementById("cv");
-const cx = cv.getContext("2d");
+// cx is the context every drawing helper draws on: the screen's, except
+// while a playing piece is drawn on its own canvas to be outlined (DRAWING,
+// pieceOutlined).
+let cx = cv.getContext("2d");
 const SC = Math.max(2, Math.round(2 * (window.devicePixelRatio || 1)));
 cv.width = VW * SC;
 cv.height = VH * SC;
@@ -2934,6 +2937,20 @@ function checkTheme() {
     if (!t || ["tall", "dome"].indexOf(t.hat) < 0 || ["ring", "bar"].indexOf(t.base) < 0) bad("data.js THEME " + s + ": hat must be tall or dome, base ring or bar.");
   }
   if (THEME.red && THEME.blue && THEME.red.hat === THEME.blue.hat && THEME.red.base === THEME.blue.base) bad("data.js THEME: give red and blue different hats or bases, so the sides read without colour.");
+  const hex = /^#[0-9a-fA-F]{6}$/;
+  for (const s of ["red", "blue"]) {
+    for (const k of ["paint", "light", "dark"]) {
+      if (THEME[s] && !hex.test(THEME[s][k] || "")) bad("data.js THEME " + s + ": " + k + " must be a colour like \"#b8372b\".");
+    }
+  }
+  for (const k of ["outline", "mark", "flag"]) if (!hex.test(THEME[k] || "")) bad("data.js THEME: " + k + " must be a colour like \"#1a1410\".");
+  const P = THEME.pieces;
+  if (!P) bad("data.js THEME: the pieces group (the switches for the playing pieces' look) is missing.");
+  else {
+    for (const k of ["outline", "detail", "stand", "shadow", "doneMark", "raidFlag", "badge"]) {
+      if (typeof P[k] !== "boolean") bad("data.js THEME pieces: " + k + " must be true or false.");
+    }
+  }
 }
 
 // ===================================================================
@@ -3059,27 +3076,53 @@ function drawSquare(x, y, px, py, S) {
 }
 
 // ---- the toy soldiers ----
-function drawSoldier(x, y, h, paint, away) {
+// The pieces are meant to read at a glance as playing pieces, apart from
+// the board (HANDOFF NEXT 3): a dark outline round each unit (the board has
+// none), more detail than the board (gloss on the paint, rifles, the
+// horses' legs and tails, guns painted in the side's colours), a solid
+// stand with a soft shadow under it, a tick on a unit that has acted
+// (instead of fading it), a flag on a raider holding the back line, and
+// the figure count on a badge. Each is a switch in data.js THEME.pieces.
+function pieceOn(k) {
+  return !!(THEME.pieces && THEME.pieces[k]);
+}
+
+// The paint's lighter tint (the gloss), from THEME or worked out.
+function lightOf(pal) {
+  if (pal.light) return pal.light;
+  const n = parseInt(pal.paint.slice(1), 16);
+  const m = function (v) { return Math.round(v + (255 - v) * 0.45); };
+  return "rgb(" + m(n >> 16) + "," + m((n >> 8) & 255) + "," + m(n & 255) + ")";
+}
+
+function drawSoldier(x, y, h, paint, away, rifle) {
   const pal = THEME[paint];
+  const detail = pieceOn("detail");
   const w = Math.max(2, Math.round(h * 0.4));
   const l = Math.round(x - w / 2);
   const tr = Math.max(1, Math.round(h * 0.32));
   const tu = Math.max(2, Math.round(h * 0.32));
   const fa = Math.max(1, Math.round(h * 0.14));
   const ha = Math.max(1, h - tr - tu - fa);
+  const top = y - tr - tu - fa - ha;
+  // the rifle, sloped at the shoulder, behind the figure
+  if (detail && rifle && !away) rect(THEME.gunMetal, l + w, top - 1, 1, ha + fa + tu);
   rect(THEME.trousers, l, y - tr, w, tr);
   rect(away ? THEME.rockDark : pal.paint, l, y - tr - tu, w, tu);
   if (!away) rect(THEME.belt, l, y - tr - Math.ceil(tu / 2), w, 1);
+  // the enamel's gloss: a lighter stroke down the tunic's lit side
+  if (detail && !away && w >= 3) rect(lightOf(pal), l, y - tr - tu, 1, Math.max(1, Math.floor(tu / 2)));
   rect(away ? THEME.rockDark : THEME.face, l, y - tr - tu - fa, w, fa);
-  const top = y - tr - tu - fa - ha;
   if (pal.hat === "tall") {
     rect(pal.dark, l, top, w, ha);
     rect(pal.dark, l - 1, top, w + 2, 1);
+    if (detail && !away && ha >= 3) rect(pal.paint, l, top + ha - 1, w, 1);
   } else {
     cx.fillStyle = pal.dark;
     cx.beginPath();
     cx.arc(x, top + ha, Math.max(1.5, w / 2 + 0.5), Math.PI, 0);
     cx.fill();
+    if (detail && !away && ha >= 3) rect(pal.paint, l, top + ha - 1, w, 1);
   }
 }
 
@@ -3087,6 +3130,23 @@ function drawHorse(x, y, h, paint) {
   const pal = THEME[paint];
   const bw = Math.max(5, Math.round(h * 0.8));
   const bh = Math.max(2, Math.round(h * 0.28));
+  const L = Math.round(x - bw / 2);
+  const R = L + bw;
+  if (pieceOn("detail")) {
+    // four legs, a tail, a neck and head, and a saddle cloth in the paint
+    rect(THEME.horse, L, y - 2, 1, 2);
+    rect(THEME.horse, L + 2, y - 2, 1, 2);
+    rect(THEME.horse, R - 3, y - 2, 1, 2);
+    rect(THEME.horse, R - 1, y - 2, 1, 2);
+    rect(THEME.horse, L, y - bh - 2, bw, bh);
+    rect(THEME.trousers, L - 1, y - bh - 2, 1, bh + 1);
+    rect(THEME.horse, R - 1, y - bh - 4, 2, 2);
+    rect(THEME.horse, R, y - bh - 5, 2, 2);
+    rect(THEME.trousers, R + 1, y - bh - 5, 1, 1);
+    rect(pal.paint, x - 3, y - bh - 2, 4, Math.max(1, bh - 1));
+    drawSoldier(x - 1, y - bh, Math.max(5, Math.round(h * 0.75)), paint);
+    return;
+  }
   rect(THEME.horse, x - bw / 2, y - bh - 2, bw, bh);
   rect(THEME.horse, x - bw / 2, y - 2, 1, 2);
   rect(THEME.horse, x + bw / 2 - 1, y - 2, 1, 2);
@@ -3095,9 +3155,11 @@ function drawHorse(x, y, h, paint) {
   rect(pal.paint, x - bw / 2, y - bh - 2, 1, 1);
 }
 
-function drawGun(x, y, s, empty) {
+function drawGun(x, y, s, empty, paint) {
+  const detail = pieceOn("detail") && paint;
   const wr = Math.max(2, s / 6);
-  cx.strokeStyle = THEME.wheel;
+  // the trail: in the side's dark paint, like a painted toy gun
+  cx.strokeStyle = detail ? THEME[paint].dark : THEME.wheel;
   cx.lineWidth = Math.max(1, s / 14);
   cx.beginPath();
   cx.moveTo(x - s * 0.35, y);
@@ -3109,17 +3171,58 @@ function drawGun(x, y, s, empty) {
   cx.moveTo(x - s * 0.05, y - s * 0.12);
   cx.lineTo(x + s * 0.4, y - s * 0.32);
   cx.stroke();
+  if (detail && !empty) {
+    // a gleam along the barrel
+    cx.strokeStyle = THEME.rock;
+    cx.lineWidth = 0.75;
+    cx.beginPath();
+    cx.moveTo(x + s * 0.02, y - s * 0.19);
+    cx.lineTo(x + s * 0.34, y - s * 0.35);
+    cx.stroke();
+  }
   cx.fillStyle = THEME.wheel;
   cx.beginPath();
   cx.arc(x, y - wr / 2, wr, 0, Math.PI * 2);
   cx.fill();
+  if (detail) {
+    cx.strokeStyle = THEME[paint].paint;
+    cx.lineWidth = 0.75;
+    cx.beginPath();
+    cx.arc(x, y - wr / 2, Math.max(1, wr - 0.6), 0, Math.PI * 2);
+    cx.stroke();
+  }
   rect(THEME.gunMetal, x - 1, y - wr / 2 - 1, 2, 2);
 }
 
+// The stand under a unit. Red's and Blue's differ in shape as well as
+// colour (THEME base: "ring" or "bar"), for players who can't tell the
+// paints apart.
 function drawBase(px, py, S, paint) {
   const pal = THEME[paint];
   const cxm = px + S / 2;
   const cy = py + S - 4;
+  if (pieceOn("stand")) {
+    // a solid painted stand with a lighter rim; the ring or bar on top
+    cx.beginPath();
+    cx.ellipse(cxm, cy, S / 2 - 2, 3.5, 0, 0, Math.PI * 2);
+    cx.fillStyle = pal.dark;
+    cx.fill();
+    cx.strokeStyle = pal.paint;
+    cx.lineWidth = 1;
+    cx.beginPath();
+    cx.ellipse(cxm, cy, S / 2 - 2.5, 3, 0, 0, Math.PI);
+    cx.stroke();
+    if (pal.base === "ring") {
+      cx.strokeStyle = THEME.mark;
+      cx.lineWidth = 1;
+      cx.beginPath();
+      cx.ellipse(cxm, cy, S / 2 - 5, 1.6, 0, 0, Math.PI * 2);
+      cx.stroke();
+    } else {
+      rect(THEME.mark, cxm - S / 2 + 4, cy - 0.5, S - 8, 1);
+    }
+    return;
+  }
   cx.beginPath();
   cx.ellipse(cxm, cy, S / 2 - 2, 3, 0, 0, Math.PI * 2);
   if (pal.base === "ring") {
@@ -3133,9 +3236,73 @@ function drawBase(px, py, S, paint) {
   }
 }
 
-function drawUnit(u, px, py, S, faded) {
-  const paint = paintOf(u.side);
-  if (faded) cx.globalAlpha = 0.45;
+// A soft shadow under a stand (the board casts none, so the pieces lift).
+function drawShadow(px, py, S) {
+  cx.globalAlpha = 0.3;
+  cx.fillStyle = THEME.outline;
+  cx.beginPath();
+  cx.ellipse(px + S / 2 + 1.5, py + S - 2.5, S / 2 - 1.5, 3.5, 0, 0, Math.PI * 2);
+  cx.fill();
+  cx.globalAlpha = 1;
+}
+
+// Draws one piece (what draw() puts on cx) with a dark outline round its
+// whole shape: drawn first on a canvas of its own, its silhouette stamped
+// one game pixel out in eight directions, then the piece on top. The piece
+// must stay within 4 game pixels of its square.
+let PIECE_CV = null;
+let PIECE_SIL = null;
+function pieceOutlined(px, py, S, draw) {
+  if (!pieceOn("outline")) {
+    draw();
+    return;
+  }
+  const m = 4;
+  const size = Math.ceil((S + 2 * m) * SC);
+  if (!PIECE_CV) {
+    PIECE_CV = document.createElement("canvas");
+    PIECE_SIL = document.createElement("canvas");
+  }
+  if (PIECE_CV.width < size) {
+    PIECE_CV.width = PIECE_CV.height = size;
+    PIECE_SIL.width = PIECE_SIL.height = size;
+  }
+  const o = PIECE_CV.getContext("2d");
+  o.setTransform(1, 0, 0, 1, 0, 0);
+  o.clearRect(0, 0, PIECE_CV.width, PIECE_CV.height);
+  o.globalAlpha = 1;
+  o.imageSmoothingEnabled = false;
+  o.setTransform(SC, 0, 0, SC, (m - px) * SC, (m - py) * SC);
+  const screenCx = cx;
+  const alpha = screenCx.globalAlpha;
+  cx = o;
+  try {
+    draw();
+  } finally {
+    cx = screenCx;
+  }
+  const sx = PIECE_SIL.getContext("2d");
+  sx.setTransform(1, 0, 0, 1, 0, 0);
+  sx.globalCompositeOperation = "copy";
+  sx.drawImage(PIECE_CV, 0, 0);
+  sx.globalCompositeOperation = "source-in";
+  sx.fillStyle = THEME.outline;
+  sx.fillRect(0, 0, size, size);
+  sx.globalCompositeOperation = "source-over";
+  cx.globalAlpha = alpha;
+  const smooth = cx.imageSmoothingEnabled;
+  cx.imageSmoothingEnabled = false;
+  for (let dx = -1; dx <= 1; dx++) {
+    for (let dy = -1; dy <= 1; dy++) {
+      if (dx || dy) cx.drawImage(PIECE_SIL, 0, 0, size, size, px - m + dx, py - m + dy, size / SC, size / SC);
+    }
+  }
+  cx.drawImage(PIECE_CV, 0, 0, size, size, px - m, py - m, size / SC, size / SC);
+  cx.imageSmoothingEnabled = smooth;
+}
+
+// The figures of a unit, standing on its stand.
+function drawFigures(u, px, py, S, paint) {
   drawBase(px, py, S, paint);
   const h = Math.max(6, Math.round(S * 0.42));
   const foot = py + S - 4;
@@ -3145,7 +3312,7 @@ function drawUnit(u, px, py, S, faded) {
     for (let i = 0; i < n; i++) {
       const r = Math.floor(i / cols);
       const c = i % cols;
-      drawSoldier(px + S * (0.25 + c * 0.25), foot - (1 - r) * Math.round(S * 0.28), h, paint);
+      drawSoldier(px + S * (0.25 + c * 0.25), foot - (1 - r) * Math.round(S * 0.28), h, paint, false, true);
     }
   } else if (u.arm === "cav") {
     const n = Math.min(u.n, 4);
@@ -3155,17 +3322,98 @@ function drawUnit(u, px, py, S, faded) {
       drawHorse(px + S * (0.3 + c * 0.42), foot - (1 - r) * Math.round(S * 0.32), h, paint);
     }
   } else if (u.arm === "gun" || u.arm === "hgun") {
-    drawGun(px + S * 0.42, foot - 1, S, u.n === 0);
+    drawGun(px + S * 0.42, foot - 1, S, u.n === 0, paint);
     const n = Math.min(u.n, 4);
     for (let i = 0; i < n; i++) drawSoldier(px + S * (0.14 + (i % 2) * 0.72), foot - (i < 2 ? 0 : Math.round(S * 0.3)), Math.round(h * 0.85), paint);
-    if (u.arm === "hgun") rect(THEME.horse, px + S - 5, py + 3, 3, 2);
+    if (u.arm === "hgun") {
+      // the horse gun's team: a small horse above the gun
+      if (pieceOn("detail")) {
+        const hx = Math.round(px + S * 0.3);
+        const hy = py + 3;
+        rect(THEME.horse, hx, hy + 1, 5, 2);
+        rect(THEME.horse, hx + 4, hy - 1, 2, 2);
+        rect(THEME.horse, hx, hy + 3, 1, 2);
+        rect(THEME.horse, hx + 4, hy + 3, 1, 2);
+        rect(THEME.trousers, hx - 1, hy + 1, 1, 3);
+      } else {
+        rect(THEME.horse, px + S - 5, py + 3, 3, 2);
+      }
+    }
   } else if (u.arm === "esc") {
-    drawSoldier(px + S * 0.25, foot, h, paint);
+    drawSoldier(px + S * 0.25, foot, h, paint, false, true);
     const pn = Math.min(u.pn, 5);
     for (let i = 0; i < pn; i++) drawSoldier(px + S * (0.45 + (i % 3) * 0.18), foot - (i < 3 ? 0 : Math.round(S * 0.28)), Math.round(h * 0.8), paint === "red" ? "blue" : "red", true);
   }
+}
+
+// The figure count, on a small badge in the side's colours.
+function drawCount(n, px, py, S, paint) {
+  if (!pieceOn("badge")) {
+    text(n, px + S - 2, py + 7, THEME.text, 6, "right", true);
+    return;
+  }
+  const pal = THEME[paint];
+  const w = String(n).length > 1 ? 10 : 7;
+  const x = px + S - w;
+  rect(THEME.outline, x - 1, py, w + 1, 9);
+  rect(pal.dark, x, py + 1, w - 1, 7);
+  rect(pal.paint, x, py + 1, w - 1, 1);
+  text(n, x + (w - 1) / 2, py + 7, THEME.mark, 6, "center", true);
+}
+
+// The tick on a unit of yours that has done all it can this turn, on the
+// left end of its stand (clear of the figures and the count).
+function drawDone(px, py, S) {
+  const x = px + 4;
+  const y = py + S - 5;
+  cx.fillStyle = THEME.outline;
+  cx.beginPath();
+  cx.arc(x, y, 3.5, 0, Math.PI * 2);
+  cx.fill();
+  cx.strokeStyle = THEME.mark;
+  cx.lineWidth = 1;
+  cx.beginPath();
+  cx.moveTo(x - 2, y);
+  cx.lineTo(x - 0.5, y + 1.5);
+  cx.lineTo(x + 2.3, y - 1.7);
+  cx.stroke();
+}
+
+// The flag on a raider holding the other side's back line (its raid
+// counts if it is still there after its side's next turn): a pennant on a
+// pole at the square's left edge, standing above the figures.
+function drawRaidFlag(px, py, S) {
+  const x = px + 1;
+  const top = py - 3;
+  const foot = py + S - 6;
+  rect(THEME.outline, x - 1, top - 1, 3, foot - top + 2);
+  rect(THEME.mark, x, top, 1, foot - top);
+  cx.fillStyle = THEME.outline;
+  cx.beginPath();
+  cx.moveTo(x + 1, top - 1.5);
+  cx.lineTo(x + 11, top + 3.5);
+  cx.lineTo(x + 1, top + 8.5);
+  cx.fill();
+  cx.fillStyle = THEME.flag;
+  cx.beginPath();
+  cx.moveTo(x + 2, top);
+  cx.lineTo(x + 8.6, top + 3.5);
+  cx.lineTo(x + 2, top + 7);
+  cx.fill();
+}
+
+// done: a unit of yours that has done all it can this turn. standing: a
+// raider holding the other side's back line.
+function drawUnit(u, px, py, S, done, standing) {
+  const paint = paintOf(u.side);
+  const fade = done && !pieceOn("doneMark");
+  if (pieceOn("shadow")) drawShadow(px, py, S);
+  if (fade) cx.globalAlpha = 0.45;
+  pieceOutlined(px, py, S, function () { drawFigures(u, px, py, S, paint); });
   cx.globalAlpha = 1;
-  if (u.arm !== "esc" && !(isGun(u) && u.n === 0)) text(u.n, px + S - 2, py + 7, THEME.text, 6, "right", true);
+  if (u.arm !== "esc" && !(isGun(u) && u.n === 0)) drawCount(u.n, px, py, S, paint);
+  if (done && pieceOn("doneMark")) drawDone(px, py, S);
+  if (standing && pieceOn("raidFlag")) drawRaidFlag(px, py, S);
 }
 
 function drawFallen(x, y, paint, a) {
@@ -3225,8 +3473,9 @@ function drawBoard(hideThem) {
   for (const u of B.units) {
     if (u.off || (u.n === 0 && !isGun(u))) continue;
     if (hideThem && u.side === "them") continue;
-    const faded = mine && u.side === "you" && u.arm !== "esc" && u.n > 0 && !canMove(u) && !(isGun(u) && canFire(u));
-    drawUnit(u, g.x0 + u.x * S, g.y0 + u.y * S, S, faded);
+    const done = mine && u.side === "you" && u.arm !== "esc" && u.n > 0 && !canMove(u) && !(isGun(u) && canFire(u));
+    const standing = !B.raid && B.standing && B.standing[u.side].indexOf(u.id) >= 0;
+    drawUnit(u, g.x0 + u.x * S, g.y0 + u.y * S, S, done, standing);
   }
   for (const f of FX) {
     if (f.kind === "fall") drawFallen(g.x0 + f.x * S + S / 2, g.y0 + f.y * S + S - 6, paintOf(f.side), f.t);
@@ -3284,6 +3533,8 @@ function drawPanel() {
   if (B.row.type === "defend") text(B.row.defender === "you" ? W.defend : W.attack, x + 6, y, THEME.dim, 7);
   y += 10;
   if (B.raid) text(words(W.raidOn, { n: B.raid.left }), x + 6, y, THEME.hard, 7);
+  else if (B.standing && B.standing.you.length && W.raidNext) text(W.raidNext, x + 6, y, THEME.hard, 7);
+  else if (B.standing && B.standing.them.length && W.raidNextThem) text(W.raidNextThem, x + 6, y, THEME.hard, 7);
   y += 12;
   const s = selUnit() || (HOVER && unitAt(HOVER[0], HOVER[1]));
   if (s) {

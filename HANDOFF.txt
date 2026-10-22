@@ -15,10 +15,13 @@ START HERE (2026-10-22)
   within about 5 points of GDD 5.2 for the easiest foe_ style (NUMBERS FOR
   THE TUNING below). What it couldn't reach, and the author's calls it
   raised, are in OPEN ITEMS.
-  Not settled yet: how the soldiers read against the board (NEXT 3), and
-  no human has played a battle through.
-  Next: tag v0.1-alpha on main (NEXT 1, by hand; the tuning can go in it
-  or after it), then NEXT 3-6.
+  The pieces now stand out from the board (NEXT 3, 2026-10-22): outline,
+  detail, stands with shadows, a tick for a unit that has acted, a raid
+  flag, count badges - each a switch in data.js THEME.pieces, the
+  author's to keep or turn off (OPEN ITEMS). No human has played a battle
+  through yet.
+  Next: tag v0.1-alpha on main (NEXT 1, by hand; the tuning and the new
+  look can go in it or after it), then NEXT 4-6.
   On reference (cloud sessions only - never on the laptop): dev-reference/
   - Claude's reference game.html (42/42), stub.html (the skeleton with
   every block a stub), the phase builds, 75 planted bugs, a block-by-block
@@ -27,11 +30,12 @@ START HERE (2026-10-22)
 STARTER PROMPTS (the author pastes one into a new cloud session, after
 merging working-claude into working; start fresh rather than going on in a
 long conversation - it reads less)
-  For NEXT 3 (the soldiers stand out):
+  For NEXT 4 (small things before the playtests), or changes to the
+  pieces' look after you've judged it:
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
-  (Opus 5.5, high). Start from origin/working-claude (merge origin/working
-  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 3 (the
-  soldiers stand out from the board).
+  (Opus 5.5, medium). Start from origin/working-claude (merge origin/working
+  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 4 (the
+  version on the title screen; the hold lines' words as I give them).
   For a triage after a runner stop (a block the fixer couldn't fix):
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
   (Sonnet 5.5, medium). Start from origin/working-claude (merge origin/working
@@ -63,45 +67,11 @@ NEXT (to the design freeze)
     Tags are the game's versions; GDD.md has its own (v0.6 now).
   2 The data tuning: done (2026-10-22, HISTORY). What is left is the
     author's (OPEN ITEMS, "From the tuning").
-  3 The soldiers stand out from the board (cloud, Opus 5.5 high; STARTER
-    PROMPTS). The author (2026-10-21): every unit, both sides, must read
-    at a glance as a playing piece, apart from everything else on the
-    board; the bases help but aren't enough. His idea: a slightly higher
-    level of detail than the rest of the board; open to others. What a
-    look at the drawing code shows (game.html drawSoldier, drawHorse,
-    drawGun, drawBase, drawUnit; data.js THEME):
-    - The figures are flat rectangles in the board's own earthy palette
-      and at its level of detail, with no outline. Red paint (#b8372b)
-      sits close to the brick houses, books and hill edges (#a4553c,
-      #6f3526); Blue (#2f5fae) close to the river (#86a9c2); the horses
-      (#7a5230) close to twigs and planks.
-    - A unit that has acted is drawn at 45% opacity, so a finished unit
-      melts into the floor - the opposite of what this item needs.
-    - A raider standing on the back line (decision 14's hold) shows only
-      in the log; nothing on the board says "one more turn".
-    Directions to try, combined (Claude's suggestions, the author picks):
-    a a dark 1-pixel outline around every figure, horse and gun - the
-      board has none, so the pieces pop at once;
-    b more detail on the pieces only: a gloss highlight on the paint
-      (toy-soldier enamel), a rifle line, a strap, the horse's legs and
-      tail; the board stays as it is or is flattened a little;
-    c a solid base like a toy's stand: a filled oval in the side's dark
-      with a lighter rim, and a soft shadow under it (the board has no
-      shadows), keeping the ring / bar marks for colour-blind players;
-    d value contrast: quieter board colours (less saturated floor,
-      houses and river) and stronger paints, and the paints moved away
-      from brick and river;
-    e a finished unit keeps full colour and gets a small mark instead
-      (a tick or a lowered flag), or turns grey without fading;
-    f a standing raider gets a small flag on its square, and the panel
-      says "Raid next turn" (SCREEN_WORDS, the author's words);
-    g the figure count as a badge in the side's colours, not plain text.
-    This is skeleton drawing and THEME data: no PHASE block, no runner,
-    and the self-test doesn't see it. Check it by screenshots (Playwright,
-    each Country, both paints, a light and a dark square) and by the
-    author's eyes - he decides. THEME's colours are his to hand-edit after.
-  4 Small things worth doing before the playtests (cloud, can ride with
-    2 or 3):
+  3 The soldiers stand out from the board: done (2026-10-22, HISTORY).
+    What is left is the author's eyes and calls (OPEN ITEMS, "The
+    pieces' look").
+  4 Small things worth doing before the playtests (cloud, Opus 5.5
+    medium):
     - the version on the title screen ("v0.1-alpha"), so a playtester's
       report names the build;
     - the hold lines' words (OPEN ITEMS, his).
@@ -209,8 +179,9 @@ WHAT TO READ (keep it cheap)
   For tuning or bot work: CLAUDE.md, this file down to HISTORY, GDD.md
     sections 4, 5 and 6, dev/README.txt, hand-edits.txt; the spec's rules
     and API part (lines in its LINE MAP) only if a rule is in question.
-  For drawing: game.html's DRAWING section and data.js THEME; GDD 8 (look
-    and content).
+  For drawing: game.html's DRAWING section (the toy soldiers: drawUnit,
+    pieceOutlined) and data.js THEME; GDD 8 (look and content); dev/shots.js
+    for screenshots.
   Wells's Little Wars (1913): only to check a rule. GDD section 3 restates
     the rules with their numbers (W1-W29). If needed, read chapter III
     only: https://www.gutenberg.org/cache/epub/3691/pg3691-images.html
@@ -325,7 +296,7 @@ THE FILES
                      knotworkprivateprealpha, branch working, 67688c3 (no
                      3.8-alpha tag). Never edit them here (CLAUDE.md)
   dev/               selftest.js, bots.js, outcomes.js, tryout.js,
-                     linemap.py, inkc.sh, README.txt;
+                     shots.js, linemap.py, inkc.sh, README.txt;
                      disclosure.js, an unedited copy of Auto-Disclosure-
                      Tool's disclosure.js (branch working, af06b0f)
   run-local.sh, run-phases.js, LOCAL-SUBAGENTS.md, phase-plan.example.txt
@@ -339,6 +310,22 @@ THE FILES
   stub.html, blocks.py, phasebuilds.py, plant.py, compare.py).
 
 OPEN ITEMS (the author, by hand)
+  * The pieces' look (NEXT 3, 2026-10-22) - your eyes decide:
+    - Play a battle or two and say what stays. Every part is a switch in
+      data.js THEME.pieces (true / false): outline, detail, stand, shadow,
+      doneMark (a tick instead of fading), raidFlag, badge. To compare
+      without editing: node dev/shots.js . shots 4,8 7 10
+      '{"pieces":{"detail":false}}' (screenshots into shots/, which Git
+      ignores).
+    - The colours moved (the old ones are in the comment above THEME):
+      red paint #b8372b -> #cc2b2b, blue #2f5fae -> #2350c8 (and their
+      darks, plus a new light for the gloss); the board's brick #a4553c
+      -> #9a6450, brickDark #6f3526 -> #6a4030, river #86a9c2 -> #9db4c2.
+      Put back any you liked better - SAFE edits.
+    - data.js SCREEN_WORDS battle raidNext ("Raid next turn") and
+      raidNextThem ("Their raid next turn"), the side panel's line while a
+      raider holds the back line, are Claude's drafts. Reword as you
+      like; a missing one just isn't shown.
   * Before the tag (NEXT 1), if you want them in it:
     - README.md's Status line: "Design only. There is no game code yet."
       Your words (decision 7) - or ask a session for a draft.
@@ -388,7 +375,11 @@ OPEN ITEMS (the author, by hand)
       style it is already at 83.
   * The route-check skill (on claude.ai) still gives the laptop limits as
     builder 10, fixer 30; they're 20 and 60. Section 5's line should read:
-    "Limits: builder 20 minutes, fixer 60, 2 fixer tries."
+    "Limits: builder 20 minutes, fixer 60, 2 fixer tries." Its rule 4 also
+    lists only Amontillado and Auto-Disclosure-Tool as runner-ready; Little
+    Wars is too (PHASE 2-25 of game.html): "Runner-ready today:
+    Amontillado (PHASE 2-9 of game.html), Auto-Disclosure-Tool (PHASE 21-22
+    of disclosure.js) and Little Wars (PHASE 2-25 of game.html)."
   * An idea for the runner, your call (a cloud session on
     localsubagentresults, then copied here): on a timeout, still run the
     self-test and commit when only that block changed and the line is the
@@ -530,3 +521,15 @@ HISTORY
               and stub.html rebuilt around the new skeleton; 25 phase
               builds OK, 75 of 75 caught. WIDE pairs 5 -> 3; river stalls
               in 4 from 40% to 2%. No PHASE block or bot change.
+  2026-10-22  NEXT 3, the pieces stand out (cloud, Opus 5.5 high):
+              skeleton drawing only (game.html DRAWING: drawUnit split into
+              shadow, an outlined piece drawn on its own canvas, count
+              badge, done tick, raid flag; cx became let so a piece can be
+              drawn off-screen; the side panel's raid-next-turn line;
+              checkTheme for the new keys) and data.js THEME (brighter
+              paints, quieter brick and river, light / outline / mark /
+              flag, the pieces switches) and two SCREEN_WORDS drafts.
+              dev/shots.js added for screenshots. GDD 8, hand-edits.txt,
+              dev/README.txt. Reference: game.html and stub.html rebuilt
+              around the new skeleton; 25 phase builds OK, 75 of 75 caught;
+              42/42; disclosure OK. No PHASE block, rule or bot change.

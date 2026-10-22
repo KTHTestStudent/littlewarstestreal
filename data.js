@@ -697,6 +697,8 @@ const SCREEN_WORDS = {
     boxYou: "Your box: {n}",
     boxThem: "Their box: {n}",
     raidOn: "Withdraw: {n} turns",
+    raidNext: "Raid next turn",
+    raidNextThem: "Their raid next turn",
     goal: "Raid: {half}",
     defend: "You defend",
     attack: "You attack",
@@ -743,19 +745,38 @@ const TIPS = {
 };
 
 // ---- THE LOOK (GDD 8) ----
-// SAFE edits, all of them: colours are "#rrggbb". Each side's paint, and
-// the shapes that tell the sides apart without colour: hat "tall" (a tall
-// flat-topped hat) or "dome" (a round domed one); base "ring" (a plain
-// ring) or "bar" (a bar across it). Give the two sides different shapes.
+// SAFE edits, all of them: colours are "#rrggbb". Each side's paint (light
+// is the enamel's gloss, dark the hats and stands), and the shapes that
+// tell the sides apart without colour: hat "tall" (a tall flat-topped hat)
+// or "dome" (a round domed one); base "ring" (a ring on the stand) or "bar"
+// (a bar across it). Give the two sides different shapes.
+// The paints are kept away from the board's brick and river, so a piece
+// never reads as part of the Country (2026-10-22; before: red paint
+// #b8372b dark #6e1d16, blue paint #2f5fae dark #18325e, brick #a4553c,
+// brickDark #6f3526, river #86a9c2).
 const THEME = {
-  red: { paint: "#b8372b", dark: "#6e1d16", hat: "tall", base: "ring" },
-  blue: { paint: "#2f5fae", dark: "#18325e", hat: "dome", base: "bar" },
-  // the figures: faces, belts, trousers, horses, guns
+  red: { paint: "#cc2b2b", light: "#f09a8c", dark: "#6a1714", hat: "tall", base: "ring" },
+  blue: { paint: "#2350c8", light: "#93b3f2", dark: "#132c6b", hat: "dome", base: "bar" },
+  // How the playing pieces stand out from the board: each true or false.
+  //   outline   a dark line round every unit (the board has none)
+  //   detail    gloss on the paint, rifles, horses' legs and tails, guns
+  //             painted in the side's colours
+  //   stand     a solid painted stand with a ring or bar on it (false: the
+  //             old plain ring or bar)
+  //   shadow    a soft shadow under each stand
+  //   doneMark  a unit of yours that has acted keeps its colours and gets
+  //             a tick (false: it fades, as before)
+  //   raidFlag  a flag on a raider holding the other side's back line
+  //   badge     the figure count on a small badge in the side's colours
+  pieces: { outline: true, detail: true, stand: true, shadow: true, doneMark: true, raidFlag: true, badge: true },
+  // the figures: faces, belts, trousers, horses, guns; the pieces' outline
+  // and shadow, the light marks on stands, ticks and badges, the raid flag
   face: "#e8c9a0", belt: "#f2efe6", trousers: "#2a2622", horse: "#7a5230", gunMetal: "#3b3d40", wheel: "#5a3b22",
+  outline: "#1a1410", mark: "#f6efe0", flag: "#f2c94c",
   // the Country
   floor: "#c9a77c", floorLine: "#b8946a", wood: "#3f6b34", woodDark: "#2a4a23", twig: "#5b4126",
-  hill: "#c4a571", hillEdge: "#7a5c36", brick: "#a4553c", brickDark: "#6f3526", roof: "#4a3a33",
-  rock: "#8b8b86", rockDark: "#5c5c58", river: "#86a9c2", chalk: "#f4f2ea", plank: "#8a6a44",
+  hill: "#c4a571", hillEdge: "#7a5c36", brick: "#9a6450", brickDark: "#6a4030", roof: "#4a3a33",
+  rock: "#8b8b86", rockDark: "#5c5c58", river: "#9db4c2", chalk: "#f4f2ea", plank: "#8a6a44",
   // the screens
   back: "#1b1612", panel: "#2a221c", panelEdge: "#6b5a46", text: "#f1e9dc", dim: "#a89a88", gold: "#e3c27a",
   button: "#3a2e24", buttonLit: "#5a4630", reach: "#f4e27a", aim: "#ff9a4a", select: "#ffffff", zone: "#9ad77d",

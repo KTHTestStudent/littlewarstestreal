@@ -101,7 +101,14 @@ THE TABLES, IN FILE ORDER
          (about 3 lines of 60 letters).
   THEME  (SAFE)  colours ("#rrggbb"), and the shapes that tell the sides
          apart without colour: hat "tall" or "dome", base "ring" or "bar".
-         Give Red and Blue different shapes.
+         Give Red and Blue different shapes. Each side has paint, light
+         (the gloss) and dark (hats and stands). pieces is a row of
+         switches, each true or false, for how the units stand out from
+         the board (outline, detail, stand, shadow, doneMark, raidFlag,
+         badge; the comment above it says what each does). The old colours
+         are in the comment above THEME. To see a change before making it:
+         node dev/shots.js . shots 4,8 7 10 '{"pieces":{"outline":false}}'
+         writes screenshots to a shots folder (dev/README.txt).
   DATA_OK = true  the last line - keep it last.
 
 AFTER A RULE EDIT (a cloud session, or you)

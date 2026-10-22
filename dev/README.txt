@@ -50,6 +50,15 @@ THE TOOLS
       plain JavaScript table edits, such as RULES.withdraw = 4), to try
       a lever before editing data.js. Writes nothing. Table edits only: a
       changed game function is a rule change for the spec.
+  shots.js [folder] [out folder] [battles] [seed] [actions] [theme]
+      Screenshots, to judge how the pieces read against the board (HANDOFF
+      NEXT 3): bots play a few turns on both sides, your side moves part
+      of its army, then each battle is shot in both paints - the whole
+      screen and the board three times its size. [theme] is JSON merged
+      into THEME for these shots only, to try colours or the pieces'
+      switches without editing data.js. Writes PNGs; changes nothing.
+      node dev/shots.js . shots 0,3,4,8,10 7 10
+      node dev/shots.js . shots 4,8 7 10 '{"pieces":{"outline":false}}'
   linemap.py [spec]
       Writes the LINE MAP at the top of specs/LITTLEWARS-SPEC.txt. Run it
       after every edit of the spec.
