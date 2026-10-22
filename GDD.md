@@ -6,6 +6,8 @@ their bots, three maps and four outcome effects changed (6.1, 7.2); what
 the tuning could not reach is in section 5.2's last list. Later the same
 day: the playing pieces drawn to stand out from the board (section 8,
 "Pieces, not scenery"; HANDOFF NEXT 3), for the author to judge.
+Also: section 5.2 now has a table of your side's score against each `foe_`
+style in every battle, easiest to hardest (bot runs, no data change).
 
 v0.6, 2026-10-21: v0.5 with the author's decision 14 (section 10)
 - in a Defensive Game only an infantry squad gets through, and a raid
@@ -388,6 +390,36 @@ counts as half a win.
   battle 6's pair (neither outcome changes anything in bot runs); the
   length of battles 6 and 8 (most end in round 4 or 5 of 10-14, under
   section 5.3's half). HANDOFF has the details.
+
+- **Your side's score against each `foe_` style (2026-10-22, 1,000 seeds,
+  `node dev/outcomes.js . 1000`, each battle with its `scene_` knot's
+  default outcome).** A draw counts as half a win. Each row runs from the
+  easiest style to the hardest; the default (the row's bot, 6.1) is meant
+  to be the easiest. A tie in score is ordered with the default first,
+  then by win rate. Sampling noise is about 1.5 points.
+
+| # | Country | Target | Default | Easiest | 2nd | 3rd | Hardest | Default is easiest? |
+|---|---|---|---|---|---|---|---|---|
+| 0 | Hook's Farm | 90 | gentle | gentle 86 | - | - | - | yes (no `foe_` knot) |
+| 1 | The Two Hills | 75 | clever | **clever 80** | bold 76 | cautious 59 | steady 51 | yes |
+| 2 | The Long Wall | 75 | steady | cautious 79 | clever 73 | **steady 72** | bold 54 | no: 3rd, 7 points under cautious |
+| 3 | The Cottages | 75 | clever | **clever 83** | cautious 32 | steady 18 | bold 0 | yes |
+| 4 | The Chalk Brook | 65 | steady | **steady 60** | clever 60 | bold 53 | cautious 37 | yes (tied with clever) |
+| 5 | The Orchard | 65 | clever | **clever 67** | cautious 62 | steady 44 | bold 5 | yes |
+| 6 | The Mill Hill | 65 | steady | **steady 70** | bold 18 | clever 13 | cautious 7 | yes |
+| 7 | The Ridge | 55 | clever | cautious 71 | steady 59 | bold 59 | **clever 57** | no: the hardest, 14 points under cautious |
+| 8 | The Village | 55 | steady | **steady 52** | bold 38 | cautious 16 | clever 16 | yes |
+| 9 | The Two Fords | 55 | cautious | **cautious 52** | steady 48 | clever 41 | bold 32 | yes |
+| 10 | The Whole Floor | 50 | clever | **clever 43** | steady 21 | bold 8 | cautious 7 | yes |
+
+  The default is the easiest style in 9 of 11 rows (battle 4's is tied).
+  The two exceptions, 2 and 7, are ones HANDOFF's numbers already show
+  (cautious 79 and 71): in those battles the cautious bot leaves your
+  side more room than the row's own bot. The spread between easiest and
+  hardest is over 50 points in 3, 5 and 6 and under 20 only in 7, so the
+  `foe_` knot is a real choice of difficulty in most battles. The hardest
+  styles are close to unwinnable for the newcomer bot: bold in 3 and 5
+  (0 and 5), cautious in 6 and 10 (7 each).
 
 ### 5.3 How it is checked
 

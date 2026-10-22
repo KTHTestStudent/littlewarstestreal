@@ -104,6 +104,8 @@ NUMBERS FOR THE TUNING (2026-10-22, after NEXT 2; 1,000 seeds)
     8 The Village      52 (55)   steady (the easiest); median round 5/14
     9 The Two Fords    52 (55)   cautious (the easiest); 18% at the limit
     10 The Whole Floor 43 (50)   clever (the easiest)
+  The score against every foe_ style, easiest to hardest, is in GDD 5.2
+  (a table, 2026-10-22). In 2 and 7 the default is not the easiest style.
   node dev/outcomes.js . 1000 - the scene_ pairs with the row's bot:
     1 scout 80 / move_first 80 ok   (both unseen by bots now)
     2 rear_west 72 / rear_east 75 ok
