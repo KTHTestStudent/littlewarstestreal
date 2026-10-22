@@ -75,8 +75,9 @@
 //               "clever"    keeps its guns supported, counts a melee
 //                           before it charges
 //               DEFAULT (while the knot is not written): the battle's
-//               own bot - foe_1-4 steady, foe_5 bold, foe_6 cautious,
-//               foe_7 and foe_8 clever, foe_9 cautious, foe_10 clever.
+//               own bot - foe_1 clever, foe_2 steady, foe_3 clever,
+//               foe_4 steady, foe_5 clever, foe_6 steady, foe_7 clever,
+//               foe_8 steady, foe_9 cautious, foe_10 clever.
 //               This is a choice of how hard, not a sidegrade: the four
 //               differ a lot.
 //   The two outcomes of a scene_ knot give different kinds of help,
@@ -86,7 +87,8 @@
 //     scene_1   battle 1, The Two Hills, Fight to the Finish
 //               "scout"         you see their set-up while you arrange
 //                               yours                            DEFAULT
-//               "move_first"    you move first
+//               "move_first"    you move first and set up in your
+//                               back 3 rows
 //     scene_2   battle 2, The Long Wall, Blow at the Rear
 //               "rear_west"     raids must reach the west half of a
 //                               back line                        DEFAULT
@@ -94,25 +96,30 @@
 //     scene_3   battle 3, The Cottages, Defensive Game - you defend
 //               "scout"         you see their set-up while you arrange
 //                               yours                            DEFAULT
-//               "wall"          a wall stands in front of your cottages
+//               "wall"          a broken wall stands across the
+//                               ground in front of your cottages
 //     scene_4   battle 4, The Chalk Brook, Fight to the Finish
-//               "bridge"        a second bridge over the brook   DEFAULT
+//               "bridge"        two more bridges over the brook  DEFAULT
 //               "horse_gun"     your gun section is a horse gun (it
 //                               moves 4)
 //     scene_5   battle 5, The Orchard, Blow at the Rear (the west half)
 //               "forward"       your set-up zone is your back 3 rows
 //                                                                DEFAULT
-//               "extra_troop"   you have a cavalry troop more
+//               "extra_troop"   you have a cavalry troop more, and
+//                               they move first
 //     scene_6   battle 6, The Mill Hill, Defensive Game - you attack
 //               "more_rounds"   the round limit is 2 more        DEFAULT
-//               "horse_gun"     your gun section is a horse gun
+//               "horse_gun"     your gun section is a horse gun (in
+//                               battle 6 it already is: an open item)
 //     scene_7   battle 7, The Ridge, Fight to the Finish
-//               "head_start"    you move first and see their set-up
+//               "head_start"    you move first, see their set-up and
+//                               have a cavalry troop more
 //                                                                DEFAULT
-//               "extra_squad"   you have an infantry squad more
+//               "extra_squad"   you have an infantry squad more, and
+//                               they move first
 //     scene_8   battle 8, The Village, Defensive Game - you attack
 //               "more_rounds"   the round limit is 2 more        DEFAULT
-//               "wood"          a wood stands in the middle
+//               "wood"          a wood stands west of the middle
 //     scene_9   battle 9, The Two Fords, Blow at the Rear (the whole
 //               line)
 //               "scout"         you see their set-up while you arrange
@@ -243,7 +250,7 @@ EXTERNAL foeDone(name, outcome)
 // POTENTIAL OUTCOMES (sceneDone):
 //   "scout"       game: you see their set-up while you arrange yours
 //                                                            DEFAULT
-//   "move_first"  game: you move first
+//   "move_first"  game: you move first and set up in your back 3 rows
 -> DONE
 
 
@@ -280,7 +287,8 @@ EXTERNAL foeDone(name, outcome)
 // POTENTIAL OUTCOMES (sceneDone):
 //   "scout"       game: you see their set-up while you arrange yours
 //                                                            DEFAULT
-//   "wall"        game: a wall stands in front of your cottages
+//   "wall"        game: a broken wall stands across the ground in front
+//                 of your cottages
 -> DONE
 
 
@@ -296,7 +304,7 @@ EXTERNAL foeDone(name, outcome)
 // SUMMARY: after battle 3, before battle 4, The Chalk Brook - Act II's
 // Fight to the Finish (14 x 10): a brook across the middle.
 // POTENTIAL OUTCOMES (sceneDone):
-//   "bridge"      game: a second bridge over the brook       DEFAULT
+//   "bridge"      game: two more bridges over the brook      DEFAULT
 //   "horse_gun"   game: your gun section is a horse gun (moves 4)
 -> DONE
 
@@ -315,7 +323,8 @@ EXTERNAL foeDone(name, outcome)
 // POTENTIAL OUTCOMES (sceneDone):
 //   "forward"      game: your set-up zone is your back 3 rows
 //                                                            DEFAULT
-//   "extra_troop"  game: you have a cavalry troop more
+//   "extra_troop"  game: you have a cavalry troop more, and they move
+//                  first
 -> DONE
 
 
@@ -332,7 +341,8 @@ EXTERNAL foeDone(name, outcome)
 // Defensive Game (14 x 10). You attack their hill.
 // POTENTIAL OUTCOMES (sceneDone):
 //   "more_rounds"  game: the round limit is 2 more           DEFAULT
-//   "horse_gun"    game: your gun section is a horse gun
+//   "horse_gun"    game: your gun section is a horse gun (in battle 6
+//                  it already is: an open item)
 -> DONE
 
 
@@ -348,8 +358,10 @@ EXTERNAL foeDone(name, outcome)
 // SUMMARY: after battle 6, before battle 7, The Ridge - Act III's Fight
 // to the Finish (14 x 12).
 // POTENTIAL OUTCOMES (sceneDone):
-//   "head_start"   game: you move first and see their set-up DEFAULT
-//   "extra_squad"  game: you have an infantry squad more
+//   "head_start"   game: you move first, see their set-up and have a
+//                  cavalry troop more                         DEFAULT
+//   "extra_squad"  game: you have an infantry squad more, and they move
+//                  first
 -> DONE
 
 
@@ -366,7 +378,7 @@ EXTERNAL foeDone(name, outcome)
 // Defensive Game (16 x 12). You attack.
 // POTENTIAL OUTCOMES (sceneDone):
 //   "more_rounds"  game: the round limit is 2 more           DEFAULT
-//   "wood"         game: a wood stands in the middle
+//   "wood"         game: a wood stands west of the middle
 -> DONE
 
 

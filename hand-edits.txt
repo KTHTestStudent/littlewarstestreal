@@ -58,8 +58,9 @@ THE TABLES, IN FILE ORDER
          them, their back line at the top, yours at the bottom; every row
          as long as the others; at most 18 columns and 12 rows. Keep each
          battle's set-up rows clear for its ARMIES (the red banner names a
-         unit on a square it can't stand on). Battles 1-10 are rough first
-         drafts for the bot runs to reshape.
+         unit on a square it can't stand on). Battles 1-10 were tuned by
+         bot runs on 2026-10-22 (HANDOFF's NUMBERS FOR THE TUNING): after
+         a map, army or row change, run the bot runs again.
   COUNTRY_NAMES  (SAFE)  the battles' names (about 22 letters). Working
          names: rename any.
   SWITCHES  (RULE)  the squares a story outcome's ["piece", key] changes:

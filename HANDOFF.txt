@@ -3,7 +3,7 @@ KTHTestStudent/littlewarstestreal. For Claude sessions: read START HERE down
 to the HISTORY line, and open HISTORY only for what the task needs. Keep this
 file short: when a NEXT item is done, move it into HISTORY in a line or two.
 
-START HERE (2026-10-21, late)
+START HERE (2026-10-22)
   The whole game is built and plays: 11 battles, both rule changes of
   decision 14 in, SELF-TEST 42/42 PASS, the AI disclosure check OK. PHASE
   2-25 were written by the local builder and fixer through the runner and
@@ -11,11 +11,14 @@ START HERE (2026-10-21, late)
   drawing, input, bots' playback, self-test) is Claude's. The story is
   still empty knots (the author's to write), so every conversation is
   skipped with its default outcome.
-  What isn't settled yet: the balance (most battles are off GDD 5.2's
-  targets - NUMBERS FOR THE TUNING below), how the soldiers read against
-  the board (NEXT 3), and no human has played a battle through yet.
-  Next: tag v0.1-alpha on main (NEXT 1, by hand), then the steps to the
-  design freeze (NEXT 2-6).
+  The data tuning (NEXT 2) is done as far as data goes: most battles are
+  within about 5 points of GDD 5.2 for the easiest foe_ style (NUMBERS FOR
+  THE TUNING below). What it couldn't reach, and the author's calls it
+  raised, are in OPEN ITEMS.
+  Not settled yet: how the soldiers read against the board (NEXT 3), and
+  no human has played a battle through.
+  Next: tag v0.1-alpha on main (NEXT 1, by hand; the tuning can go in it
+  or after it), then NEXT 3-6.
   On reference (cloud sessions only - never on the laptop): dev-reference/
   - Claude's reference game.html (42/42), stub.html (the skeleton with
   every block a stub), the phase builds, 75 planted bugs, a block-by-block
@@ -24,11 +27,6 @@ START HERE (2026-10-21, late)
 STARTER PROMPTS (the author pastes one into a new cloud session, after
 merging working-claude into working; start fresh rather than going on in a
 long conversation - it reads less)
-  For NEXT 2 (the data tuning):
-  Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
-  (Opus 5.5, medium). Start from origin/working-claude (merge origin/working
-  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 2 (the
-  data tuning). My answer to Q1b: <your answer>.
   For NEXT 3 (the soldiers stand out):
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
   (Opus 5.5, high). Start from origin/working-claude (merge origin/working
@@ -63,25 +61,8 @@ NEXT (to the design freeze)
       git push origin v0.1-alpha
       git checkout working
     Tags are the game's versions; GDD.md has its own (v0.6 now).
-  2 The data tuning (cloud, Opus 5.5 medium; STARTER PROMPTS). Ask the
-    author Q1b first if the prompt doesn't answer it: may the Defensive
-    Game's defender get more than two-thirds of the force, more cover on
-    its half, or fewer rounds (GDD 4 says two-thirds)? Then, with
-    dev/tryout.js, bots.js and outcomes.js, against GDD 5 (decision 14):
-    - the targets hold for the EASIEST of the four foe_ styles in each
-      battle (outcomes.js's foe_ lines);
-    - help your side first: first move, scouting, a unit more, set-up
-      rows, round limits; only then bot rows or styles;
-    - river stalls (battle 4): more crossings on the maps, not a bot
-      change;
-    - outcome pairs: an outcome's effect may change, keeping its name, to
-      bring each scene_ pair within 5 points;
-    - first: 3 The Cottages (the attacker wins by attrition), 8 The
-      Village (100 with every style), 2 (rear_west / rear_east 38 / 71),
-      the WIDE pairs 5 and 7 (a unit more against other help);
-    then the probes' replay lines, CHECK lines, GDD 5-6 and hand-edits.txt
-    in step. Data only: no PHASE block changes, so no runner. If a
-    rule turns out to be the lever, write it down for the author instead.
+  2 The data tuning: done (2026-10-22, HISTORY). What is left is the
+    author's (OPEN ITEMS, "From the tuning").
   3 The soldiers stand out from the board (cloud, Opus 5.5 high; STARTER
     PROMPTS). The author (2026-10-21): every unit, both sides, must read
     at a glance as a playing piece, apart from everything else on the
@@ -138,45 +119,41 @@ NEXT (to the design freeze)
     playtests and the release (tools/pack.html). Later, if it goes well:
     the Appendix (GDD 6.5).
 
-NUMBERS FOR THE TUNING (2026-10-21, decision 14's rules, the built game)
-  node dev/bots.js . 200 - your side's score (a draw counting half)
-  against GDD 5.2's target, how battles end:
-    0 Hook's Farm      88 (90)   5 of 8 rounds
-    1 The Two Hills    47 (75)
-    2 The Long Wall    33 (75)   raids 27%, 28% at the limit
-    3 The Cottages     18 (75)   the attacker wipes you out (none 82)
-    4 The Chalk Brook  56 (65)   40% at the limit (river stalls)
-    5 The Orchard      47 (65)
-    6 The Mill Hill    91 (65)   by attrition
-    7 The Ridge        53 (55)
-    8 The Village     100 (55)   6.5 actions a turn - the busiest
-    9 The Two Fords    59 (55)   36% at the limit
-    10 The Whole Floor 83 (50)
-  node dev/outcomes.js . 1000 - each scene_ pair and each foe_ style
-  (* the row's bot):
-    1  scout 50 / move_first 51         ok    steady* 50, cautious 51,
-                                               bold 8, clever 49
-    2  rear_west 38 / rear_east 71      WIDE  steady* 38, cautious 49,
-                                               bold 41, clever 60
-    3  scout 18 / wall 1                WIDE  steady* 18, cautious 32,
-                                               bold 0, clever 83
-    4  bridge 55 / horse_gun 53         ok    steady* 55, cautious 50,
-       (horse_gun 91% at the limit)            bold 15, clever 49
-    5  forward 42 / extra_troop 69      WIDE  steady 69, cautious 71,
-                                               bold* 42, clever 94
-    6  more_rounds 89 / horse_gun 81    WIDE  steady 51, cautious* 89,
-                                               bold 56, clever 27
-    7  head_start 54 / extra_squad 96   WIDE  steady 56, cautious 83,
-                                               bold 53, clever* 54
-    8  more_rounds 100 / wood 100       ok    every style 100
-    9  scout 59 / forward 59            ok    steady 65, cautious* 59,
-                                               bold 35, clever 45
-    10 extra_troop 84 / extra_gun 88    ok    steady 27, cautious 16,
-                                               bold 15, clever* 84
-  "clever" is the easiest bot in 3, 5 and 10 and the hardest in 6: the
-  styles don't rank the same way battle to battle. A unit more is worth
-  35-42 points against other help (5, 7). scene_9's pair and scout on 1
-  and 3 can't show in bot runs (the bots set up from ARMIES): playtests.
+NUMBERS FOR THE TUNING (2026-10-22, after NEXT 2; 1,000 seeds)
+  node dev/bots.js . 1000 - your side's score (a draw counting half) with
+  the row's bot, against GDD 5.2's target; then the easiest of the four
+  foe_ styles when it is another (dev/outcomes.js):
+    0 Hook's Farm      86 (90)
+    1 The Two Hills    80 (75)   row bot clever (the easiest)
+    2 The Long Wall    72 (75)   steady; cautious 79; 18% at the limit
+    3 The Cottages     83 (75)   clever (the easiest; steady 18, bold 0)
+    4 The Chalk Brook  60 (65)   steady; 2% at the limit (was 40%)
+    5 The Orchard      67 (65)   clever (the easiest; bold 5)
+    6 The Mill Hill    70 (65)   steady (the easiest); median round 4/12
+    7 The Ridge        57 (55)   clever; cautious 71
+    8 The Village      52 (55)   steady (the easiest); median round 5/14
+    9 The Two Fords    52 (55)   cautious (the easiest); 18% at the limit
+    10 The Whole Floor 43 (50)   clever (the easiest)
+  node dev/outcomes.js . 1000 - the scene_ pairs with the row's bot:
+    1 scout 80 / move_first 80 ok   (both unseen by bots now)
+    2 rear_west 72 / rear_east 75 ok
+    3 scout 83 / wall 76            WIDE by 7
+    4 bridge 60 / horse_gun 59 ok
+    5 forward 67 / extra_troop 65 ok
+    6 more_rounds 70 / horse_gun 70 ok (neither changes anything: OPEN ITEMS)
+    7 head_start 57 / extra_squad 64 WIDE by 7
+    8 more_rounds 52 / wood 52 ok
+    9 scout 52 / forward 52 ok   (both unseen by bots)
+    10 extra_troop 43 / extra_gun 84 WIDE by 41
+  What changed (data.js; GDD 6.1 and 7.2): first move to you in 1, 4 and
+  7; their bot to clever in 1, 3, 5 and steady in 6, 8; armies - 2 you +1
+  squad, 5 you -1 troop, 6 them +1 troop and your gun a horse gun, 7 you
+  -1 squad, 8 you G 3I C (was 2G 4I 2C), 10 you -1 troop; maps - 4 and 9
+  double-wide fords, 3's wall a row further out (row 5), 4's bridge
+  outcome two bridges (D, K), 8's wood west of the middle (C6-D7);
+  effects - move_first adds set-up rows 3; scene_5's extra_troop and
+  scene_7's extra_squad also give them the first move; head_start also
+  gives a troop. The bots and rules are unchanged.
 
 RECIPES
   A rule change (a PHASE block's steps): cloud, Opus 5.5 high - the spec's
@@ -311,6 +288,8 @@ THE AUTHOR'S DECISIONS (2026-10-20)
     your side gets the help first; Q3b the targets hold for the easiest
     of the four foe_ styles; Q4 more river crossings on the maps; Q5 an
     outcome's effect may change, keeping its name.
+  15 (2026-10-22) Q1b: the Defensive Game's defender may get more than
+    two-thirds of the force and more cover on its half; not fewer rounds.
 
 
 THE FILES
@@ -379,8 +358,34 @@ OPEN ITEMS (the author, by hand)
     back line; its raid counts if it is still there at the end of its
     side's next turn) are Claude's drafts. Reword them as you like - a
     SAFE edit; keep {name}.
-  * Q1b for the tuning (NEXT 2): the Defensive Game defender's share,
-    cover or rounds.
+  * From the tuning (NEXT 2, 2026-10-22) - your calls; each is a data
+    or rule question a cloud session can carry out:
+    - Their default bots changed in 1, 3, 5, 6 and 8 (decision 14: the
+      targets hold for the easiest style, so the default is now that
+      style or near it; before, steady gave you 18 in battle 3 and bold
+      47 in 5). Keep it, or keep the old defaults and leave the easy
+      style to the foe_ knots.
+    - Some outcomes now carry a trade-off or a second effect, names
+      kept (decision 14 Q5): move_first (you already move first in 1)
+      also sets you up 3 rows deep; extra_troop in 5 and extra_squad in
+      7 hand them the first move; head_start in 7 also gives a troop.
+      Rename or reword any.
+    - Battle 6: your gun is a horse gun from the start (the only army
+      that landed near 65), so scene_6's horse_gun does nothing, and
+      more_rounds does nothing either (battles end by round 4). The pair
+      needs a new effect, or another army.
+    - Battle 10: a gun section more is worth about 40 points more than a
+      troop. Options: extra_gun also hands them the first move (they
+      already have it here - so another cost), or swap it for another
+      help.
+    - Battle 7: the cautious style is easier than the row's clever by
+      about 14 points, and its pair is 7 points apart.
+    - Battles 6 and 8 end in round 4-5 of 10-14 (GDD 5.3 wants at least
+      half the limit). The levers are rules - gun deadliness, cover %,
+      melee - or wider set-up gaps; a rule question for you.
+    - Defender's share: Q1b's yes is used in 6 (them 20 vs 24) and 8
+      (even, 26 each). More cover wasn't needed in 3: with the easiest
+      style it is already at 83.
   * The route-check skill (on claude.ai) still gives the laptop limits as
     builder 10, fixer 30; they're 20 and 60. Section 5's line should read:
     "Limits: builder 20 minutes, fixer 60, 2 fixer tries."
@@ -514,3 +519,14 @@ HISTORY
               (4, 5a-5d) moved here, the runner's recipe kept under
               RECIPES, the steps to the design freeze laid out (NEXT 1-7),
               the author's request that the soldiers stand out (NEXT 3).
+  2026-10-22  NEXT 2, the data tuning (cloud, Opus 5.5 medium): the
+              author's Q1b answer (the defender may get more of the force
+              and more cover, not fewer rounds; decision 15). Trials with a
+              scratch per-style measure, then data.js (NUMBERS FOR THE
+              TUNING lists every change), the extra / row / replay probes
+              and replay lines in step, GDD v0.7 (3.10, 4, 5.2, 6.1, 7.2,
+              10), the story contract's outcome wording (story.ink
+              comments, CONTRACT.txt), hand-edits.txt. Reference: game.html
+              and stub.html rebuilt around the new skeleton; 25 phase
+              builds OK, 75 of 75 caught. WIDE pairs 5 -> 3; river stalls
+              in 4 from 40% to 2%. No PHASE block or bot change.
