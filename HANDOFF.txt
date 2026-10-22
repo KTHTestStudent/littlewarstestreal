@@ -420,8 +420,35 @@ NEXT
 
 OUTCOMES-5D (node dev/outcomes.js . 1000 under the new rules, 2026-10-21,
 for step 4 - the built game with the reference's 17 and 22)
-  (the 1,000-seed run was still going at this commit; its table follows
-  in the next one)
+  battle   scene_ pair (score)               gap    foe_ styles (score;
+                                                     * the row's bot)
+  1        scout 50 / move_first 51          ok     steady* 50, cautious
+                                                     51, bold 8, clever 49
+  2        rear_west 38 / rear_east 71       WIDE   steady* 38, cautious 49,
+                                                     bold 41, clever 60
+  3        scout 18 / wall 1                 WIDE   steady* 18, cautious 32,
+                                                     bold 0, clever 83
+  4        bridge 55 / horse_gun 53          ok     steady* 55, cautious 50
+           (horse_gun 91% at the limit)              (100% at limit), bold 15,
+                                                     clever 49 (88% at limit)
+  5        forward 42 / extra_troop 69       WIDE   steady 69, cautious 71,
+                                                     bold* 42, clever 94
+  6        more_rounds 89 / horse_gun 81     WIDE   steady 51, cautious* 89,
+                                                     bold 56, clever 27
+  7        head_start 54 / extra_squad 96    WIDE   steady 56, cautious 83,
+                                                     bold 53, clever* 54
+  8        more_rounds 100 / wood 100        ok     every style 100
+  9        scout 59 / forward 59             ok     steady 65, cautious* 59,
+                                                     bold 35, clever 45
+  10       extra_troop 84 / extra_gun 88     ok     steady 27, cautious 16,
+                                                     bold 15, clever* 84
+  Read for step 4: the targets hold for the easiest style (Q3b), so the
+  battle to fix first is 3 (easiest: clever 83, but steady, the row's,
+  18 - the attacker wins by attrition now; Q1's second half is open), then
+  8 (100 with every style - the Village needs a stronger defender or a
+  smaller attack), 2 (rear_west), and the WIDE pairs 5 and 7 (a unit more
+  against other help). "clever" is the easiest bot in 3, 5 and 10 and the
+  hardest in 6: the styles are not ordered the same way battle to battle.
 
 ANSWERED QUESTIONS (NEXT 5b; decision 14 has his answers)
   Q1 the Defensive Game dash; Q2 the raid race; Q3 Fights to the Finish
