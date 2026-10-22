@@ -58,8 +58,9 @@ THE TABLES, IN FILE ORDER
          them, their back line at the top, yours at the bottom; every row
          as long as the others; at most 18 columns and 12 rows. Keep each
          battle's set-up rows clear for its ARMIES (the red banner names a
-         unit on a square it can't stand on). Battles 1-10 are rough first
-         drafts for the bot runs to reshape.
+         unit on a square it can't stand on). Battles 1-10 were tuned by
+         bot runs on 2026-10-22 (HANDOFF's NUMBERS FOR THE TUNING): after
+         a map, army or row change, run the bot runs again.
   COUNTRY_NAMES  (SAFE)  the battles' names (about 22 letters). Working
          names: rename any.
   SWITCHES  (RULE)  the squares a story outcome's ["piece", key] changes:
@@ -100,7 +101,14 @@ THE TABLES, IN FILE ORDER
          (about 3 lines of 60 letters).
   THEME  (SAFE)  colours ("#rrggbb"), and the shapes that tell the sides
          apart without colour: hat "tall" or "dome", base "ring" or "bar".
-         Give Red and Blue different shapes.
+         Give Red and Blue different shapes. Each side has paint, light
+         (the gloss) and dark (hats and stands). pieces is a row of
+         switches, each true or false, for how the units stand out from
+         the board (outline, detail, stand, shadow, doneMark, raidFlag,
+         badge; the comment above it says what each does). The old colours
+         are in the comment above THEME. To see a change before making it:
+         node dev/shots.js . shots 4,8 7 10 '{"pieces":{"outline":false}}'
+         writes screenshots to a shots folder (dev/README.txt).
   DATA_OK = true  the last line - keep it last.
 
 AFTER A RULE EDIT (a cloud session, or you)

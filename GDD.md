@@ -1,6 +1,13 @@
-# Little Wars (working title) - Game Design Document, v0.6
+# Little Wars (working title) - Game Design Document, v0.7
 
-Status: v0.6, 2026-10-21: v0.5 with the author's decision 14 (section 10)
+Status: v0.7, 2026-10-22: the data tuning against section 5 (HANDOFF NEXT
+2), with the author's answer to Q1b (section 10): the armies, first moves,
+their bots, three maps and four outcome effects changed (6.1, 7.2); what
+the tuning could not reach is in section 5.2's last list. Later the same
+day: the playing pieces drawn to stand out from the board (section 8,
+"Pieces, not scenery"; HANDOFF NEXT 3), for the author to judge.
+
+v0.6, 2026-10-21: v0.5 with the author's decision 14 (section 10)
 - in a Defensive Game only an infantry squad gets through, and a raid
 counts only after its unit has stood a turn on the back line; the data
 tuning against section 5 comes next.
@@ -261,7 +268,7 @@ ending plays (the author's decision, 2026-10-20).
 | Raid size (Blow at the Rear) | 3 figures, standing through one enemy turn | W28; the hold is the author's decision 14 |
 | Withdrawal after a raid | 3 turns | W28 gives six |
 | Figures a unit of the attacker needs on the defender's back line (Defensive Game) | 5 (only an infantry squad) | the author's decision 14 |
-| Defender's share (Defensive Game) | two-thirds | W29 |
+| Defender's share (Defensive Game) | two-thirds or more, as the row's armies say (3: two-thirds; 6: five-sixths; 8: even) | W29; more is the author's Q1b answer |
 | Attacker's quarter (Defensive Game) | a quarter | W29 |
 | Set-up rows | 2 | - |
 | Points | 100 / 10 / 1.5 / 1 / 0.5 / 0.5 | W27 |
@@ -304,8 +311,8 @@ both sides have none at once, it is a draw.
   the loser is still on the field after them surrenders: its figures
   count as the winner's prisoners, and any prisoners it was escorting go
   free. With no raid by the round limit, it is a draw.
-- **Defensive Game.** The defender has two-thirds of the attacker's force
-  (as near as whole units allow), sets up as 3.8 says, and may fire from its first turn. The attacker wins
+- **Defensive Game.** The defender has at least two-thirds of the attacker's
+  force (as near as whole units allow; the row may give it more), sets up as 3.8 says, and may fire from its first turn. The attacker wins
   when, at the end of its turn, one of its units with at least 5 figures
   (an infantry squad: a cavalry troop has 4) stands on the defender's
   back line while the attacker still has at least a quarter of its
@@ -365,8 +372,22 @@ counts as half a win.
 - **The `foe_` knots are not sidegrades** (the author's call, 2026-10-21):
   each picks one of four bot styles for their side, a choice of how hard
   the battle is. dev/outcomes.js shows each style's win rate and their
-  spread, and judges only the `scene_` pairs. The row's own bot (its
-  default) is the one the part's target is measured with.
+  spread, and judges only the `scene_` pairs. The part's target holds
+  for the easiest of the four styles with the knot's default outcome
+  (the author's decision 14); the `scene_` pairs are judged with the
+  row's own bot (its default), which the tuning made the easiest style,
+  or near it, in each battle.
+- **After the tuning (2026-10-22, 1,000 seeds).** Your side's score
+  against the easiest style (its name when it is not the row's bot), with
+  the knot's default outcome: 0 86 (target 90); 1 80 (75); 2 cautious 79,
+  the row's steady 72 (75); 3 83 (75); 4 60 (65); 5 67 (65); 6 70 (65); 7
+  cautious 71, the row's clever 57 (55); 8 52 (55); 9 52 (55); 10 43 (50).
+  The `scene_` pairs are within 5 points except 3 (7), 7 (7) and 10 (41).
+  What data alone could not reach: battle 7's cautious bot and its pair;
+  battle 10's pair (a gun section more is worth far more than a troop);
+  battle 6's pair (neither outcome changes anything in bot runs); the
+  length of battles 6 and 8 (most end in round 4 or 5 of 10-14, under
+  section 5.3's half). HANDOFF has the details.
 
 ### 5.3 How it is checked
 
@@ -420,16 +441,16 @@ working names: the author may rename any of them by hand in data.js
 | # | Part | Type | Country (board) | You | Them | First | Set-up | Rounds | Draw line | Their bot (`foe_` default) | Knots before | Target |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 0 | Tutorial | Fight to the Finish | Hook's Farm (12×9) | G 2I C (20) | G 2I C (20) | them | fixed (6.3), no curtain | 8 | 4 | gentle | `tutorial` (sends nothing) | 90% |
-| 1 | Act I | Fight to the Finish | The Two Hills (12×10) | G 2I C (20) | G 2I C (20) | them | curtain | 10 | 4 | steady | `foe_1`, `scene_1` | 75% |
-| 2 | Act I | Blow at the Rear: the half `scene_2` picks | The Long Wall (12×10) | G 2I 2C (24) | G 2I 2C (24) | you | curtain | 10 | 4 | steady | `foe_2`, `scene_2` | 75% |
-| 3 | Act I | Defensive Game: you defend | The Cottages (12×10) | G 2I (16) | G 2I 2C (24) | them | curtain; you rows 1-3, them rows 9-10 | 10 | - | steady | `foe_3`, `scene_3` | 75% |
-| 4 | Act II | Fight to the Finish | The Chalk Brook (14×10) | G 2I 2C (24) | G 2I 2C (24) | them | curtain | 11 | 4 | steady | `foe_4`, `scene_4` | 65% |
-| 5 | Act II | Blow at the Rear: the west half | The Orchard (14×10) | G 2I 2C (24) | G 2I 2C (24) | you | curtain | 10 | 4 | bold | `foe_5`, `scene_5` | 65% |
-| 6 | Act II | Defensive Game: you attack | The Mill Hill (14×10) | G 2I 2C (24) | G 2I (16) | you | curtain; you rows 1-2, them rows 8-10 | 10 | - | cautious | `foe_6`, `scene_6` | 65% |
-| 7 | Act III | Fight to the Finish | The Ridge (14×12) | G 3I 2C (30) | G 3I 2C (30) | them | curtain | 12 | 5 | clever | `foe_7`, `scene_7` | 55% |
-| 8 | Act III | Defensive Game: you attack | The Village (16×12) | 2G 4I 2C (40) | G 3I C (26) | you | curtain; you rows 1-2, them rows 9-12 | 12 | - | clever | `foe_8`, `scene_8` | 55% |
-| 9 | Act III | Blow at the Rear: the whole line | The Two Fords (16×12) | G 3I 2C (30) | G 3I 2C (30) | you | curtain | 12 | 5 | cautious or bold, as `scene_9` picks | `foe_9`, `scene_9` | 55% |
-| 10 | Finale | Fight to the Finish | The Whole Floor (18×12) | 2G 4I 3C (44) | 2G 4I 3C (44) | them | curtain; each side's back 3 rows | 18 | 7 | clever | `foe_10`, `scene_10` | 50% |
+| 1 | Act I | Fight to the Finish | The Two Hills (12×10) | G 2I C (20) | G 2I C (20) | you | curtain | 10 | 4 | clever | `foe_1`, `scene_1` | 75% |
+| 2 | Act I | Blow at the Rear: the half `scene_2` picks | The Long Wall (12×10) | G 3I 2C (30) | G 2I 2C (24) | you | curtain | 10 | 4 | steady | `foe_2`, `scene_2` | 75% |
+| 3 | Act I | Defensive Game: you defend | The Cottages (12×10) | G 2I (16) | G 2I 2C (24) | them | curtain; you rows 1-3, them rows 9-10 | 10 | - | clever | `foe_3`, `scene_3` | 75% |
+| 4 | Act II | Fight to the Finish | The Chalk Brook (14×10) | G 2I 2C (24) | G 2I 2C (24) | you | curtain | 11 | 4 | steady | `foe_4`, `scene_4` | 65% |
+| 5 | Act II | Blow at the Rear: the west half | The Orchard (14×10) | G 2I C (20) | G 2I 2C (24) | you | curtain | 10 | 4 | clever | `foe_5`, `scene_5` | 65% |
+| 6 | Act II | Defensive Game: you attack | The Mill Hill (14×10) | HG 2I 2C (24; HG a horse gun) | G 2I C (20) | you | curtain; you rows 1-2, them rows 8-10 | 10 | - | steady | `foe_6`, `scene_6` | 65% |
+| 7 | Act III | Fight to the Finish | The Ridge (14×12) | G 2I 2C (24) | G 3I 2C (30) | you | curtain | 12 | 5 | clever | `foe_7`, `scene_7` | 55% |
+| 8 | Act III | Defensive Game: you attack | The Village (16×12) | G 3I C (26) | G 3I C (26) | you | curtain; you rows 1-2, them rows 9-12 | 12 | - | steady | `foe_8`, `scene_8` | 55% |
+| 9 | Act III | Blow at the Rear: the whole line | The Two Fords (16×12) | G 3I 2C (30) | G 3I 2C (30) | you | curtain | 12 | 5 | cautious | `foe_9`, `scene_9` | 55% |
+| 10 | Finale | Fight to the Finish | The Whole Floor (18×12) | 2G 4I 2C (40) | 2G 4I 3C (44) | them | curtain; each side's back 3 rows | 18 | 7 | clever | `foe_10`, `scene_10` | 50% |
 
 The story outcomes (section 7) change the row of the battle after their
 knots: the `foe_` knot picks their bot's style; the `scene_` knot changes
@@ -443,13 +464,13 @@ this table; the bot runs reshape them):
 |---|---|---|---|
 | 1 | The Two Hills | a hill on each half, a wood in the middle, two rocks | the first curtain; a gun on its hill fires over the rocks; the wood is the cover to fight for |
 | 2 | The Long Wall | a wall across the middle with three gaps; a wood on the west; a chalk stream with a ford on the east | the gaps are where melees happen; the two halves differ, for `scene_2`'s choice |
-| 3 | The Cottages | three cottages and a wood on your half; open ground and one hill on theirs | the defender's cover. Switchable: `wall`, a wall in front of your cottages |
-| 4 | The Chalk Brook | a river across the middle with a bridge in the centre and a ford near each side; woods on both banks | crossings force melees, so prisoners matter. Switchable: `bridge`, a second bridge |
+| 3 | The Cottages | three cottages and a wood on your half; open ground and one hill on theirs | the defender's cover. Switchable: `wall`, a broken wall across the ground in front of your cottages (row 5) |
+| 4 | The Chalk Brook | a river across the middle with a bridge in the centre and a double-wide ford near each side; woods on both banks | crossings force melees, so prisoners matter. Switchable: `bridge`, two more bridges (D, K) |
 | 5 | The Orchard | rows of trees (wood) inside a broken wall on the west; houses on the east | raids go through the orchard or past the houses |
 | 6 | The Mill Hill | their hill, with a mill (a house) and a wall on it; a wood on your half; open slopes | their gun on the hill is the one to take |
 | 7 | The Ridge | a long hill across the middle with one gap; woods at both ends; two houses | high ground: guns on the ridge see far |
-| 8 | The Village | houses and walls in a cluster on their half; a wood and a hill on yours | houses block fire, so the fighting is close. Switchable: `wood`, a wood in the middle |
-| 9 | The Two Fords | a river across the middle with two fords and a bridge; a hill on each half | three ways to the rear, each a narrow one |
+| 8 | The Village | houses and walls in a cluster on their half; a wood and a hill on yours | houses block fire, so the fighting is close. Switchable: `wood`, a wood west of the middle (C6-D7) |
+| 9 | The Two Fords | a river across the middle with two double-wide fords and a bridge; a hill on each half | three ways to the rear, each a narrow one |
 | 10 | The Whole Floor | every piece: two hills, woods, a river with a bridge and two fords, houses, walls, rocks | the biggest Country |
 
 ### 6.2 The Countries' pieces
@@ -642,14 +663,14 @@ they fit any frame the author picks.
 |---|---|---|---|
 | `intro` | the campaign | none | - |
 | `tutorial` | Hook's Farm | none | - |
-| `scene_1` | 1, Fight to the Finish | *"scout" → you see their set-up while you arrange yours; "move_first" → you move first | scout |
+| `scene_1` | 1, Fight to the Finish | *"scout" → you see their set-up while you arrange yours; "move_first" → you move first and set up in your back 3 rows | scout |
 | `scene_2` | 2, Blow at the Rear | *"rear_west" → raids must reach the west half of a back line; "rear_east" → the east half | rear_west |
-| `scene_3` | 3, Defensive Game (you defend) | *"scout" → as above; "wall" → a wall stands in front of your cottages | scout |
-| `scene_4` | 4, Fight to the Finish | *"bridge" → a second bridge over the brook; "horse_gun" → your gun section is a horse gun (moves 4) | bridge |
-| `scene_5` | 5, Blow at the Rear | *"forward" → your set-up zone is your back 3 rows; "extra_troop" → you have a cavalry troop more | forward |
-| `scene_6` | 6, Defensive Game (you attack) | *"more_rounds" → the round limit is 2 more; "horse_gun" → your gun section is a horse gun | more_rounds |
-| `scene_7` | 7, Fight to the Finish | *"head_start" → you move first and see their set-up; "extra_squad" → you have an infantry squad more | head_start |
-| `scene_8` | 8, Defensive Game (you attack) | *"more_rounds" → the round limit is 2 more; "wood" → a wood stands in the middle | more_rounds |
+| `scene_3` | 3, Defensive Game (you defend) | *"scout" → as above; "wall" → a broken wall stands across the ground in front of your cottages (row 5) | scout |
+| `scene_4` | 4, Fight to the Finish | *"bridge" → two more bridges over the brook (D and K); "horse_gun" → your gun section is a horse gun (moves 4) | bridge |
+| `scene_5` | 5, Blow at the Rear | *"forward" → your set-up zone is your back 3 rows; "extra_troop" → you have a cavalry troop more, and they move first | forward |
+| `scene_6` | 6, Defensive Game (you attack) | *"more_rounds" → the round limit is 2 more; "horse_gun" → your gun section is a horse gun (in battle 6 it already is since the 2026-10-22 tuning: an open item) | more_rounds |
+| `scene_7` | 7, Fight to the Finish | *"head_start" → you move first, see their set-up and have a cavalry troop more; "extra_squad" → you have an infantry squad more, and they move first | head_start |
+| `scene_8` | 8, Defensive Game (you attack) | *"more_rounds" → the round limit is 2 more; "wood" → a wood stands west of the middle | more_rounds |
 | `scene_9` | 9, Blow at the Rear | *"scout" → as above; "forward" → your set-up zone is your back 3 rows | scout |
 | `scene_10` | 10, the finale | *"extra_troop" → you have a cavalry troop more; "extra_gun" → you have a gun section more | extra_troop |
 | `foe_1` ... `foe_10` | 1-10, just before that battle's `scene_` knot | "steady", "cautious", "bold" or "clever" → their bot plays that style (6.4) | the row's own bot (6.1) |
@@ -738,6 +759,20 @@ Country is drawn by code, like everything else: stacked boards for hills,
 twigs for trees, brick-block houses, and chalk lines for rivers and roads.
 Fallen figures tip over and go to a box at the side. Prisoners face away and
 walk to the back line with their escort.
+
+**Pieces, not scenery** (HANDOFF NEXT 3, 2026-10-22; the author decides,
+and each part is a switch in THEME's pieces group). Every unit, both
+sides, must read at a glance as a playing piece, apart from the Country.
+The pieces get what the board doesn't have: a dark outline round each
+unit; more detail (a gloss on the enamel, rifles, horses with four legs
+and a tail, guns with the trail painted in the side's dark and a rim on
+the wheel); a solid painted stand with a soft shadow under it. The paints
+are brighter and kept away from the board's brick and river, which are a
+little quieter. A unit of yours that has acted keeps its colours and gets
+a tick on its stand (it used to fade into the floor). A raider holding the
+other side's back line flies a small flag, and the side panel says the
+raid comes next turn. The figure count sits on a small badge in the
+side's colours.
 
 **Telling the sides apart.** Red and Blue are Wells's own sides (Hook's Farm,
 and the examples in his rules). Each side also gets its own hat silhouette
@@ -879,8 +914,8 @@ bot runs' questions):
   the easiest of the four `foe_` styles in each battle; river stalls are
   fixed with more crossings on the maps, not in the bots; an outcome's
   effect may change, keeping its name.
-- Still open: whether the defender may get more than two-thirds of the
-  force, more cover, or fewer rounds (section 4 says two-thirds).
+- Q1b (2026-10-22): the Defensive Game's defender may get more than
+  two-thirds of the force and more cover on its half; not fewer rounds.
 
 Still open (later):
 
@@ -897,7 +932,7 @@ tables a person can hand-edit.
 | File | What it holds | Written by |
 |---|---|---|
 | `game.html` | all the code: a red-banner script at the very top, STATE AND HELPERS (canvas, state, seeded `rng`, words), the PHASE blocks (the rules), GAME FLOW (the campaign, screens, conversations, input, drawing, the bots' turn playback, the tables' banner checks, the in-game self-test), and the title screen's AI disclosure | Claude's skeleton; the local builder's PHASE blocks |
-| `data.js` | tables and their comments only, last line `DATA_OK`: RULES, LOSS_ORDER, ARMS, PIECES, COUNTRIES (the maps), COUNTRY_NAMES, LEVELS (the eleven rows), EFFECTS and DEFAULTS (the story's outcomes), BOT_STYLES, the words (SCREEN_WORDS, TIPS, LOG_WORDS, UNIT_NAMES), THEME (colours, hats, base marks) | Claude; the author's hand edits |
+| `data.js` | tables and their comments only, last line `DATA_OK`: RULES, LOSS_ORDER, ARMS, PIECES, COUNTRIES (the maps), COUNTRY_NAMES, LEVELS (the eleven rows), EFFECTS and DEFAULTS (the story's outcomes), BOT_STYLES, the words (SCREEN_WORDS, TIPS, LOG_WORDS, UNIT_NAMES), THEME (colours, hats, base marks, the pieces' look switches) | Claude; the author's hand edits |
 | `ink/config.js` | this game's contract, for the kit and knotcheck | Claude |
 | `ink/story.js` | the compiled story (Inky's export) | the author |
 | `ink/ink.js`, `LICENSE-INKJS.txt` | inkjs and its licence, unedited, as Knotwork ships them | inkle (MIT) |

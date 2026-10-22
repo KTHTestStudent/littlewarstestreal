@@ -126,7 +126,8 @@ const PIECES = {
 // RULE edits. Each map is rows of PIECES letters with a space between
 // them, THEIR back line at the top and YOURS at the bottom, as on the
 // screen. Every row of a map has the same number of letters. The battles
-// 1-10 are rough first drafts (2026-10-20): the bot runs reshape them.
+// 1-10 were drawn as rough drafts (2026-10-20) and reshaped by the bot
+// runs (2026-10-22: wider crossings on 4 and 9).
 // Keep the set-up rows of each battle (LEVELS youRows / themRows) clear
 // enough for its ARMIES below - the red banner names a unit that stands
 // on a square it can't, or outside its zone.
@@ -186,15 +187,15 @@ const COUNTRIES = {
     ". . . . . . . . . . . ."  // 1
   ],
   // The Chalk Brook (14 x 10): a river across the middle, a bridge in the
-  // centre, a ford near each side, woods on both banks (switchable:
-  // "bridge", a second bridge)
+  // centre, a double-wide ford near each side, woods on both banks
+  // (switchable: "bridge", two more bridges, at D and K)
   chalkbrook: [
     ". . . . . . . . . . . . . .", // 10
     ". . . . . . . . . . . . . .", // 9
     ". . w w . . . . . . w w . .", // 8
     ". . w . . . . . . . . w . .", // 7
-    "~ f ~ ~ ~ ~ b ~ ~ ~ ~ ~ f ~", // 6
-    "~ f ~ ~ ~ ~ b ~ ~ ~ ~ ~ f ~", // 5
+    "~ f f ~ ~ ~ b ~ ~ ~ ~ f f ~", // 6
+    "~ f f ~ ~ ~ b ~ ~ ~ ~ f f ~", // 5
     ". . w . . . . . . . . w . .", // 4
     ". . w w . . . . . . w w . .", // 3
     ". . . . . . . . . . . . . .", // 2
@@ -260,16 +261,16 @@ const COUNTRIES = {
     ". . w w . . . . . . . . . . . .", // 2
     ". . . . . . . . . . . . . . . ."  // 1
   ],
-  // The Two Fords (16 x 12): a river across the middle with two fords and
-  // a bridge; a hill on each half
+  // The Two Fords (16 x 12): a river across the middle with two
+  // double-wide fords and a bridge; a hill on each half
   twofords: [
     ". . . . . . . . . . . . . . . .", // 12
     ". . . . . . . . . . . . . . . .", // 11
     ". . . . . . . . . . . . . . . .", // 10
     ". . h h . . . . . . . . . . . .", // 9
     ". . h h . . . . . . . . . . . .", // 8
-    "~ ~ ~ f ~ ~ ~ ~ b ~ ~ ~ f ~ ~ ~", // 7
-    "~ ~ ~ f ~ ~ ~ ~ b ~ ~ ~ f ~ ~ ~", // 6
+    "~ f f ~ ~ ~ ~ b ~ ~ ~ ~ ~ f f ~", // 7
+    "~ f f ~ ~ ~ ~ b ~ ~ ~ ~ ~ f f ~", // 6
     ". . h h . . . . . . . . . . . .", // 5
     ". . h h . . . . . . . . . . . .", // 4
     ". . . . . . . . . . . . . . . .", // 3
@@ -315,17 +316,19 @@ const COUNTRY_NAMES = {
 // RULE edits. One line per square: when a battle's outcome puts the piece
 // "key" in, the square "at" of that country becomes the letter "piece".
 const SWITCHES = [
-  { country: "cottages", key: "wall", at: "B4", piece: "=" },
-  { country: "cottages", key: "wall", at: "C4", piece: "=" },
-  { country: "cottages", key: "wall", at: "F4", piece: "=" },
-  { country: "cottages", key: "wall", at: "G4", piece: "=" },
-  { country: "cottages", key: "wall", at: "K4", piece: "=" },
-  { country: "chalkbrook", key: "bridge", at: "J5", piece: "b" },
-  { country: "chalkbrook", key: "bridge", at: "J6", piece: "b" },
-  { country: "village", key: "wood", at: "H6", piece: "w" },
-  { country: "village", key: "wood", at: "I6", piece: "w" },
-  { country: "village", key: "wood", at: "H7", piece: "w" },
-  { country: "village", key: "wood", at: "I7", piece: "w" }
+  { country: "cottages", key: "wall", at: "B5", piece: "=" },
+  { country: "cottages", key: "wall", at: "C5", piece: "=" },
+  { country: "cottages", key: "wall", at: "F5", piece: "=" },
+  { country: "cottages", key: "wall", at: "G5", piece: "=" },
+  { country: "cottages", key: "wall", at: "K5", piece: "=" },
+  { country: "chalkbrook", key: "bridge", at: "D5", piece: "b" },
+  { country: "chalkbrook", key: "bridge", at: "D6", piece: "b" },
+  { country: "chalkbrook", key: "bridge", at: "K5", piece: "b" },
+  { country: "chalkbrook", key: "bridge", at: "K6", piece: "b" },
+  { country: "village", key: "wood", at: "C6", piece: "w" },
+  { country: "village", key: "wood", at: "D6", piece: "w" },
+  { country: "village", key: "wood", at: "C7", piece: "w" },
+  { country: "village", key: "wood", at: "D7", piece: "w" }
 ];
 
 // ---- THE LEVEL TABLE: the eleven battles (GDD 6.1) ----
@@ -354,14 +357,14 @@ const SWITCHES = [
 //   target    your side's win rate the bot runs aim at, percent (GDD 5.2)
 const LEVELS = [
   { lv: 0, part: "tutorial", type: "finish", country: "hooks", first: "them", curtain: false, youRows: 2, themRows: 2, rounds: 8, drawLine: 4, bot: "gentle", rear: "", defender: "", foe: "", knot: "tutorial", target: 90 },
-  { lv: 1, part: "act1", type: "finish", country: "twohills", first: "them", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "steady", rear: "", defender: "", foe: "foe_1", knot: "scene_1", target: 75 },
+  { lv: 1, part: "act1", type: "finish", country: "twohills", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "clever", rear: "", defender: "", foe: "foe_1", knot: "scene_1", target: 75 },
   { lv: 2, part: "act1", type: "rear", country: "longwall", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "steady", rear: "west", defender: "", foe: "foe_2", knot: "scene_2", target: 75 },
-  { lv: 3, part: "act1", type: "defend", country: "cottages", first: "them", curtain: true, youRows: 3, themRows: 2, rounds: 10, drawLine: 0, bot: "steady", rear: "", defender: "you", foe: "foe_3", knot: "scene_3", target: 75 },
-  { lv: 4, part: "act2", type: "finish", country: "chalkbrook", first: "them", curtain: true, youRows: 2, themRows: 2, rounds: 11, drawLine: 4, bot: "steady", rear: "", defender: "", foe: "foe_4", knot: "scene_4", target: 65 },
-  { lv: 5, part: "act2", type: "rear", country: "orchard", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "bold", rear: "west", defender: "", foe: "foe_5", knot: "scene_5", target: 65 },
-  { lv: 6, part: "act2", type: "defend", country: "millhill", first: "you", curtain: true, youRows: 2, themRows: 3, rounds: 10, drawLine: 0, bot: "cautious", rear: "", defender: "them", foe: "foe_6", knot: "scene_6", target: 65 },
-  { lv: 7, part: "act3", type: "finish", country: "ridge", first: "them", curtain: true, youRows: 2, themRows: 2, rounds: 12, drawLine: 5, bot: "clever", rear: "", defender: "", foe: "foe_7", knot: "scene_7", target: 55 },
-  { lv: 8, part: "act3", type: "defend", country: "village", first: "you", curtain: true, youRows: 2, themRows: 4, rounds: 12, drawLine: 0, bot: "clever", rear: "", defender: "them", foe: "foe_8", knot: "scene_8", target: 55 },
+  { lv: 3, part: "act1", type: "defend", country: "cottages", first: "them", curtain: true, youRows: 3, themRows: 2, rounds: 10, drawLine: 0, bot: "clever", rear: "", defender: "you", foe: "foe_3", knot: "scene_3", target: 75 },
+  { lv: 4, part: "act2", type: "finish", country: "chalkbrook", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 11, drawLine: 4, bot: "steady", rear: "", defender: "", foe: "foe_4", knot: "scene_4", target: 65 },
+  { lv: 5, part: "act2", type: "rear", country: "orchard", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "clever", rear: "west", defender: "", foe: "foe_5", knot: "scene_5", target: 65 },
+  { lv: 6, part: "act2", type: "defend", country: "millhill", first: "you", curtain: true, youRows: 2, themRows: 3, rounds: 10, drawLine: 0, bot: "steady", rear: "", defender: "them", foe: "foe_6", knot: "scene_6", target: 65 },
+  { lv: 7, part: "act3", type: "finish", country: "ridge", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 12, drawLine: 5, bot: "clever", rear: "", defender: "", foe: "foe_7", knot: "scene_7", target: 55 },
+  { lv: 8, part: "act3", type: "defend", country: "village", first: "you", curtain: true, youRows: 2, themRows: 4, rounds: 12, drawLine: 0, bot: "steady", rear: "", defender: "them", foe: "foe_8", knot: "scene_8", target: 55 },
   { lv: 9, part: "act3", type: "rear", country: "twofords", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 12, drawLine: 5, bot: "cautious", rear: "all", defender: "", foe: "foe_9", knot: "scene_9", target: 55 },
   { lv: 10, part: "finale", type: "finish", country: "wholefloor", first: "them", curtain: true, youRows: 3, themRows: 3, rounds: 18, drawLine: 7, bot: "clever", rear: "", defender: "", foe: "foe_10", knot: "scene_10", target: 50 }
 ];
@@ -395,7 +398,7 @@ const ARMIES = [
   { lv: 1, side: "you", arm: "inf", at: "C2", goal: "" },
   { lv: 1, side: "you", arm: "inf", at: "H2", goal: "" },
   { lv: 1, side: "you", arm: "cav", at: "F1", goal: "" },
-  // 2 The Long Wall: G 2I 2C a side
+  // 2 The Long Wall: you G 3I 2C; they G 2I 2C
   { lv: 2, side: "them", arm: "gun", at: "F10", goal: "" },
   { lv: 2, side: "them", arm: "inf", at: "D9", goal: "" },
   { lv: 2, side: "them", arm: "inf", at: "H9", goal: "" },
@@ -404,6 +407,7 @@ const ARMIES = [
   { lv: 2, side: "you", arm: "gun", at: "F1", goal: "" },
   { lv: 2, side: "you", arm: "inf", at: "D2", goal: "" },
   { lv: 2, side: "you", arm: "inf", at: "H2", goal: "" },
+  { lv: 2, side: "you", arm: "inf", at: "I2", goal: "" },
   { lv: 2, side: "you", arm: "cav", at: "B1", goal: "" },
   { lv: 2, side: "you", arm: "cav", at: "K1", goal: "" },
   // 3 The Cottages: you defend with G 2I; they attack with G 2I 2C
@@ -426,7 +430,7 @@ const ARMIES = [
   { lv: 4, side: "you", arm: "inf", at: "K2", goal: "" },
   { lv: 4, side: "you", arm: "cav", at: "B1", goal: "" },
   { lv: 4, side: "you", arm: "cav", at: "M1", goal: "" },
-  // 5 The Orchard: G 2I 2C a side
+  // 5 The Orchard: you G 2I C; they G 2I 2C
   { lv: 5, side: "them", arm: "gun", at: "H10", goal: "" },
   { lv: 5, side: "them", arm: "inf", at: "D9", goal: "" },
   { lv: 5, side: "them", arm: "inf", at: "K9", goal: "" },
@@ -436,17 +440,18 @@ const ARMIES = [
   { lv: 5, side: "you", arm: "inf", at: "D2", goal: "" },
   { lv: 5, side: "you", arm: "inf", at: "K2", goal: "" },
   { lv: 5, side: "you", arm: "cav", at: "B1", goal: "" },
-  { lv: 5, side: "you", arm: "cav", at: "L1", goal: "" },
-  // 6 The Mill Hill: you attack with G 2I 2C; they defend with G 2I
+  // 6 The Mill Hill: you attack with a horse gun, 2I 2C; they defend with
+  // G 2I C
   { lv: 6, side: "them", arm: "gun", at: "H8", goal: "" },
   { lv: 6, side: "them", arm: "inf", at: "F9", goal: "" },
   { lv: 6, side: "them", arm: "inf", at: "J8", goal: "" },
-  { lv: 6, side: "you", arm: "gun", at: "G1", goal: "" },
+  { lv: 6, side: "them", arm: "cav", at: "L9", goal: "" },
+  { lv: 6, side: "you", arm: "hgun", at: "G1", goal: "" },
   { lv: 6, side: "you", arm: "inf", at: "C2", goal: "" },
   { lv: 6, side: "you", arm: "inf", at: "K2", goal: "" },
   { lv: 6, side: "you", arm: "cav", at: "A1", goal: "" },
   { lv: 6, side: "you", arm: "cav", at: "N1", goal: "" },
-  // 7 The Ridge: G 3I 2C a side
+  // 7 The Ridge: you G 2I 2C; they G 3I 2C
   { lv: 7, side: "them", arm: "gun", at: "H12", goal: "" },
   { lv: 7, side: "them", arm: "inf", at: "K11", goal: "" },
   { lv: 7, side: "them", arm: "inf", at: "G11", goal: "" },
@@ -456,23 +461,19 @@ const ARMIES = [
   { lv: 7, side: "you", arm: "gun", at: "G1", goal: "" },
   { lv: 7, side: "you", arm: "inf", at: "D2", goal: "" },
   { lv: 7, side: "you", arm: "inf", at: "H2", goal: "" },
-  { lv: 7, side: "you", arm: "inf", at: "K2", goal: "" },
   { lv: 7, side: "you", arm: "cav", at: "B1", goal: "" },
   { lv: 7, side: "you", arm: "cav", at: "M1", goal: "" },
-  // 8 The Village: you attack with 2G 4I 2C; they defend with G 3I C
+  // 8 The Village: you attack with G 3I C; they defend with G 3I C
   { lv: 8, side: "them", arm: "gun", at: "H12", goal: "" },
   { lv: 8, side: "them", arm: "inf", at: "G9", goal: "" },
   { lv: 8, side: "them", arm: "inf", at: "I10", goal: "" },
   { lv: 8, side: "them", arm: "inf", at: "L9", goal: "" },
   { lv: 8, side: "them", arm: "cav", at: "D12", goal: "" },
   { lv: 8, side: "you", arm: "gun", at: "G1", goal: "" },
-  { lv: 8, side: "you", arm: "gun", at: "J1", goal: "" },
-  { lv: 8, side: "you", arm: "inf", at: "C2", goal: "" },
-  { lv: 8, side: "you", arm: "inf", at: "F2", goal: "" },
-  { lv: 8, side: "you", arm: "inf", at: "K2", goal: "" },
-  { lv: 8, side: "you", arm: "inf", at: "N2", goal: "" },
+  { lv: 8, side: "you", arm: "inf", at: "D2", goal: "" },
+  { lv: 8, side: "you", arm: "inf", at: "H2", goal: "" },
+  { lv: 8, side: "you", arm: "inf", at: "L2", goal: "" },
   { lv: 8, side: "you", arm: "cav", at: "B1", goal: "" },
-  { lv: 8, side: "you", arm: "cav", at: "O1", goal: "" },
   // 9 The Two Fords: G 3I 2C a side
   { lv: 9, side: "them", arm: "gun", at: "D12", goal: "" },
   { lv: 9, side: "them", arm: "inf", at: "F11", goal: "" },
@@ -486,7 +487,7 @@ const ARMIES = [
   { lv: 9, side: "you", arm: "inf", at: "L2", goal: "" },
   { lv: 9, side: "you", arm: "cav", at: "B1", goal: "" },
   { lv: 9, side: "you", arm: "cav", at: "O1", goal: "" },
-  // 10 The Whole Floor: 2G 4I 3C a side
+  // 10 The Whole Floor: you 2G 4I 2C; they 2G 4I 3C
   { lv: 10, side: "them", arm: "gun", at: "E12", goal: "" },
   { lv: 10, side: "them", arm: "gun", at: "N12", goal: "" },
   { lv: 10, side: "them", arm: "inf", at: "C10", goal: "" },
@@ -503,7 +504,6 @@ const ARMIES = [
   { lv: 10, side: "you", arm: "inf", at: "L3", goal: "" },
   { lv: 10, side: "you", arm: "inf", at: "P3", goal: "" },
   { lv: 10, side: "you", arm: "cav", at: "A2", goal: "" },
-  { lv: 10, side: "you", arm: "cav", at: "I2", goal: "" },
   { lv: 10, side: "you", arm: "cav", at: "R2", goal: "" }
 ];
 
@@ -529,13 +529,13 @@ const ARMIES = [
 // choice of how hard, not a sidegrade); while one is not written, their
 // bot is the row's (LEVELS bot), so foe_ knots have no DEFAULTS line.
 const EFFECTS = {
-  scene_1: { scout: [["scout"]], move_first: [["first", "you"]] },
+  scene_1: { scout: [["scout"]], move_first: [["first", "you"], ["setupRows", 3]] },
   scene_2: { rear_west: [["rear", "west"]], rear_east: [["rear", "east"]] },
   scene_3: { scout: [["scout"]], wall: [["piece", "wall"]] },
   scene_4: { bridge: [["piece", "bridge"]], horse_gun: [["horseGun"]] },
-  scene_5: { forward: [["setupRows", 3]], extra_troop: [["unit", "cav"]] },
+  scene_5: { forward: [["setupRows", 3]], extra_troop: [["unit", "cav"], ["first", "them"]] },
   scene_6: { more_rounds: [["rounds", 2]], horse_gun: [["horseGun"]] },
-  scene_7: { head_start: [["first", "you"], ["scout"]], extra_squad: [["unit", "inf"]] },
+  scene_7: { head_start: [["first", "you"], ["scout"], ["unit", "cav"]], extra_squad: [["unit", "inf"], ["first", "them"]] },
   scene_8: { more_rounds: [["rounds", 2]], wood: [["piece", "wood"]] },
   scene_9: { scout: [["scout"]], forward: [["setupRows", 3]] },
   scene_10: { extra_troop: [["unit", "cav"]], extra_gun: [["unit", "gun"]] },
@@ -697,6 +697,8 @@ const SCREEN_WORDS = {
     boxYou: "Your box: {n}",
     boxThem: "Their box: {n}",
     raidOn: "Withdraw: {n} turns",
+    raidNext: "Raid next turn",
+    raidNextThem: "Their raid next turn",
     goal: "Raid: {half}",
     defend: "You defend",
     attack: "You attack",
@@ -743,19 +745,38 @@ const TIPS = {
 };
 
 // ---- THE LOOK (GDD 8) ----
-// SAFE edits, all of them: colours are "#rrggbb". Each side's paint, and
-// the shapes that tell the sides apart without colour: hat "tall" (a tall
-// flat-topped hat) or "dome" (a round domed one); base "ring" (a plain
-// ring) or "bar" (a bar across it). Give the two sides different shapes.
+// SAFE edits, all of them: colours are "#rrggbb". Each side's paint (light
+// is the enamel's gloss, dark the hats and stands), and the shapes that
+// tell the sides apart without colour: hat "tall" (a tall flat-topped hat)
+// or "dome" (a round domed one); base "ring" (a ring on the stand) or "bar"
+// (a bar across it). Give the two sides different shapes.
+// The paints are kept away from the board's brick and river, so a piece
+// never reads as part of the Country (2026-10-22; before: red paint
+// #b8372b dark #6e1d16, blue paint #2f5fae dark #18325e, brick #a4553c,
+// brickDark #6f3526, river #86a9c2).
 const THEME = {
-  red: { paint: "#b8372b", dark: "#6e1d16", hat: "tall", base: "ring" },
-  blue: { paint: "#2f5fae", dark: "#18325e", hat: "dome", base: "bar" },
-  // the figures: faces, belts, trousers, horses, guns
+  red: { paint: "#cc2b2b", light: "#f09a8c", dark: "#6a1714", hat: "tall", base: "ring" },
+  blue: { paint: "#2350c8", light: "#93b3f2", dark: "#132c6b", hat: "dome", base: "bar" },
+  // How the playing pieces stand out from the board: each true or false.
+  //   outline   a dark line round every unit (the board has none)
+  //   detail    gloss on the paint, rifles, horses' legs and tails, guns
+  //             painted in the side's colours
+  //   stand     a solid painted stand with a ring or bar on it (false: the
+  //             old plain ring or bar)
+  //   shadow    a soft shadow under each stand
+  //   doneMark  a unit of yours that has acted keeps its colours and gets
+  //             a tick (false: it fades, as before)
+  //   raidFlag  a flag on a raider holding the other side's back line
+  //   badge     the figure count on a small badge in the side's colours
+  pieces: { outline: true, detail: true, stand: true, shadow: true, doneMark: true, raidFlag: true, badge: true },
+  // the figures: faces, belts, trousers, horses, guns; the pieces' outline
+  // and shadow, the light marks on stands, ticks and badges, the raid flag
   face: "#e8c9a0", belt: "#f2efe6", trousers: "#2a2622", horse: "#7a5230", gunMetal: "#3b3d40", wheel: "#5a3b22",
+  outline: "#1a1410", mark: "#f6efe0", flag: "#f2c94c",
   // the Country
   floor: "#c9a77c", floorLine: "#b8946a", wood: "#3f6b34", woodDark: "#2a4a23", twig: "#5b4126",
-  hill: "#c4a571", hillEdge: "#7a5c36", brick: "#a4553c", brickDark: "#6f3526", roof: "#4a3a33",
-  rock: "#8b8b86", rockDark: "#5c5c58", river: "#86a9c2", chalk: "#f4f2ea", plank: "#8a6a44",
+  hill: "#c4a571", hillEdge: "#7a5c36", brick: "#9a6450", brickDark: "#6a4030", roof: "#4a3a33",
+  rock: "#8b8b86", rockDark: "#5c5c58", river: "#9db4c2", chalk: "#f4f2ea", plank: "#8a6a44",
   // the screens
   back: "#1b1612", panel: "#2a221c", panelEdge: "#6b5a46", text: "#f1e9dc", dim: "#a89a88", gold: "#e3c27a",
   button: "#3a2e24", buttonLit: "#5a4630", reach: "#f4e27a", aim: "#ff9a4a", select: "#ffffff", zone: "#9ad77d",
