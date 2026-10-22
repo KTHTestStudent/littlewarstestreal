@@ -220,6 +220,9 @@ function mapFor(row) {
 //   firedOn     {you, them}: true if that side's units were fired at in
 //               the other side's last turn (the bots read it)
 //   raid        null, or {by, left} once a raid has got through (rear)
+//   standing    {you, them}: the ids of that side's raiders on the other
+//               side's back line at the end of its last turn (rear; a
+//               raid counts when one of them is still there a turn later)
 //   result      null, or {winner, why} when the battle is over
 //   start       each side's armed figures when the battle starts
 //   botKey, botDone   the bots' memory of this turn (phase 25)
@@ -237,7 +240,7 @@ function newBattle(lv, outcome, foe) {
   B = {
     lv: lv, row: row, W: map[0].length, H: map.length, map: map, units: [], nextId: 1,
     side: row.first, round: 1, gunsOpen: true, T: { you: tally(), them: tally() },
-    firedOn: { you: false, them: false }, raid: null, result: null, start: { you: 0, them: 0 },
+    firedOn: { you: false, them: false }, raid: null, standing: { you: [], them: [] }, result: null, start: { you: 0, them: 0 },
     botKey: "", botDone: []
   };
   makeArmy("them");
@@ -1141,6 +1144,27 @@ PHASE_OK[16] = true;
 // ==== PHASE 17 START ====
 // The result: is the battle over, and who won.
 
+// RETURNS a new array of side's raiders: its units (not escorts) with
+// RULES.raidSize or more figures on the other side's back line, in the
+// row's half (B.row.rear: "west" x < B.W / 2, "east" x >= B.W / 2,
+// anything else the whole line), in B.units order.
+function raiders(side) {
+  const out = [];
+  for (const u of B.units) {
+    if (u.side !== side || u.arm === "esc" || u.n < RULES.raidSize || u.y !== backY(other(side))) {
+      continue;
+    }
+    if (B.row.rear === "west" && u.x >= B.W / 2) {
+      continue;
+    }
+    if (B.row.rear === "east" && u.x < B.W / 2) {
+      continue;
+    }
+    out.push(u);
+  }
+  return out;
+}
+
 // RETURNS null while the battle goes on, or {winner, why} - winner "you",
 // "them" or "draw". Called at the end of B.side's turn.
 function checkResult() {
@@ -1157,10 +1181,20 @@ function checkResult() {
   if (t !== "defend" && a < B.row.drawLine && b < B.row.drawLine) {
     return { winner: "draw", why: "few" };
   }
-  if (t === "rear" && onBackLine(s, RULES.raidSize, B.row.rear)) {
-    B.raid = { by: s, left: RULES.withdraw };
-    say(words(LOG_WORDS.raid, { n: RULES.withdraw }));
-    return null;
+  if (t === "rear") {
+    const now = raiders(s);
+    for (const u of now) {
+      if (B.standing[s].indexOf(u.id) >= 0) {
+        B.raid = { by: s, left: RULES.withdraw };
+        say(words(LOG_WORDS.raid, { n: RULES.withdraw }));
+        return null;
+      }
+    }
+    B.standing[s] = [];
+    for (const u of now) {
+      B.standing[s].push(u.id);
+      say(words(s === "you" ? LOG_WORDS.holdYou : LOG_WORDS.holdThem, { name: u.name }));
+    }
   }
   if (t === "defend") {
     const att = other(B.row.defender);
@@ -1378,10 +1412,10 @@ function headGrid(u, st) {
   if (B.raid !== null && B.raid.by !== side) {
     return stepsFrom(backLine(side, "all"));
   }
-  if (u.arm === "cav" && B.row.type === "rear") {
+  if (u.arm === "cav" && u.n >= RULES.raidSize && B.row.type === "rear") {
     return stepsFrom(backLine(other(side), B.row.rear));
   }
-  if (u.arm === "cav" && B.row.type === "defend" && B.row.defender !== side) {
+  if (u.arm === "cav" && u.n >= RULES.throughSize && B.row.type === "defend" && B.row.defender !== side) {
     return stepsFrom(backLine(B.row.defender, "all"));
   }
   const foes = [];
@@ -2136,7 +2170,7 @@ function testBoard(rows, extra) {
   B = {
     lv: 1, row: row, W: map[0].length, H: map.length, map: map, units: [], nextId: 1,
     side: "you", round: 2, gunsOpen: true, T: { you: tally(), them: tally() },
-    firedOn: { you: false, them: false }, raid: null, result: null, start: { you: 0, them: 0 },
+    firedOn: { you: false, them: false }, raid: null, standing: { you: [], them: [] }, result: null, start: { you: 0, them: 0 },
     botKey: "", botDone: []
   };
   LOG = [];
@@ -2187,15 +2221,16 @@ const OPEN8 = [
 ];
 
 // The replay probe's five battles (bots on both sides: the newcomer for
-// you, the row's style for them), and what they gave on 2026-10-20. A RULE
-// edit in data.js changes them on purpose: update these with the new lines
-// (dev/selftest.js prints them) once the change is meant.
+// you, the row's style for them), and what they gave on 2026-10-21 (the
+// author's decision 14: throughSize 5, the bots' cavalry, the raid's hold).
+// A RULE edit in data.js changes them on purpose: update these with the new
+// lines (dev/selftest.js prints them) once the change is meant.
 const REPLAY_RUNS = [[0, 5, ""], [2, 11, "rear_west"], [6, 23, "more_rounds"], [9, 8, "scout"], [10, 3, "extra_troop"]];
 const REPLAY_EXPECT = [
   "lv0 s5 you/none r6 you 121.5 them 13 acts 31 #tb3lnp",
-  "lv2 s11 them/raid r5 you 8.5 them 136.5 acts 34 #uk38f4",
-  "lv6 s23 you/through r3 you 137 them 26 acts 19 #57t3eb",
-  "lv9 s8 you/raid r6 you 130.5 them 28 acts 66 #li18dz",
+  "lv2 s11 them/raid r6 you 5.5 them 136.5 acts 35 #119x75s",
+  "lv6 s23 you/none r4 you 136 them 2 acts 25 #1up7bqt",
+  "lv9 s8 you/none r11 you 128 them 15 acts 78 #1un0bzj",
   "lv10 s3 you/none r7 you 147 them 22.5 acts 79 #wm9xcf"
 ];
 
@@ -2679,32 +2714,53 @@ function selfTest() {
     a.n = 5;
     B.round = 3;
     r.push(k(checkResult()));
-    a.n = 4;
+    B.start.you = 24;
     a.y = 0;
     B.side = "you";
     r.push(k(checkResult()));
-    a.n = 5;
+    B.start.you = 20;
     r.push(k(checkResult()));
-    return r.join(" ") === "draw/few - - draw/rounds them/none - them/quarter you/through";
+    B.start.you = 16;
+    a.n = 4;
+    r.push(k(checkResult()));
+    return r.join(" ") === "draw/few - - draw/rounds them/none - them/quarter you/through -";
   });
   T("rear", function () {
     testBoard(OPEN8, { type: "rear", rear: "west" });
     const a = put("you", "cav", "E8", 3);
     const b = put("you", "inf", "C7", 6);
+    put("you", "cav", "A8", 2);
     put("them", "inf", "H1", 2);
+    const d = put("them", "inf", "B1", 3);
     putEsc("them", "G2", "inf", 2, 2);
-    const r1 = checkResult();
+    const r = [checkResult()];
+    const k0 = B.standing.you.length === 0 && LOG.length === 0;
     a.x = 3;
-    const r2 = checkResult();
-    const k = B.raid !== null && B.raid.by === "you" && B.raid.left === 3 && LOG[LOG.length - 1] === words(LOG_WORDS.raid, { n: 3 });
-    B.round = 10;
-    const r3 = checkResult();
+    r.push(checkResult());
+    const k1 = B.raid === null && B.standing.you.join() === String(a.id);
     B.side = "them";
-    const r4 = checkResult();
-    const r5 = checkResult();
-    const r6 = checkResult();
-    return r1 === null && r2 === null && k && r3 === null && r4 === null && r5 === null && r6.winner === "you" && r6.why === "raid" &&
-      B.T.you.held === 3 && B.T.you.freed === 2 && b.n === 6;
+    r.push(checkResult());
+    const k2 = B.standing.them.join() === String(d.id) && B.standing.you.join() === String(a.id);
+    B.side = "you";
+    a.y = 1;
+    b.y = 0;
+    r.push(checkResult());
+    b.y = 1;
+    a.y = 0;
+    r.push(checkResult());
+    const k3 = B.raid === null && B.standing.you.join() === String(a.id);
+    r.push(checkResult());
+    const k4 = B.raid !== null && B.raid.by === "you" && B.raid.left === 3;
+    const said = [words(LOG_WORDS.holdYou, { name: a.name }), words(LOG_WORDS.holdThem, { name: d.name }), words(LOG_WORDS.holdYou, { name: b.name }),
+      words(LOG_WORDS.holdYou, { name: a.name }), words(LOG_WORDS.raid, { n: 3 })];
+    const k5 = LOG.join("|") === said.join("|");
+    B.round = 10;
+    r.push(checkResult());
+    B.side = "them";
+    r.push(checkResult(), checkResult());
+    const w = checkResult();
+    return r.every(function (x) { return x === null; }) && k0 && k1 && k2 && k3 && k4 && k5 && w !== null && w.winner === "you" && w.why === "raid" &&
+      B.T.you.held === 6 && B.T.you.freed === 2 && b.n === 6;
   });
   // ---- phase 18: points and the campaign ----
   T("points", function () {
@@ -2811,16 +2867,22 @@ function selfTest() {
     const g5 = headGrid(c, S.steady);
     B.row.type = "rear";
     B.row.rear = "east";
+    c.n = 3;
     const g6 = headGrid(c, S.steady);
     const g7 = headGrid(a, S.steady);
+    c.n = 2;
+    const g10 = headGrid(c, S.steady);
     B.raid = { by: "you", left: 3 };
     const g8 = headGrid(a, S.steady);
     B.raid = null;
     B.row.type = "defend";
     B.row.defender = "you";
+    c.n = 4;
     const g9 = headGrid(c, S.steady);
+    c.n = 5;
+    const g11 = headGrid(c, S.steady);
     return [g1[6][3], g1[0][3], g1[4][0], g2[3][0], g2[0][3], g3[3][3], g3[3][0], g4[5][6], g4[0][0], g5[5][6], g6[7][4], g6[7][3], g6[0][0],
-      g7[5][6], g7[3][3], g8[0][5], g8[7][0], g9[7][0]].join(",") === "0,6,3,0,3,0,3,0,6,0,0,1,7,3,0,0,7,0";
+      g7[5][6], g7[3][3], g8[0][5], g8[7][0], g9[7][0], g10[0][0], g10[7][4], g11[7][0]].join(",") === "0,6,3,0,3,0,3,0,6,0,0,1,7,3,0,0,7,4,3,4,0";
   });
   // ---- phase 23: the bots, 4 ----
   T("score", function () {
@@ -3083,7 +3145,7 @@ function checkBots() {
 }
 
 function checkWords() {
-  const need = { LOG_WORDS: [LOG_WORDS, ["battle", "youFirst", "themFirst", "round", "yourTurn", "theirTurn", "quiet", "undone", "noUndo", "fired", "melee", "taken", "escortHome", "freed", "gunTaken", "leftField", "raid", "won", "drawn", "lost"]],
+  const need = { LOG_WORDS: [LOG_WORDS, ["battle", "youFirst", "themFirst", "round", "yourTurn", "theirTurn", "quiet", "undone", "noUndo", "fired", "melee", "taken", "escortHome", "freed", "gunTaken", "leftField", "holdYou", "holdThem", "raid", "won", "drawn", "lost"]],
     TIPS: [TIPS, ["select", "undo", "quiet", "aim", "cover", "contact", "melee", "isolated", "prisoners", "emptyGun", "leave", "points"]] };
   for (const t in need) {
     for (const k of need[t][1]) if (typeof need[t][0][k] !== "string") bad("data.js " + t + ": the line " + k + " is missing.");

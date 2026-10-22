@@ -1,0 +1,3144 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Little Wars</title>
+<style>
+  body { margin: 0; background: #1b1612; display: flex; justify-content: center; align-items: center; height: 100vh; }
+  canvas { width: min(960px, 100vw, 150vh); aspect-ratio: 3 / 2; touch-action: none; user-select: none; -webkit-user-select: none; }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<!-- The red banner's list (finished; Claude's) - first, so that it also catches a slip in data.js. -->
+<script>
+const ERRORS = [];
+const PHASE_OK = {};
+window.addEventListener("error", function (e) {
+  // Opened from disk, the browser hides the details of an error in another
+  // file (data.js, ink/): it reports "Script error." with no line number.
+  const file = String(e.filename || "").split(/[\\/]/).pop().split(/[?#]/)[0];
+  const m = e.lineno && file ? "Error: " + e.message + " (" + file + " line " + e.lineno + ")" :
+    "Error in data.js or a file in ink/ - press F12, then Console: it names the file and line.";
+  if (ERRORS.indexOf(m) < 0 && ERRORS.length < 5) ERRORS.push(m);
+  if (/Unexpected token '<'/.test(e.message || "")) {
+    const msg = "A <\/script> line is missing under a PHASE END line - put it back on its own line.";
+    if (ERRORS.indexOf(msg) < 0) ERRORS.unshift(msg);
+  }
+});
+// Without data.js (the hand-edited tables) nothing else can draw, so a slip
+// that stops it (a missing comma, quote or bracket) gets this plain screen
+// instead of a black one. DATA_OK is data.js's last line.
+window.addEventListener("load", function () {
+  if (typeof DATA_OK !== "undefined" && DATA_OK) return;
+  const c = document.getElementById("cv");
+  c.width = 960;
+  c.height = 640;
+  const g = c.getContext("2d");
+  g.fillStyle = "#1b1612";
+  g.fillRect(0, 0, 960, 640);
+  g.fillStyle = "#ff6b6b";
+  g.font = "bold 20px monospace";
+  ["data.js did not load all the way, so the game can't start.",
+    "Usually a slip in your last edit there: a missing comma,",
+    "quote or bracket. Press F12, then Console: the red line",
+    "names data.js and the line number (the slip is on that",
+    "line or the one above). Fix it, save, and press F5."].forEach(function (t, i) { g.fillText(t, 40, 90 + i * 34); });
+});
+</script>
+<!-- The kit (four files in ink/) - finished, leave these four blocks alone. tools/pack.html puts them inside this file for release. -->
+<!-- INK:RUNTIME --><script src="ink/ink.js"></script><!-- /INK:RUNTIME -->
+<!-- INK:STORY --><script src="ink/story.js"></script><!-- /INK:STORY -->
+<!-- INK:CONFIG --><script src="ink/config.js"></script><!-- /INK:CONFIG -->
+<!-- INK:KIT --><script src="ink/dialogue.js"></script><!-- /INK:KIT -->
+<!-- The data (finished; the tables to hand-edit - rules, maps, battles, armies, outcomes, bots, words, colours - are in data.js). tools/pack.js packs it into this file for release. -->
+<!-- INK:DATA --><script src="data.js"></script><!-- /INK:DATA -->
+<!-- State and helpers (finished; Claude's skeleton): the canvas, the battle B, the campaign CAMP, rng, say, words, and the board helpers the PHASE blocks use. -->
+<script>
+// ===== STATE AND HELPERS (finished) =====
+// The PHASE blocks below use these variables and functions (the spec's
+// API lists them).
+// The canvas: 480 x 320 game pixels, drawn sharp at the screen's own scale.
+const VW = 480;
+const VH = 320;
+const cv = document.getElementById("cv");
+const cx = cv.getContext("2d");
+const SC = Math.max(2, Math.round(2 * (window.devicePixelRatio || 1)));
+cv.width = VW * SC;
+cv.height = VH * SC;
+cx.setTransform(SC, 0, 0, SC, 0, 0);
+cx.imageSmoothingEnabled = false;
+
+// The AI disclosure, shown on the title screen. The author's words: keep
+// it on ONE line (dev/disclosure.js checks it against the commits).
+const DISCLOSURE = "AI Disclosure: code by Claude Opus 5.5, Qwen 3.6 and Qwen 3.8. Code hand-edits by Kenton Howard. Design and decisions by Kenton Howard. Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT).";
+
+let B = null; // the battle (newBattle)
+let CAMP = null; // the campaign (newCampaign)
+let screen = "title"; // title, talk, setup, battle, result, end
+let LOG = [];
+let test = false;
+let rseed = 1;
+let TALK = null; // the knot on screen: {knot, then, got}
+
+// The 8 directions, in this order: up (toward THEIR back line), up-right,
+// right, down-right, down, down-left, left, up-left. [dx, dy]; y grows down.
+const DIRS = [[0, -1], [1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1]];
+const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+// 0 <= rng() < 1, seeded by rseed (every chance in the game uses it).
+function rng() {
+  rseed |= 0;
+  rseed = rseed + 0x6D2B79F5 | 0;
+  let t = Math.imul(rseed ^ rseed >>> 15, 1 | rseed);
+  t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+  return ((t ^ t >>> 14) >>> 0) / 4294967296;
+}
+
+// Adds a line to the log (the newest shows at the bottom of the screen).
+function say(t) {
+  LOG.push(String(t));
+  if (LOG.length > 6) LOG.shift();
+}
+
+// RETURNS the pattern t (an entry of a word table in data.js: LOG_WORDS,
+// SCREEN_WORDS) with each {key} replaced by o[key], e.g.
+// words(LOG_WORDS.fired, { name: "1st Gun", n: 2 }) -> "1st Gun fires: 2 down."
+function words(t, o) {
+  let s = String(t);
+  for (const k in o) s = s.split("{" + k + "}").join(String(o[k]));
+  return s;
+}
+
+// RETURNS "them" for "you" and "you" for "them".
+function other(side) {
+  return side === "you" ? "them" : "you";
+}
+
+// RETURNS [x, y] for a square's name on the current board: "C9" on Hook's
+// Farm (9 rows) is [2, 0]. Column letters from the left; rows counted from
+// YOUR back line (row 1, the bottom row, y = B.H - 1).
+function sq(name) {
+  return [LETTERS.indexOf(name.charAt(0)), B.H - Number(name.slice(1))];
+}
+
+// RETURNS the name of the square (x, y): sqName(2, 0) on Hook's Farm is "C9".
+function sqName(x, y) {
+  return LETTERS.charAt(x) + (B.H - y);
+}
+
+// RETURNS the y of side's back line: B.H - 1 for "you" (the bottom row),
+// 0 for "them" (the top row).
+function backY(side) {
+  return side === "you" ? B.H - 1 : 0;
+}
+
+// RETURNS true if (x, y) is a square of the board.
+function onBoard(x, y) {
+  return x >= 0 && x < B.W && y >= 0 && y < B.H;
+}
+
+// RETURNS the PIECES record of the square (x, y), or null off the board.
+function pieceAt(x, y) {
+  if (!onBoard(x, y)) return null;
+  return PIECES[B.map[y].charAt(x)] || PIECES["."];
+}
+
+// RETURNS the steps between two squares (a diagonal step is one).
+function dist(x0, y0, x1, y1) {
+  return Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+}
+
+// RETURNS the unit on the square (x, y), or null. Units that fell or left
+// the field are on no square; an empty gun (n = 0) still is.
+function unitAt(x, y) {
+  for (const u of B.units) {
+    if (u.x === x && u.y === y && !u.off && (u.n > 0 || isGun(u))) return u;
+  }
+  return null;
+}
+
+// RETURNS true for a gun section (a gun or a horse gun), crewed or empty.
+function isGun(u) {
+  return ARMS[u.arm].gun;
+}
+
+// RETURNS the points one living figure of unit u is worth (ARMS pts); an
+// escort's figure counts as the arm it came from (u.of).
+function figVal(u) {
+  return u.arm === "esc" ? ARMS[u.of].pts : ARMS[u.arm].pts;
+}
+
+// Takes the units that fell (n = 0) or left the field (off) out of
+// B.units. Empty guns stay. endTurn (phase 15) calls it; the game calls it
+// after every action.
+function clearFallen() {
+  B.units = B.units.filter(function (u) {
+    return !u.off && (u.n > 0 || isGun(u));
+  });
+}
+
+// A side's tally for the battle: figures fallen (to the box); points of
+// figures safe off the field; points of its prisoners freed; prisoners it
+// holds at its back line; guns it took off the field.
+function tally() {
+  return { fallen: 0, safe: 0, freed: 0, held: 0, gunsOff: 0 };
+}
+
+// RETURNS the battle row lv as a new object, with the fields a story
+// outcome can set at "nothing yet" (applyOutcome, phase 19, fills them).
+function baseRow(lv) {
+  return Object.assign({}, LEVELS[lv], { scout: false, horseGun: false, extra: [], pieces: [] });
+}
+
+// RETURNS the map for row: COUNTRIES[row.country]'s rows with the spaces
+// taken out, and the SWITCHES of row.pieces put in.
+function mapFor(row) {
+  const m = COUNTRIES[row.country].map(function (r) { return r.split(" ").join(""); });
+  for (const s of SWITCHES) {
+    if (s.country !== row.country || row.pieces.indexOf(s.key) < 0) continue;
+    const x = LETTERS.indexOf(s.at.charAt(0));
+    const y = m.length - Number(s.at.slice(1));
+    m[y] = m[y].slice(0, x) + s.piece + m[y].slice(x + 1);
+  }
+  return m;
+}
+
+// Sets up the battle lv as B, with the story outcome (one of its knot's
+// outcomes, or "") applied, then foe (one of its foe_ knot's outcomes - a
+// bot style - or "": the row's own bot), and both armies made (them
+// first). B:
+//   lv, row     the battle's number and its row (baseRow + applyOutcome)
+//   W, H, map   the board's size and its rows of PIECES letters, their
+//               back line first (map[y][x] is a letter)
+//   units       every unit on the field: {id, side, arm, n, x, y, name,
+//               goal, moved, fired, bare, off, of, pn, pv} (addUnit)
+//   side        whose turn it is ("you" or "them"); round: 1, 2, ...
+//   gunsOpen    true until a unit that is not a gun moves this turn
+//   T           each side's tally (tally())
+//   firedOn     {you, them}: true if that side's units were fired at in
+//               the other side's last turn (the bots read it)
+//   raid        null, or {by, left} once a raid has got through (rear)
+//   standing    {you, them}: the ids of that side's raiders on the other
+//               side's back line at the end of its last turn (rear; a
+//               raid counts when one of them is still there a turn later)
+//   result      null, or {winner, why} when the battle is over
+//   start       each side's armed figures when the battle starts
+//   botKey, botDone   the bots' memory of this turn (phase 25)
+function newBattle(lv, outcome, foe) {
+  const row = baseRow(lv);
+  applyOutcome(row, outcome || "");
+  if (foe && row.foe) {
+    // the foe_ knot's outcome, through the same steps (EFFECTS[row.foe])
+    const k = row.knot;
+    row.knot = row.foe;
+    applyOutcome(row, foe);
+    row.knot = k;
+  }
+  const map = mapFor(row);
+  B = {
+    lv: lv, row: row, W: map[0].length, H: map.length, map: map, units: [], nextId: 1,
+    side: row.first, round: 1, gunsOpen: true, T: { you: tally(), them: tally() },
+    firedOn: { you: false, them: false }, raid: null, standing: { you: [], them: [] }, result: null, start: { you: 0, them: 0 },
+    botKey: "", botDone: []
+  };
+  makeArmy("them");
+  makeArmy("you");
+  B.start.you = armed("you");
+  B.start.them = armed("them");
+}
+
+// The campaign: paint ("red" or "blue"), tutorial (true if Hook's Farm is
+// played), seed, next (the battle to play next), points (battles 1-10),
+// done, wins, draws, losses (battles 1-10), last ({result, points} of the
+// last battle played, the tutorial included), outcomes (knot -> outcome),
+// played (true once Hook's Farm was played), tips (the tips shown).
+function newCampaign(paint, tutorial, seed) {
+  CAMP = {
+    paint: paint, tutorial: tutorial, seed: seed, next: tutorial ? 0 : 1, points: 0, done: 0,
+    wins: 0, draws: 0, losses: 0, last: { result: "none", points: 0 }, outcomes: {}, played: false, tips: []
+  };
+}
+
+// RETURNS the new unit, after adding it to the end of B.units. Its id is
+// B.nextId; its name is the next of UNIT_NAMES[arm] not yet used by that
+// side; n is a full unit (ARMS[arm].figures).
+function addUnit(side, arm, x, y, goal) {
+  let k = 0;
+  for (const v of B.units) {
+    if (v.side === side && v.arm === arm) k += 1;
+  }
+  const names = UNIT_NAMES[arm];
+  const u = {
+    id: B.nextId, side: side, arm: arm, n: ARMS[arm].figures, x: x, y: y,
+    name: names[Math.min(k, names.length - 1)], goal: goal,
+    moved: false, fired: false, bare: false, off: false, of: "", pn: 0, pv: 0
+  };
+  B.nextId += 1;
+  B.units.push(u);
+  return u;
+}
+
+// RETURNS the free square of side's set-up zone nearest the middle of its
+// back line, as [x, y], or null if there is none: its back line first,
+// then the row in front of it, and so on; in each row the square nearest
+// the middle first (of two as near, the left one).
+function freeSquare(side) {
+  const rows = side === "you" ? B.row.youRows : B.row.themRows;
+  const xs = [];
+  for (let x = 0; x < B.W; x++) xs.push(x);
+  xs.sort(function (a, b) {
+    return Math.abs(2 * a - (B.W - 1)) - Math.abs(2 * b - (B.W - 1)) || a - b;
+  });
+  for (let r = 0; r < rows; r++) {
+    const y = side === "you" ? B.H - 1 - r : r;
+    for (const x of xs) {
+      if (pieceAt(x, y).enter && unitAt(x, y) === null) return [x, y];
+    }
+  }
+  return null;
+}
+
+// RETURNS a grid g (B.H rows of B.W numbers; read g[y][x]): the fewest
+// steps from each square to the nearest square of starts (an array of
+// [x, y]), stepping as canStep (phase 3) allows, by the board alone; 999
+// where none can be reached.
+function stepsFrom(starts) {
+  const g = [];
+  for (let y = 0; y < B.H; y++) {
+    const row = [];
+    for (let x = 0; x < B.W; x++) row.push(999);
+    g.push(row);
+  }
+  const open = [];
+  for (const s of starts) {
+    if (g[s[1]][s[0]] !== 0) {
+      g[s[1]][s[0]] = 0;
+      open.push(s);
+    }
+  }
+  while (open.length > 0) {
+    const s = open.shift();
+    for (const d of DIRS) {
+      const nx = s[0] + d[0];
+      const ny = s[1] + d[1];
+      if (!canStep(s[0], s[1], nx, ny) || g[ny][nx] <= g[s[1]][s[0]] + 1) continue;
+      g[ny][nx] = g[s[1]][s[0]] + 1;
+      open.push([nx, ny]);
+    }
+  }
+  return g;
+}
+
+// RETURNS the squares of side's back line that can be entered, from the
+// left, as [x, y]: half "west" keeps x < B.W / 2, "east" keeps
+// x >= B.W / 2, anything else keeps them all.
+function backLine(side, half) {
+  const y = backY(side);
+  const out = [];
+  for (let x = 0; x < B.W; x++) {
+    if (!pieceAt(x, y).enter) continue;
+    if (half === "west" && x >= B.W / 2) continue;
+    if (half === "east" && x < B.W / 2) continue;
+    out.push([x, y]);
+  }
+  return out;
+}
+
+// RETURNS the free square for an escort that unit u of side gives, as
+// [x, y], or null: of the free squares that can be entered, the nearest
+// to u; of two as near, the nearer to side's back line; then the first
+// from the top left.
+function escortSquare(u, side) {
+  let best = null;
+  let bd = 0;
+  let bb = 0;
+  for (let y = 0; y < B.H; y++) {
+    for (let x = 0; x < B.W; x++) {
+      if (!pieceAt(x, y).enter || unitAt(x, y) !== null) continue;
+      const d = dist(u.x, u.y, x, y);
+      const b = Math.abs(y - backY(side));
+      if (best === null || d < bd || (d === bd && b < bb)) {
+        best = [x, y];
+        bd = d;
+        bb = b;
+      }
+    }
+  }
+  return best;
+}
+</script>
+<script>
+// ==== PHASE 2 START ====
+// STUBS for now - PHASE 2 fills them in.
+// The armies: set-up zones, each side's units, their armed figures.
+
+// RETURNS true if the square (x, y) is in side's set-up zone: its back
+// B.row.youRows rows for "you", its back B.row.themRows rows for "them".
+function inZone(side, x, y) {
+  return false;
+}
+
+// RETURNS nothing. Makes side's units for the battle B.lv: its ARMIES
+// lines, in order, then (for "you" only) one unit for each arm in
+// B.row.extra.
+function makeArmy(side) {
+}
+
+// RETURNS side's armed figures on the field: the n of each of its units,
+// escorts left out.
+function armed(side) {
+  return 0;
+}
+PHASE_OK[2] = true;
+// ==== PHASE 2 END ====
+</script>
+<script>
+// ==== PHASE 3 START ====
+// STUBS for now - PHASE 3 fills them in.
+// Steps and contact: which steps the board allows, and who touches whom.
+
+// RETURNS false only for a diagonal step that would squeeze between two
+// squares that can't be entered (the two squares beside the step).
+function cornerOpen(x0, y0, x1, y1) {
+  return true;
+}
+
+// RETURNS true if a unit may step from (x0, y0) to (x1, y1), by the board
+// alone (units are not looked at).
+function canStep(x0, y0, x1, y1) {
+  return false;
+}
+
+// RETURNS true if units a and b stand next to each other, not across a
+// closed corner.
+function touching(a, b) {
+  return false;
+}
+
+// RETURNS true if a unit of the other side with figures stands next to
+// the square (x, y), not across a closed corner.
+function enemyNear(side, x, y) {
+  return false;
+}
+PHASE_OK[3] = true;
+// ==== PHASE 3 END ====
+</script>
+<script>
+// ==== PHASE 4 START ====
+// STUBS for now - PHASE 4 fills them in.
+// Moving: the squares a unit can reach this turn.
+
+// RETURNS the squares unit u can move to this turn, as an array of
+// {x, y, cost} - cost is the fewest move points it takes - top row first,
+// each row from the left.
+function reach(u) {
+  return [];
+}
+PHASE_OK[4] = true;
+// ==== PHASE 4 END ====
+</script>
+<script>
+// ==== PHASE 5 START ====
+// STUBS for now - PHASE 5 fills them in.
+// Moving units: who may move, a move, leaving the field.
+
+// RETURNS true if unit u may move (or leave the field) now.
+function canMove(u) {
+  return false;
+}
+
+// RETURNS nothing. Unit u moves to (x, y), a square from reach(u).
+function moveTo(u, x, y) {
+}
+
+// RETURNS true if unit u may leave the field now: it may move, and it
+// stands on its own back line.
+function canLeave(u) {
+  return false;
+}
+
+// RETURNS nothing. Unit u leaves the field over its back line, safe.
+function leaveField(u) {
+}
+PHASE_OK[5] = true;
+// ==== PHASE 5 END ====
+</script>
+<script>
+// ==== PHASE 6 START ====
+// STUBS for now - PHASE 6 fills them in.
+// Line of fire: what a gun can aim at, and how often a shot lands there.
+
+// RETURNS true if a gun on (x0, y0) has a line of fire to (x1, y1).
+function lineOfFire(x0, y0, x1, y1) {
+  return false;
+}
+
+// RETURNS true if gun g may aim at the square (x, y): on the board, 1 to
+// RULES.range squares away, with a line of fire.
+function canAim(g, x, y) {
+  return false;
+}
+
+// RETURNS the percent chance that a shot lands on an aimed square d
+// squares away: the pct of the first ON_TARGET line with d <= upTo, or 0.
+function onTarget(d) {
+  return 0;
+}
+PHASE_OK[6] = true;
+// ==== PHASE 6 END ====
+</script>
+<script>
+// ==== PHASE 7 START ====
+// STUBS for now - PHASE 7 fills them in.
+// Crews and support: guns in action, and isolation in a melee.
+
+// RETURNS the figures that count at gun g: its own crew (g.n), plus the
+// figures of every other unit of its side next to it (not escorts).
+function crewAt(g) {
+  return 0;
+}
+
+// RETURNS true if gun g is in action: RULES.crew or more figures count at it.
+function inAction(g) {
+  return false;
+}
+
+// RETURNS the figures of side outside melee m (an array of units) in units
+// within RULES.isolation squares of one of side's units in m (escorts left
+// out).
+function supportCount(side, m) {
+  return 0;
+}
+
+// RETURNS true if side is isolated in melee m: its support is fewer than
+// half of its own figures in m.
+function isolated(side, m) {
+  return false;
+}
+PHASE_OK[7] = true;
+// ==== PHASE 7 END ====
+</script>
+<script>
+// ==== PHASE 8 START ====
+// STUBS for now - PHASE 8 fills them in.
+// Gunfire: who may fire, the seeded shots, cover, knocking a figure over.
+
+// RETURNS true if gun g may fire now.
+function canFire(g) {
+  return false;
+}
+
+// RETURNS the figures knocked over. Gun g fires RULES.shots shots at the
+// square (x, y).
+function fireGun(g, x, y) {
+  return 0;
+}
+
+// RETURNS nothing. One figure of unit u falls (an escort's prisoners go
+// free first).
+function knockOver(u) {
+}
+PHASE_OK[8] = true;
+// ==== PHASE 8 END ====
+</script>
+<script>
+// ==== PHASE 9 START ====
+// STUBS for now - PHASE 9 fills them in.
+// Who fights: the units in contact, and the melees they make.
+
+// RETURNS every pair of touching units of opposite sides that both have
+// figures, as [a, b] with a before b in B.units.
+function contacts() {
+  return [];
+}
+
+// RETURNS the melees: an array of melees, each an array of units in
+// B.units order, the melees in the order of their first units.
+function findMelees() {
+  return [];
+}
+PHASE_OK[9] = true;
+// ==== PHASE 9 END ====
+</script>
+<script>
+// ==== PHASE 10 START ====
+// STUBS for now - PHASE 10 fills them in.
+// Melee results: counting the figures, and what a melee does.
+
+// RETURNS the figures of side in melee m.
+function meleeCount(m, side) {
+  return 0;
+}
+
+// RETURNS what melee m would do, changing nothing: {you: {fall, taken},
+// them: {fall, taken}} - the figures that fall and the figures taken
+// prisoner on each side.
+function meleeOutcome(m) {
+  return { you: { fall: 0, taken: 0 }, them: { fall: 0, taken: 0 } };
+}
+PHASE_OK[10] = true;
+// ==== PHASE 10 END ====
+</script>
+<script>
+// ==== PHASE 11 START ====
+// STUBS for now - PHASE 11 fills them in.
+// Losses: who falls first, taking the figures, prisoners freed.
+
+// RETURNS side's units in melee m in the order they lose figures: by
+// LOSS_ORDER (own if side's turn it is, other if not), then the unit with
+// the fewest figures first, then in B.units order.
+function lossOrder(m, side) {
+  return [];
+}
+
+// RETURNS an array of the points of each figure taken. Takes k figures
+// from the units of list, in order (an escort frees its prisoners first).
+function takeFigures(list, k) {
+  return [];
+}
+
+// RETURNS nothing. Escort e's prisoners go free: they go back to their
+// own side's box, safe.
+function freePrisoners(e) {
+}
+PHASE_OK[11] = true;
+// ==== PHASE 11 END ====
+</script>
+<script>
+// ==== PHASE 12 START ====
+// STUBS for now - PHASE 12 fills them in.
+// Escorts: which unit gives the escort, and making the escorts.
+
+// RETURNS true if unit a should give an escort before unit b: not a gun
+// before a gun, then more figures, then infantry before anything else.
+function betterEscort(a, b) {
+  return false;
+}
+
+// RETURNS the unit of side in melee m that gives a figure to be an escort,
+// or null if it has none.
+function escortFrom(m, side) {
+  return null;
+}
+
+// RETURNS nothing. side takes the prisoners whose points are in vals, from
+// melee m: one escort for every RULES.perEscort of them.
+function makeEscorts(m, side, vals) {
+}
+PHASE_OK[12] = true;
+// ==== PHASE 12 END ====
+</script>
+<script>
+// ==== PHASE 13 START ====
+// STUBS for now - PHASE 13 fills them in.
+// Fighting: every melee at once, and empty guns taken.
+
+// RETURNS nothing. Fights every melee on the board for the side whose turn
+// it is: all are judged on the board as it stands, then fought in order.
+function fightMelees() {
+}
+
+// RETURNS nothing. At the end of side's turn, side takes each empty gun of
+// the other side that has no figure of its own side next to it and a unit
+// of side (not an escort) with RULES.crew or more figures next to it.
+function takeGuns(side) {
+}
+PHASE_OK[13] = true;
+// ==== PHASE 13 END ====
+</script>
+<script>
+// ==== PHASE 14 START ====
+// STUBS for now - PHASE 14 fills them in.
+// Escorts walk: toward their own back line, and off the field there.
+
+// RETURNS the square [x, y] escort e steps to, or null: a square next to
+// it that it may step to, free, with a lower g (a stepsFrom grid of its
+// back line); not next to an enemy if it can; then the lowest g; then the
+// first in DIRS order.
+function escortStep(e, g) {
+  return null;
+}
+
+// RETURNS nothing. Each escort of side walks up to RULES.escortWalk steps
+// toward side's back line, and leaves the field there with its prisoners.
+function walkEscorts(side) {
+}
+PHASE_OK[14] = true;
+// ==== PHASE 14 END ====
+</script>
+<script>
+// ==== PHASE 15 START ====
+// STUBS for now - PHASE 15 fills them in.
+// End Turn: the order of things, and units on a back line.
+
+// RETURNS nothing. Ends B.side's turn: the melees, the guns taken, the
+// escorts' walk, the result check, then the other side's turn.
+function endTurn() {
+}
+
+// RETURNS true if a unit of side (not an escort) with size or more figures
+// stands on the other side's back line, in half ("west": x < B.W / 2,
+// "east": x >= B.W / 2, anything else: anywhere on it).
+function onBackLine(side, size, half) {
+  return false;
+}
+PHASE_OK[15] = true;
+// ==== PHASE 15 END ====
+</script>
+<script>
+// ==== PHASE 16 START ====
+// STUBS for now - PHASE 16 fills them in.
+// A raid: the loser's withdrawal, and surrender.
+
+// RETURNS nothing. side surrenders after a raid: each of its figures on
+// the field is the other side's prisoner, its escorts' prisoners go free,
+// and its guns are the other side's.
+function surrender(side) {
+}
+
+// RETURNS null while the loser of a raid (the side that is not B.raid.by)
+// is still withdrawing, or the result once it is over.
+function raidOver() {
+  return null;
+}
+PHASE_OK[16] = true;
+// ==== PHASE 16 END ====
+</script>
+<script>
+// ==== PHASE 17 START ====
+// STUBS for now - PHASE 17 fills them in.
+// The result: is the battle over, and who won.
+
+// RETURNS a new array of side's raiders: its units (not escorts) with
+// RULES.raidSize or more figures on the other side's back line, in the
+// row's half (B.row.rear: "west" x < B.W / 2, "east" x >= B.W / 2,
+// anything else the whole line), in B.units order.
+function raiders(side) {
+  return [];
+}
+
+// RETURNS null while the battle goes on, or {winner, why} - winner "you",
+// "them" or "draw". Called at the end of B.side's turn.
+function checkResult() {
+  return null;
+}
+PHASE_OK[17] = true;
+// ==== PHASE 17 END ====
+</script>
+<script>
+// ==== PHASE 18 START ====
+// STUBS for now - PHASE 18 fills them in.
+// Points and the campaign: a battle's points, a battle recorded.
+
+// RETURNS side's points for the finished battle B (B.result is set).
+function battlePoints(side) {
+  return 0;
+}
+
+// RETURNS your points in the finished battle B, after adding the battle
+// to the campaign CAMP.
+function recordBattle() {
+  return 0;
+}
+PHASE_OK[18] = true;
+// ==== PHASE 18 END ====
+</script>
+<script>
+// ==== PHASE 19 START ====
+// STUBS for now - PHASE 19 fills them in.
+// The story's outcomes: what a scene_ knot's outcome does to the next row.
+
+// RETURNS nothing. Applies the story outcome (one of row.knot's outcomes
+// in EFFECTS, or "") to row, a battle row from baseRow: each of its steps
+// in order.
+function applyOutcome(row, outcome) {
+}
+PHASE_OK[19] = true;
+// ==== PHASE 19 END ====
+</script>
+<script>
+// ==== PHASE 20 START ====
+// STUBS for now - PHASE 20 fills them in.
+// The bots, 1: which style plays, and what a shot is worth.
+
+// RETURNS the BOT_STYLES record side's bot plays: the row's bot for
+// "them", the newcomer for "you".
+function botStyle(side) {
+  return BOT_STYLES.newcomer;
+}
+
+// RETURNS the figures one shot of gun g aimed at (x, y) can be expected to
+// knock over, in percent: plus for the other side's, minus for its own.
+function shotValue(g, x, y) {
+  return 0;
+}
+PHASE_OK[20] = true;
+// ==== PHASE 20 END ====
+</script>
+<script>
+// ==== PHASE 21 START ====
+// STUBS for now - PHASE 21 fills them in.
+// The bots, 2: what a gun aims at.
+
+// RETURNS true if a unit of side with figures, other than v, stands next
+// to unit v.
+function friendNear(side, v) {
+  return false;
+}
+
+// RETURNS the square [x, y] gun g aims at for style st, or null.
+function aimFor(g, st) {
+  return null;
+}
+PHASE_OK[21] = true;
+// ==== PHASE 21 END ====
+</script>
+<script>
+// ==== PHASE 22 START ====
+// STUBS for now - PHASE 22 fills them in.
+// The bots, 3: where a unit is heading.
+
+// RETURNS the stepsFrom grid toward where unit u is heading, for style st.
+function headGrid(u, st) {
+  return stepsFrom([]);
+}
+PHASE_OK[22] = true;
+// ==== PHASE 22 END ====
+</script>
+<script>
+// ==== PHASE 23 START ====
+// STUBS for now - PHASE 23 fills them in.
+// The bots, 4: how good a square is to end a move on.
+
+// RETURNS the score of unit u ending its move on (x, y), for style st,
+// heading along the grid g (from headGrid).
+function moveScore(u, x, y, st, g) {
+  return 0;
+}
+PHASE_OK[23] = true;
+// ==== PHASE 23 END ====
+</script>
+<script>
+// ==== PHASE 24 START ====
+// STUBS for now - PHASE 24 fills them in.
+// The bots, 5: when a unit may charge, and the square it picks.
+
+// RETURNS true if style st lets unit u move into contact on (x, y): u is
+// put on (x, y) for a moment, and the melee it would be in there is judged.
+function chargeOk(u, x, y, st) {
+  return false;
+}
+
+// RETURNS the square [x, y] unit u ends its move on, for style st: where
+// it stands or a square of reach(u), the best by moveScore.
+function bestSquare(u, st) {
+  return [u.x, u.y];
+}
+PHASE_OK[24] = true;
+// ==== PHASE 24 END ====
+</script>
+<script>
+// ==== PHASE 25 START ====
+// STUBS for now - PHASE 25 fills them in.
+// The bots, 6: the next action of a bot's turn.
+
+// RETURNS the bot's next action for side, or null to end its turn:
+// {kind: "fire", u, x, y}, {kind: "move", u, x, y} or {kind: "leave", u}.
+function botNext(side) {
+  return null;
+}
+PHASE_OK[25] = true;
+// ==== PHASE 25 END ====
+</script>
+<script>
+// ===== GAME FLOW, STORY, BATTLE, SELF-TEST, CHECKS, DRAWING, INPUT (finished) =====
+const LAST_PHASE = 25;
+for (let n = 2; n <= LAST_PHASE; n++) {
+  if (!PHASE_OK[n]) ERRORS.unshift("The PHASE " + n + " block did not load (a syntax error in it - see the F12 console).");
+}
+if (typeof dlgReady !== "function") ERRORS.unshift("Dialogue: ink/dialogue.js (the INK:KIT block) did not load.");
+
+const SAVE_KEY = "little-wars-save";
+let SEL = -1; // the selected unit's id
+let MODE = "move"; // a selected gun: "aim" or "move"
+let UNDO = []; // snapshots of the battle before each move this turn
+let CUR = [0, 0]; // the keyboard cursor on the board
+let HOVER = null; // the square under the mouse, [x, y]
+let TIP = ""; // the tip on screen (a TIPS key), Hook's Farm only
+let TIPQ = [];
+let FX = []; // short marks on the board: {kind, x, y, t, side}
+let BUTTONS = [];
+let botWait = 0; // seconds until the bot's next action
+let FAST = false;
+let AUTO_YOU = false; // test mode: the newcomer bot plays your side
+let paused = false;
+let titleTutorial = true;
+let LASTSHOT = [];
+let NOTE = ""; // a line under the board ("(scene_1 is not written yet)")
+
+// ---- the paint ----
+function paintOf(side) {
+  const mine = CAMP ? CAMP.paint : "red";
+  if (side === "you") return mine;
+  return mine === "red" ? "blue" : "red";
+}
+
+// ---- the campaign ----
+// The seed: from the address (game.html#4 plays seed 4: the CHECK walks
+// use it), otherwise a new one each campaign.
+function campaignSeed() {
+  const m = /^#(\d+)$/.exec(location.hash);
+  if (m) return Number(m[1]);
+  return 1 + Math.floor(Math.random() * 9999);
+}
+
+function startCampaign(paint) {
+  newCampaign(paint, titleTutorial, campaignSeed());
+  LOG = [];
+  NOTE = "";
+  if (typeof dlgReset === "function") dlgReset(CAMP.seed);
+  talk("intro", afterIntro);
+}
+
+function afterIntro() {
+  const lv = CAMP.tutorial ? 0 : 1;
+  talkBefore(lv, function () { startLevel(lv); });
+}
+
+// The knots before battle lv - its foe_ knot (none before the tutorial),
+// then its scene_ knot - then then().
+function talkBefore(lv, then) {
+  const r = LEVELS[lv];
+  NOTE = "";
+  if (!r.foe) {
+    talk(r.knot, then);
+    return;
+  }
+  talk(r.foe, function () { talk(r.knot, then); });
+}
+
+// The outcome a battle's knot sent, or its DEFAULT (the tutorial: none).
+function outcomeFor(lv) {
+  const k = LEVELS[lv].knot;
+  if (CAMP.outcomes[k]) return CAMP.outcomes[k];
+  return DEFAULTS[k] || "";
+}
+
+// The bot style a battle's foe_ knot sent, or "" (their bot is the
+// row's).
+function foeFor(lv) {
+  const k = LEVELS[lv].foe;
+  return k && CAMP.outcomes[k] ? CAMP.outcomes[k] : "";
+}
+
+function battleSeed(lv) {
+  return (CAMP.seed * 100 + lv) | 0;
+}
+
+function startLevel(lv) {
+  LOG = [];
+  rseed = battleSeed(lv);
+  newBattle(lv, outcomeFor(lv), foeFor(lv));
+  if (lv === 0) CAMP.played = true;
+  SEL = -1;
+  UNDO = [];
+  FX = [];
+  TIP = "";
+  TIPQ = [];
+  LASTSHOT = [];
+  if (B.row.curtain) {
+    screen = "setup";
+    say(SCREEN_WORDS.setup.title);
+    return;
+  }
+  beginBattle();
+}
+
+function beginBattle() {
+  screen = "battle";
+  SEL = -1;
+  say(words(LOG_WORDS.battle, { country: COUNTRY_NAMES[B.row.country], type: SCREEN_WORDS.types[B.row.type], max: B.row.rounds }));
+  say(B.side === "you" ? LOG_WORDS.youFirst : LOG_WORDS.themFirst);
+  turnStarts();
+}
+
+// Every turn starts here: the log line, tips, and the bot if it is a bot's turn.
+function turnStarts() {
+  UNDO = [];
+  SEL = -1;
+  if (B.side === B.row.first) say(words(LOG_WORDS.round, { n: B.round, max: B.row.rounds }));
+  if (B.side === "you") {
+    say(LOG_WORDS.yourTurn);
+    if (B.round === 1 && !(B.row.type === "defend" && B.row.defender === "you")) say(LOG_WORDS.quiet);
+    tipsAtTurn();
+    const first = B.units.find(function (u) { return u.side === "you" && u.n > 0 && u.arm !== "esc"; });
+    if (first) CUR = [first.x, first.y];
+  } else {
+    say(LOG_WORDS.theirTurn);
+  }
+  botWait = 0.5;
+}
+
+function isBotTurn() {
+  if (!B || B.result) return false;
+  return B.side === "them" || AUTO_YOU;
+}
+
+// One action of a bot (or of the self-test's replay).
+function doAction(a) {
+  if (a.kind === "fire") {
+    const before = B.units.map(function (u) { return u.n; });
+    fireGun(a.u, a.x, a.y);
+    markFallen(before);
+    LASTSHOT = [a.x, a.y, 1.2];
+  }
+  if (a.kind === "move") moveTo(a.u, a.x, a.y);
+  if (a.kind === "leave") leaveField(a.u);
+  clearFallen();
+}
+
+// A figure that fell leaves a tipped-over mark for a moment.
+function markFallen(before) {
+  const units = B.units.slice();
+  for (let i = 0; i < units.length && i < before.length; i++) {
+    if (units[i].n < before[i]) FX.push({ kind: "fall", x: units[i].x, y: units[i].y, t: 1, side: units[i].side });
+  }
+}
+
+// End Turn. While endTurn is still a stub (PHASE 15 not built), the turn
+// passes anyway, so the board can be tried out.
+function passTurn() {
+  const was = B.side + B.round;
+  endTurn();
+  if (B.result || B.side + B.round !== was) return;
+  if (B.side !== B.row.first) B.round += 1;
+  B.side = other(B.side);
+  B.gunsOpen = true;
+  for (const u of B.units) {
+    u.moved = false;
+    u.fired = false;
+  }
+}
+
+function finishTurn() {
+  const before = B.units.map(function (u) { return { u: u, n: u.n }; });
+  const hadPrisoners = B.units.some(function (u) { return u.arm === "esc"; });
+  const melees = findMelees().length;
+  passTurn();
+  for (const b of before) {
+    if (b.u.n < b.n && !b.u.off) FX.push({ kind: "fall", x: b.u.x, y: b.u.y, t: 1, side: b.u.side });
+  }
+  if (melees > 0) tip("melee");
+  if (!hadPrisoners && B.units.some(function (u) { return u.arm === "esc"; })) {
+    tip("isolated");
+    tip("prisoners");
+  }
+  if (B.units.some(function (u) { return isGun(u) && u.n === 0; })) tip("emptyGun");
+  if (B.result) {
+    finishBattle();
+    return;
+  }
+  turnStarts();
+}
+
+function finishBattle() {
+  const w = B.result.winner;
+  TIP = "";
+  TIPQ = [];
+  say(w === "you" ? LOG_WORDS.won : (w === "draw" ? LOG_WORDS.drawn : LOG_WORDS.lost));
+  B.pts = { you: battlePoints("you"), them: battlePoints("them") };
+  recordBattle();
+  CAMP.next = B.lv + 1;
+  screen = "result";
+  SEL = -1;
+  tip("points");
+  saveGame();
+}
+
+function afterResult() {
+  TIP = "";
+  TIPQ = [];
+  const next = B.lv + 1;
+  if (next < LEVELS.length) {
+    talkBefore(next, function () { startLevel(next); });
+  } else {
+    talk("ending", function () {
+      screen = "end";
+      saveGame();
+    });
+  }
+}
+
+// ---- the story (Knotwork) ----
+// The VARs the game sets before every knot (GDD 7.5).
+function storyVars() {
+  return {
+    player_side: CAMP.paint,
+    played_tutorial: CAMP.played,
+    battles_done: CAMP.done,
+    last_result: CAMP.last.result,
+    last_points: CAMP.last.points,
+    campaign_points: CAMP.points,
+    wins: CAMP.wins,
+    draws: CAMP.draws,
+    losses: CAMP.losses
+  };
+}
+
+// Sets the story's VARs, then opens the knot; then() runs when it closes.
+// A knot with nothing to show is skipped: the game uses its DEFAULT and
+// says so at the bottom of the screen (both of a battle's knots, when
+// neither is written).
+function talk(knot, then) {
+  TALK = { knot: knot, then: then, got: false };
+  if (typeof dlgStart === "function") {
+    const v = storyVars();
+    for (const k in v) dlgSet(k, v[k]);
+    if (dlgStart(knot)) {
+      screen = "talk";
+      return;
+    }
+  }
+  TALK = null;
+  const m = /^\((.*) (is|are) not written yet\)$/.exec(NOTE);
+  NOTE = m ? "(" + m[1] + " and " + knot + " are not written yet)" : "(" + knot + " is not written yet)";
+  then();
+}
+
+// The kit calls it when a conversation closes.
+function dlgEnded(knot) {
+  const t = TALK;
+  TALK = null;
+  if (t && t.then) t.then();
+}
+
+// THE HOOKS: every scene_ knot ends with ~ sceneDone("scene_4", scene_4_outcome),
+// every foe_ knot with ~ foeDone("foe_4", foe_4_outcome). The game handles
+// both alike: one outcome per knot, one of EFFECTS[name].
+function sceneDone(name, outcome) {
+  return outcomeSent("sceneDone", "scene_", name, outcome);
+}
+
+function foeDone(name, outcome) {
+  return outcomeSent("foeDone", "foe_", name, outcome);
+}
+
+function outcomeSent(hook, prefix, name, outcome) {
+  const open = typeof dlgView === "function" ? dlgView().knot : "";
+  if (!TALK || name !== TALK.knot || name !== open || name.indexOf(prefix) !== 0) {
+    ERRORS.push(hook + "(\"" + name + "\") was sent by the knot " + (open || "(none)") + " - fix the name in story.ink (" + prefix + " knots send " + hook + ")");
+    return false;
+  }
+  if (TALK.got) {
+    ERRORS.push(name + " sent a second outcome (\"" + outcome + "\"); the first stands - send one outcome per knot");
+    return false;
+  }
+  if (!EFFECTS[name] || !EFFECTS[name][outcome]) {
+    ERRORS.push(name + " sent the outcome \"" + outcome + "\", which the game doesn't handle - see EFFECTS in data.js and ink/config.js");
+    return false;
+  }
+  TALK.got = true;
+  CAMP.outcomes[name] = outcome;
+  return true;
+}
+
+function dlgPause(on) {
+  paused = !!on;
+}
+
+// For the Story and Game Viewer's Game tab.
+function describeGame() {
+  const out = ["screen: " + screen];
+  if (CAMP) out.push("paint " + CAMP.paint + ", next battle " + CAMP.next + ", points " + CAMP.points + " (won " + CAMP.wins + ", drawn " + CAMP.draws + ", lost " + CAMP.losses + ")");
+  if (CAMP) out.push("outcomes: " + (Object.keys(CAMP.outcomes).map(function (k) { return k + "=" + CAMP.outcomes[k]; }).join(", ") || "none yet"));
+  if (B) out.push("battle " + B.lv + " (" + B.row.country + "), round " + B.round + ", " + B.side + "'s turn, figures you " + armed("you") + " / them " + armed("them"));
+  return out;
+}
+
+// ---- saving (the campaign between battles, and the story with it) ----
+function saveGame() {
+  if (test) return;
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ camp: CAMP, story: typeof dlgSave === "function" ? dlgSave() : "" }));
+  } catch (e) {
+    // a private window may refuse storage: the game goes on without saving
+  }
+}
+
+function loadSave() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
+    if (s && s.camp && typeof s.camp.next === "number") return s;
+  } catch (e) {
+    return null;
+  }
+  return null;
+}
+
+function continueGame() {
+  const s = loadSave();
+  if (!s) return;
+  CAMP = s.camp;
+  LOG = [];
+  NOTE = "";
+  if (typeof dlgReset === "function") {
+    dlgReset(CAMP.seed);
+    if (s.story) dlgLoad(s.story);
+  }
+  if (CAMP.next >= LEVELS.length) {
+    screen = "end";
+    return;
+  }
+  talkBefore(CAMP.next, function () { startLevel(CAMP.next); });
+}
+
+// ---- the player's actions in a battle ----
+function selUnit() {
+  if (!B) return null;
+  return B.units.find(function (u) { return u.id === SEL; }) || null;
+}
+
+function inReach(u, x, y) {
+  return reach(u).some(function (r) { return r.x === x && r.y === y; });
+}
+
+function snapshot() {
+  return JSON.stringify({ units: B.units, gunsOpen: B.gunsOpen, T: B.T, nextId: B.nextId });
+}
+
+function selectUnit(u) {
+  SEL = u.id;
+  MODE = isGun(u) && canFire(u) ? "aim" : "move";
+  CUR = [u.x, u.y];
+  if (pieceAt(u.x, u.y).cover) tip("cover");
+  if (B.round >= 2 && u.y === backY("you")) tip("leave");
+}
+
+function playerMove(u, x, y) {
+  UNDO.push(snapshot());
+  moveTo(u, x, y);
+  clearFallen();
+  CUR = [x, y];
+  tip("undo");
+  if (enemyNear("you", x, y)) tip("contact");
+  SEL = -1;
+  const next = B.units.find(function (v) { return v.side === "you" && canMove(v) && !isGun(v); });
+  if (next) CUR = [next.x, next.y];
+}
+
+function playerFire(g, x, y) {
+  UNDO = [];
+  doAction({ kind: "fire", u: g, x: x, y: y });
+  SEL = -1;
+}
+
+function playerLeave(u) {
+  if (!canLeave(u)) return;
+  UNDO.push(snapshot());
+  leaveField(u);
+  clearFallen();
+  SEL = -1;
+}
+
+function undo() {
+  if (!UNDO.length) {
+    say(LOG_WORDS.noUndo);
+    return;
+  }
+  const s = JSON.parse(UNDO.pop());
+  B.units = s.units;
+  B.gunsOpen = s.gunsOpen;
+  B.T = s.T;
+  B.nextId = s.nextId;
+  SEL = -1;
+  say(LOG_WORDS.undone);
+}
+
+function tapSquare(x, y) {
+  if (!onBoard(x, y)) return;
+  CUR = [x, y];
+  const u = unitAt(x, y);
+  const s = selUnit();
+  if (s && MODE === "aim" && canFire(s) && canAim(s, x, y)) {
+    playerFire(s, x, y);
+    return;
+  }
+  if (s && MODE === "move" && canMove(s) && inReach(s, x, y)) {
+    playerMove(s, x, y);
+    return;
+  }
+  if (u && u.side === "you" && u.n > 0 && u.arm !== "esc") {
+    if (u.id === SEL) {
+      SEL = -1;
+      return;
+    }
+    selectUnit(u);
+    return;
+  }
+  SEL = -1;
+}
+
+function toggleMode() {
+  const s = selUnit();
+  if (!s || !isGun(s)) return;
+  // (test mode switches freely, to show a gun's aim squares - CHECK walks)
+  if (MODE === "aim" && (canMove(s) || test)) MODE = "move";
+  else if (MODE === "move" && (canFire(s) || test)) MODE = "aim";
+}
+
+function pressEndTurn() {
+  if (!B || B.result || B.side !== "you" || AUTO_YOU) return;
+  TIP = "";
+  finishTurn();
+}
+
+// ---- tips (Hook's Farm only) ----
+function tip(key) {
+  if (!CAMP || !B || B.lv !== 0 || !TIPS[key]) return;
+  if (CAMP.tips.indexOf(key) >= 0) return;
+  CAMP.tips.push(key);
+  if (!TIP) TIP = key;
+  else TIPQ.push(key);
+}
+
+function closeTip() {
+  TIP = TIPQ.length ? TIPQ.shift() : "";
+}
+
+function tipsAtTurn() {
+  tip("select");
+  if (B.round === 1 && B.units.some(function (u) { return u.side === "you" && isGun(u); })) tip("quiet");
+  if (B.units.some(function (u) { return u.side === "you" && isGun(u) && canFire(u); })) tip("aim");
+}
+
+// ---- the set-up screen (the curtain) ----
+function tapSetup(x, y) {
+  if (!onBoard(x, y)) return;
+  CUR = [x, y];
+  const u = unitAt(x, y);
+  if (u && u.side === "you") {
+    SEL = u.id === SEL ? -1 : u.id;
+    return;
+  }
+  const s = selUnit();
+  if (s && setupOk(x, y)) {
+    s.x = x;
+    s.y = y;
+    SEL = -1;
+  }
+}
+
+function setupOk(x, y) {
+  return inZone("you", x, y) && pieceAt(x, y).enter && unitAt(x, y) === null;
+}
+
+// ---- playing a whole battle with bots on both sides (headless) ----
+// Used by the self-test's replay and by dev/ scripts. RETURNS the actions
+// as short codes: "f<id>.<x>.<y>" fire, "m<id>.<x>.<y>" move, "l<id>."
+// leave, "e" End Turn.
+function autoBattle() {
+  const acts = [];
+  let guard = 0;
+  while (!B.result && guard < 4000 && B.round <= B.row.rounds + RULES.withdraw + 2) {
+    guard += 1;
+    const a = botNext(B.side);
+    if (a) {
+      acts.push(a.kind.charAt(0) + a.u.id + "." + (a.x === undefined ? "" : a.x + "." + a.y));
+      doAction(a);
+    } else {
+      acts.push("e");
+      passTurn();
+    }
+  }
+  return acts;
+}
+
+function hashOf(list) {
+  let h = 0;
+  const s = list.join(",");
+  for (let i = 0; i < s.length; i++) h = (Math.imul(h, 31) + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+
+function half(n) {
+  return String(Math.round(n * 2) / 2);
+}
+
+// One battle, bots on both sides: the newcomer for you, the row's bot for
+// them. RETURNS its replay line.
+function replayBattle(lv, seed, outcome) {
+  rseed = seed;
+  newBattle(lv, outcome);
+  const acts = autoBattle();
+  if (!B.result) return "lv" + lv + " s" + seed + " stuck";
+  const r = B.result;
+  return "lv" + lv + " s" + seed + " " + r.winner + "/" + r.why + " r" + B.round + " you " + half(battlePoints("you")) + " them " + half(battlePoints("them")) +
+    " acts " + acts.length + " #" + hashOf(acts);
+}
+// ---- the self-test (game.html#test, or G then T in a battle) ----
+// Each probe checks one rule with fixed numbers (the RULES values written
+// out), so a RULE edit in data.js fails it on purpose; words are read from
+// the tables, so a SAFE edit never does. The probes go phase by phase, so
+// the first failing one names the first phase still to build.
+function snapshotAll() {
+  return { B: B, CAMP: CAMP, LOG: LOG.slice(), rseed: rseed, screen: screen, TALK: TALK, SEL: SEL, TIP: TIP, TIPQ: TIPQ.slice(), NOTE: NOTE };
+}
+
+function restoreAll(s) {
+  B = s.B;
+  CAMP = s.CAMP;
+  LOG = s.LOG;
+  rseed = s.rseed;
+  screen = s.screen;
+  TALK = s.TALK;
+  SEL = s.SEL;
+  TIP = s.TIP;
+  TIPQ = s.TIPQ;
+  NOTE = s.NOTE;
+}
+
+// A test board: rows of PIECES letters with spaces, their back line first.
+// Round 2, your turn, you move first; a Fight to the Finish with a draw
+// line of 4 and 10 rounds, unless extra says otherwise.
+function testBoard(rows, extra) {
+  const map = rows.map(function (r) { return r.split(" ").join(""); });
+  const row = Object.assign(baseRow(1), { type: "finish", first: "you", youRows: 2, themRows: 2, rounds: 10, drawLine: 4, rear: "", defender: "", bot: "steady", curtain: false }, extra || {});
+  B = {
+    lv: 1, row: row, W: map[0].length, H: map.length, map: map, units: [], nextId: 1,
+    side: "you", round: 2, gunsOpen: true, T: { you: tally(), them: tally() },
+    firedOn: { you: false, them: false }, raid: null, standing: { you: [], them: [] }, result: null, start: { you: 0, them: 0 },
+    botKey: "", botDone: []
+  };
+  LOG = [];
+}
+
+// A unit for a test board, made directly (not through phase 2).
+function put(side, arm, at, n) {
+  const s = sq(at);
+  const u = {
+    id: B.nextId, side: side, arm: arm, n: n === undefined ? ARMS[arm].figures : n, x: s[0], y: s[1],
+    name: "U" + B.nextId, goal: "", moved: false, fired: false, bare: false, off: false, of: "", pn: 0, pv: 0
+  };
+  B.nextId += 1;
+  B.units.push(u);
+  return u;
+}
+
+// An escort for a test board.
+function putEsc(side, at, of, pn, pv) {
+  const e = put(side, "esc", at, 1);
+  e.of = of;
+  e.pn = pn;
+  e.pv = pv;
+  return e;
+}
+
+// RETURNS the seed rng() leaves after k calls from seed s (a probe counts
+// the calls a rule makes: their order is part of the spec).
+function seedAfter(s, k) {
+  for (let i = 0; i < k; i++) s = s + 0x6D2B79F5 | 0;
+  return s;
+}
+
+// RETURNS the names of squares ([x, y] each), joined by spaces.
+function names(list) {
+  return list.map(function (s) { return s === null ? "-" : sqName(s[0], s[1]); }).join(" ");
+}
+
+const OPEN8 = [
+  ". . . . . . . .",
+  ". . . . . . . .",
+  ". . . . . . . .",
+  ". . . . . . . .",
+  ". . . . . . . .",
+  ". . . . . . . .",
+  ". . . . . . . .",
+  ". . . . . . . ."
+];
+
+// The replay probe's five battles (bots on both sides: the newcomer for
+// you, the row's style for them), and what they gave on 2026-10-21 (the
+// author's decision 14: throughSize 5, the bots' cavalry, the raid's hold).
+// A RULE edit in data.js changes them on purpose: update these with the new
+// lines (dev/selftest.js prints them) once the change is meant.
+const REPLAY_RUNS = [[0, 5, ""], [2, 11, "rear_west"], [6, 23, "more_rounds"], [9, 8, "scout"], [10, 3, "extra_troop"]];
+const REPLAY_EXPECT = [
+  "lv0 s5 you/none r6 you 121.5 them 13 acts 31 #tb3lnp",
+  "lv2 s11 them/raid r6 you 5.5 them 136.5 acts 35 #119x75s",
+  "lv6 s23 you/none r4 you 136 them 2 acts 25 #1up7bqt",
+  "lv9 s8 you/none r11 you 128 them 15 acts 78 #1un0bzj",
+  "lv10 s3 you/none r7 you 147 them 22.5 acts 79 #wm9xcf"
+];
+
+function selfTest() {
+  const snap = snapshotAll();
+  const nErr = ERRORS.length;
+  const res = [];
+  const T = function (name, fn) {
+    try {
+      res.push([name, !!fn()]);
+    } catch (e) {
+      res.push([name, false]);
+    }
+  };
+  // ---- the skeleton: the story's wiring (Knotwork, sceneDone) ----
+  T("talk", function () {
+    if (typeof dlgUseStory !== "function" || !TEST_STORY) return false;
+    newCampaign("red", false, 9);
+    let ok = dlgUseStory(TEST_STORY);
+    let ended = false;
+    let seen = "";
+    try {
+      dlgSet("player_side", CAMP.paint);
+      dlgSet("battles_done", CAMP.done);
+      TALK = { knot: "scene_1", then: function () { ended = true; }, got: false };
+      ok = dlgStart("scene_1") && ok;
+      const w = dlgView();
+      seen = w.text + "|" + w.choices.join("/");
+      dlgKey("2");
+      dlgKey("Enter");
+      ok = ok && ended && !dlgActive() && seen === "red 0.|Wait/Go" && CAMP.outcomes.scene_1 === "move_first" && ERRORS.length === nErr;
+    } finally {
+      if (typeof storyContent !== "undefined") dlgUseStory(storyContent);
+      TALK = null;
+    }
+    return ok;
+  });
+  // ---- phase 2: the armies ----
+  T("army", function () {
+    rseed = 1;
+    newBattle(0, "");
+    const t = B.units.map(function (u) { return u.side.charAt(0) + u.arm + sqName(u.x, u.y) + u.n + u.goal; }).join(" ");
+    const n = B.units.map(function (u) { return u.name; });
+    const zone = inZone("you", 0, 7) && inZone("you", 11, 8) && !inZone("you", 0, 6) && inZone("them", 4, 1) && !inZone("them", 4, 2);
+    return t === "tgunC94C6 tinfB86B5 tcavD84D6 tinfK86K5 ygunG24 yinfD26 yinfI26 ycavF14" &&
+      n.join("|") === [UNIT_NAMES.gun[0], UNIT_NAMES.inf[0], UNIT_NAMES.cav[0], UNIT_NAMES.inf[1], UNIT_NAMES.gun[0], UNIT_NAMES.inf[0], UNIT_NAMES.inf[1], UNIT_NAMES.cav[0]].join("|") &&
+      B.units[7].id === 8 && B.nextId === 9 && zone && B.start.you === 20 && B.start.them === 20;
+  });
+  T("extra", function () {
+    rseed = 1;
+    newBattle(10, "");
+    B.units = [];
+    B.nextId = 1;
+    B.row.extra = ["gun"];
+    makeArmy("you");
+    const last = B.units[B.units.length - 1];
+    const k = B.units.length === 10 && last.arm === "gun" && sqName(last.x, last.y) === "I1" && last.name === UNIT_NAMES.gun[2] && last.id === 10;
+    newBattle(4, "");
+    B.units = [];
+    B.nextId = 1;
+    B.row.horseGun = true;
+    makeArmy("them");
+    makeArmy("you");
+    const h = B.units.filter(function (u) { return isGun(u); });
+    const k2 = h.length === 2 && h[0].arm === "gun" && h[1].arm === "hgun" && h[1].side === "you" && h[1].name === UNIT_NAMES.hgun[0] &&
+      sqName(h[1].x, h[1].y) === "G1" && h[1].n === 4;
+    newBattle(10, "");
+    B.units = [];
+    B.nextId = 1;
+    B.row.horseGun = true;
+    makeArmy("you");
+    const h2 = B.units.filter(function (u) { return isGun(u); }).map(function (u) { return u.arm; }).join(",");
+    return k && k2 && h2 === "hgun,gun";
+  });
+  T("armed", function () {
+    testBoard(OPEN8);
+    put("you", "inf", "D4", 6);
+    put("you", "cav", "C2", 3);
+    putEsc("you", "C4", "inf", 2, 2);
+    put("you", "gun", "A1", 0);
+    put("them", "inf", "D5", 2);
+    return armed("you") === 9 && armed("them") === 2;
+  });
+  // ---- phase 3: steps and contact ----
+  T("step", function () {
+    testBoard([". . . .", ". = . .", "= . . .", ". . . ."]);
+    const a = put("you", "inf", "B2");
+    const b = put("them", "inf", "A3");
+    const c = put("them", "cav", "C3");
+    const k = canStep(1, 1, 2, 1) && canStep(1, 1, 2, 0) && !canStep(1, 2, 0, 1) && !canStep(0, 2, 1, 1) && !canStep(1, 1, 1, 3) &&
+      !canStep(3, 3, 4, 3) && !canStep(0, 0, 2, 0) && cornerOpen(0, 0, 1, 0) && !cornerOpen(0, 1, 1, 2) && cornerOpen(2, 2, 3, 3) &&
+      !touching(a, b) && touching(a, c) && enemyNear("you", 1, 1) && enemyNear("them", 2, 2) && !enemyNear("you", 3, 3) && enemyNear("you", 1, 2);
+    c.n = 0;
+    return k && !enemyNear("you", 1, 2);
+  });
+  // ---- phase 4: moving ----
+  T("reach", function () {
+    testBoard([". . . . . .", ". . . . . .", ". . w . . .", ". . . . . .", ". . . . f .", ". . . . . ."]);
+    const u = put("you", "inf", "C2");
+    put("you", "inf", "D2");
+    put("you", "gun", "B2", 4);
+    const k = function (r) { return r.map(function (s) { return sqName(s.x, s.y) + s.cost; }).join(" "); };
+    const r1 = k(reach(u));
+    put("them", "inf", "E4");
+    const r2 = k(reach(put("you", "cav", "A5")));
+    const r3 = k(reach(put("them", "cav", "F6", 1)));
+    testBoard([". . . . .", "~ ~ f ~ ~", ". . . . .", ". . . . ."]);
+    const r4 = k(reach(put("you", "cav", "C2")));
+    testBoard([". . . . .", "= = . = =", ". . . . ."]);
+    const gap = put("you", "gun", "C2", 4);
+    const r5 = k(reach(put("you", "cav", "A1")));
+    gap.arm = "inf";
+    const r6 = k(reach(B.units[1]));
+    return r5 === "B11 C12 D13 E14" && r6 === "A34 B33 C33 D33 E34 B11 C12 D13 E14" && r1 === "A42 B42 D42 E42 A32 B31 C31 D31 E32 A22 E22 A12 B11 C11 D11 E12" &&
+      r2 === "A61 B61 C62 D63 E64 B51 C52 D53 E54 A41 B41 C43 D43 A32 B32 C32 D33 E34 A23 E24 A14 B14 C14 D14 E14" &&
+      r3 === "B64 C63 D62 E61 B54 C53 D52 E51 F51 B44 C44 D42 F42 C33 D33 E33 F33 E24 F24" &&
+      r4 === "C31 A22 B21 D21 E22 A12 B11 C11 D11 E12";
+  });
+  // ---- phase 5: moving units ----
+  T("move", function () {
+    testBoard(OPEN8);
+    const g = put("you", "gun", "D2");
+    const h = put("you", "gun", "F2", 3);
+    const a = put("you", "inf", "C3");
+    const t = put("them", "inf", "C7");
+    const k = canMove(g) && !canMove(h) && canMove(a) && !canMove(t);
+    moveTo(g, 3, 4);
+    const k2 = !canMove(g) && B.gunsOpen && !g.bare && g.moved;
+    g.moved = false;
+    g.bare = true;
+    moveTo(a, 2, 4);
+    const e = putEsc("you", "A1", "inf", 1, 1);
+    return k && k2 && !B.gunsOpen && !canMove(g) && g.bare && sqName(a.x, a.y) === "C4" && !canMove(a) && !canMove(e);
+  });
+  T("leave", function () {
+    testBoard(OPEN8);
+    const a = put("you", "cav", "B1", 3);
+    const g = put("you", "gun", "E1", 4);
+    const b = put("you", "inf", "C2");
+    const k = canLeave(a) && canLeave(g) && !canLeave(b);
+    leaveField(g);
+    const k2 = B.gunsOpen && B.T.you.gunsOff === 1 && B.T.you.safe === 4 && g.off && g.n === 0;
+    leaveField(a);
+    return k && k2 && !B.gunsOpen && B.T.you.safe === 8.5 && a.off && a.moved && LOG[LOG.length - 1] === words(LOG_WORDS.leftField, { name: a.name }) &&
+      unitAt(1, 7) === null;
+  });
+  // ---- phase 6: line of fire ----
+  T("sight", function () {
+    testBoard([". . . . . . .", ". . = . . . .", ". . . . . . .", ". h r r w . .", ". . . . . . .", "h . . . ~ . ."]);
+    const k = [lineOfFire(0, 5, 6, 0), lineOfFire(2, 5, 2, 0), lineOfFire(6, 4, 0, 4), lineOfFire(6, 3, 0, 3), lineOfFire(1, 3, 6, 3),
+      lineOfFire(2, 5, 3, 1), lineOfFire(3, 5, 4, 1), lineOfFire(4, 1, 3, 5), lineOfFire(3, 1, 2, 5), lineOfFire(6, 0, 0, 5), lineOfFire(0, 0, 4, 2),
+      lineOfFire(1, 5, 0, 1)];
+    return k.map(Number).join("") === "101010110001";
+  });
+  T("aim", function () {
+    testBoard([". . . . . . . . . . . .", ". . . . . . . . . . . .", ". . . = . . . . . . . .", ". . . . . . . . . . . ."]);
+    const g = put("you", "gun", "A1");
+    const k = [canAim(g, 4, 3), canAim(g, 10, 0), canAim(g, 11, 0), canAim(g, 0, 3), canAim(g, -1, 3), canAim(g, 5, 0), canAim(g, 4, 0),
+      canAim(g, 3, 1), canAim(g, 10, 3)];
+    return k.map(Number).join("") === "100001111" && onTarget(1) === 60 && onTarget(3) === 60 && onTarget(4) === 45 && onTarget(6) === 45 &&
+      onTarget(7) === 30 && onTarget(10) === 30 && onTarget(11) === 0;
+  });
+  // ---- phase 7: crews and support ----
+  T("crew", function () {
+    testBoard(OPEN8);
+    const g = put("you", "gun", "D4", 2);
+    put("you", "inf", "E5", 1);
+    put("you", "cav", "C2", 4);
+    putEsc("you", "C4", "inf", 0, 0);
+    put("them", "inf", "D3", 6);
+    const a = crewAt(g) === 3 && !inAction(g);
+    put("you", "inf", "C3", 1);
+    const g2 = put("them", "gun", "H8", 0);
+    put("them", "cav", "G7", 4);
+    return a && crewAt(g) === 4 && inAction(g) && crewAt(g2) === 4 && inAction(g2);
+  });
+  T("support", function () {
+    testBoard(OPEN8);
+    const a = put("you", "inf", "C4", 6);
+    const b = put("them", "inf", "D4", 4);
+    const c = put("them", "cav", "F4", 2);
+    put("them", "inf", "D7", 3);
+    put("you", "cav", "A6", 2);
+    put("you", "inf", "B2", 6);
+    putEsc("them", "E3", "inf", 0, 0);
+    const m = [a, b];
+    const k = supportCount("them", m) === 2 && supportCount("you", m) === 8 && !isolated("them", m) && !isolated("you", m);
+    c.n = 1;
+    const far = put("you", "inf", "H8", 2);
+    return k && supportCount("them", m) === 1 && isolated("them", m) && isolated("you", [far]) && supportCount("you", [far]) === 0;
+  });
+  // ---- phase 8: gunfire ----
+  T("canfire", function () {
+    testBoard(OPEN8);
+    const g = put("you", "gun", "D2", 3);
+    put("you", "inf", "D1", 1);
+    const t = put("them", "gun", "D7");
+    const a = canFire(g) && !canFire(t);
+    B.round = 1;
+    const b = !canFire(g);
+    B.row.type = "defend";
+    B.row.defender = "you";
+    const c = canFire(g);
+    B.round = 2;
+    g.fired = true;
+    const d = !canFire(g);
+    g.fired = false;
+    B.gunsOpen = false;
+    const e = !canFire(g);
+    B.gunsOpen = true;
+    g.n = 2;
+    return a && b && c && d && e && !canFire(g);
+  });
+  T("shots", function () {
+    testBoard(OPEN8);
+    const g = put("you", "gun", "D1");
+    const t = put("them", "inf", "D5", 6);
+    const c = put("them", "cav", "E6", 4);
+    const f = put("you", "inf", "C4", 6);
+    rseed = 21;
+    const h1 = fireGun(g, 3, 3);
+    const k = [h1, t.n, c.n, f.n, B.T.them.fallen, B.T.you.fallen].join(",") === "4,2,4,6,4,0" && rseed === seedAfter(21, 4) && g.fired && g.bare &&
+      B.firedOn.them && !B.firedOn.you;
+    g.fired = false;
+    rseed = 7;
+    const h2 = fireGun(g, 3, 3);
+    const k2 = [h2, t.n, c.n, f.n, B.T.them.fallen, B.T.you.fallen].join(",") === "3,0,4,5,6,1" && rseed === seedAfter(7, 6) &&
+      LOG.length === 2 && LOG[1] === words(LOG_WORDS.fired, { name: g.name, n: 3 });
+    testBoard([". . . . .", ". . = . .", ". . . . .", ". . . . .", ". . . . ."]);
+    const g3 = put("you", "gun", "A3");
+    const hid = put("them", "inf", "D4", 6);
+    rseed = 9;
+    return k && k2 && fireGun(g3, 2, 2) === 0 && hid.n === 6 && rseed === seedAfter(9, 7);
+  });
+  T("cover", function () {
+    const wood = [". . . . .", ". . . . .", ". . w . .", ". . . . .", ". . . . ."];
+    testBoard(wood);
+    const g = put("you", "gun", "C5");
+    const t = put("them", "inf", "C3", 6);
+    rseed = 4;
+    const k = fireGun(g, 2, 2) === 1 && t.n === 5 && rseed === seedAfter(4, 8);
+    testBoard(wood);
+    const g2 = put("you", "gun", "C5");
+    const t2 = put("them", "gun", "C3", 4);
+    t2.bare = true;
+    rseed = 4;
+    const k2 = fireGun(g2, 2, 2) === 3 && t2.n === 1 && rseed === seedAfter(4, 5);
+    knockOver(t2);
+    return k && k2 && t2.n === 0 && B.T.them.fallen === 4 && unitAt(2, 2) === t2;
+  });
+  // ---- phase 9: who fights ----
+  T("contact", function () {
+    testBoard([". . . . . .", ". = . . . .", "= . . . . .", ". . . . . .", ". . . . . .", ". . . . . ."]);
+    put("you", "inf", "B4");
+    put("them", "inf", "A5");
+    put("them", "cav", "C5");
+    put("you", "cav", "D4");
+    put("them", "gun", "E3", 0);
+    put("them", "inf", "D3", 0);
+    put("you", "inf", "C2", 2);
+    putEsc("them", "D1", "inf", 0, 0);
+    return contacts().map(function (p) { return p[0].id + "-" + p[1].id; }).join(" ") === "1-3 3-4 7-8";
+  });
+  T("melees", function () {
+    testBoard(OPEN8);
+    put("you", "inf", "B2");
+    put("them", "inf", "B3");
+    put("you", "cav", "C1");
+    put("them", "cav", "D4");
+    put("you", "inf", "C3");
+    put("them", "inf", "G7");
+    put("you", "inf", "G6");
+    const h = put("you", "inf", "A8");
+    put("them", "inf", "E5");
+    const j = put("them", "cav", "H5");
+    const ms = findMelees();
+    return ms.length === 2 && ms[0].map(function (u) { return u.id; }).join(",") === "1,2,3,4,5,9" &&
+      ms[1].map(function (u) { return u.id; }).join(",") === "6,7,10" && h.n === 6 && j.n === 4;
+  });
+  // ---- phase 10: melee results ----
+  T("count", function () {
+    testBoard(OPEN8);
+    const a = put("you", "inf", "B2", 5);
+    const b = put("them", "inf", "B3", 4);
+    const e = putEsc("them", "C3", "cav", 3, 4.5);
+    return meleeCount([a, b, e], "you") === 5 && meleeCount([a, b, e], "them") === 5 && meleeCount([], "you") === 0;
+  });
+  T("outcome", function () {
+    const k = function (r) { return [r.you.fall, r.you.taken, r.them.fall, r.them.taken].join(""); };
+    testBoard(OPEN8);
+    const a = put("you", "inf", "D4", 6);
+    const b = put("them", "inf", "D5", 6);
+    const r1 = k(meleeOutcome([a, b]));
+    const c = put("you", "inf", "C4", 5);
+    const r2 = k(meleeOutcome([a, c, b]));
+    const d = put("them", "cav", "D7", 4);
+    const r3 = k(meleeOutcome([a, c, b]));
+    b.n = 2;
+    d.n = 1;
+    const r4 = k(meleeOutcome([a, c, b]));
+    d.n = 0;
+    const r5 = k(meleeOutcome([a, c, b]));
+    testBoard(OPEN8);
+    const m = [put("you", "inf", "D4", 6), put("you", "inf", "C4", 3), put("them", "inf", "D5", 6), put("them", "inf", "C5", 5)];
+    const r6 = k(meleeOutcome(m));
+    return r1 === "6060" && r2 === "1015" && r3 === "6060" && r4 === "2020" && r5 === "0002" && r6 === "7270" && m[0].n === 6 && m[3].n === 5;
+  });
+  // ---- phase 11: losses ----
+  T("losses", function () {
+    testBoard(OPEN8);
+    const a = put("you", "cav", "B2", 4);
+    const b = put("you", "inf", "C2", 6);
+    const c = put("you", "inf", "D2", 2);
+    const d = put("you", "gun", "B1", 3);
+    const e = put("them", "inf", "C3", 6);
+    const m = [a, b, c, d, e];
+    const own = lossOrder(m, "you").map(function (u) { return u.id; }).join(",");
+    B.side = "them";
+    const oth = lossOrder(m, "you").map(function (u) { return u.id; }).join(",");
+    const v = takeFigures([d, a, c], 6);
+    return own === "3,2,1,4" && oth === "4,1,3,2" && v.join(",") === "1,1,1,1.5,1.5,1.5" && d.n === 0 && a.n === 1 && c.n === 2;
+  });
+  T("free", function () {
+    testBoard(OPEN8);
+    const e = putEsc("you", "D4", "inf", 3, 3.5);
+    freePrisoners(e);
+    const a = e.pn === 0 && e.pv === 0 && e.n === 1 && B.T.them.freed === 3.5 && LOG[0] === words(LOG_WORDS.freed, { n: 3 });
+    const e2 = putEsc("them", "D5", "cav", 2, 2);
+    const v = takeFigures([e2], 1);
+    return a && v.join(",") === "1.5" && e2.n === 0 && e2.pn === 0 && B.T.you.freed === 2 && LOG[1] === words(LOG_WORDS.freed, { n: 2 }) && LOG.length === 2;
+  });
+  // ---- phase 12: escorts ----
+  T("escorts", function () {
+    testBoard(OPEN8);
+    const a = put("you", "cav", "D5", 4);
+    const b = put("you", "inf", "C5", 3);
+    const c = put("you", "gun", "E5", 4);
+    put("you", "inf", "D4", 6);
+    const m = [a, b, c];
+    const k = escortFrom(m, "you") === a && names([escortSquare(a, "you"), escortSquare(a, "them")]) === "C4 C6";
+    makeEscorts(m, "you", [1, 1, 1, 1, 1, 1, 1, 1.5, 1.5]);
+    const e1 = B.units[4];
+    const e2 = B.units[5];
+    return k && a.n === 3 && b.n === 2 && c.n === 4 && B.units.length === 6 && e1.name === UNIT_NAMES.esc[0] &&
+      e1.pn === 7 && e1.pv === 7 && e1.of === "cav" && sqName(e1.x, e1.y) === "C4" &&
+      e2.pn === 2 && e2.pv === 3 && e2.of === "inf" && sqName(e2.x, e2.y) === "B4" &&
+      escortFrom([c], "you") === c && escortFrom([], "you") === null && betterEscort(b, a) === false;
+  });
+  // ---- phase 13: fighting, guns taken ----
+  T("fight", function () {
+    testBoard(OPEN8);
+    const a = put("you", "inf", "D4", 6);
+    const b = put("you", "cav", "C4", 4);
+    const c = put("them", "inf", "D5", 6);
+    const d = put("them", "gun", "E6", 3);
+    fightMelees();
+    const e = B.units[4];
+    const k = [a.n, b.n, c.n, d.n, B.T.you.fallen, B.T.them.fallen, B.units.length].join(",") === "0,1,0,0,8,8,5" &&
+      e.arm === "esc" && e.side === "you" && e.of === "cav" && e.pn === 1 && e.pv === 1 && sqName(e.x, e.y) === "B3" &&
+      LOG.join("|") === words(LOG_WORDS.melee, { a: 8, b: 9 }) + "|" + words(LOG_WORDS.taken, { n: 1 });
+    testBoard(OPEN8);
+    const f = put("you", "inf", "D4", 6);
+    const g = put("you", "inf", "C4", 6);
+    const h = put("them", "inf", "D5", 4);
+    put("them", "inf", "D8", 1);
+    fightMelees();
+    const s = B.units[4];
+    const k2 = h.n === 0 && f.n === 5 && g.n === 6 && s.arm === "esc" && s.of === "inf" && s.pn === 4 && s.pv === 4 && sqName(s.x, s.y) === "C3" &&
+      B.T.them.fallen === 0 && B.T.you.fallen === 0;
+    testBoard(OPEN8);
+    const a1 = put("you", "inf", "C2", 6);
+    const t1 = put("them", "inf", "C3", 6);
+    const t2 = put("them", "inf", "E3", 3);
+    const a2 = put("you", "inf", "E2", 6);
+    fightMelees();
+    return k && k2 && [a1.n, t1.n, t2.n, a2.n, B.units.length, B.T.you.fallen, B.T.them.fallen].join(",") === "0,0,0,3,4,9,9";
+  });
+  T("take", function () {
+    testBoard(OPEN8);
+    const g = put("them", "gun", "D4", 0);
+    const g2 = put("them", "gun", "G4", 0);
+    const g3 = put("you", "gun", "A8", 0);
+    put("you", "inf", "C3", 4);
+    put("you", "inf", "G3", 6);
+    putEsc("them", "H4", "inf", 0, 0);
+    put("them", "inf", "B7", 6);
+    takeGuns("you");
+    return g.side === "you" && g2.side === "them" && g3.side === "you" && LOG.length === 1 && LOG[0] === words(LOG_WORDS.gunTaken, { name: g.name });
+  });
+  // ---- phase 14: escorts walk ----
+  T("walk", function () {
+    testBoard([". . . . .", ". . . . .", ". . . . .", "~ ~ f ~ ~", ". . . . .", ". . . . ."]);
+    const e = putEsc("you", "A6", "inf", 3, 4);
+    put("them", "inf", "A4", 6);
+    const f = putEsc("you", "E4", "cav", 2, 2);
+    walkEscorts("you");
+    const k1 = names([[e.x, e.y], [f.x, f.y]]) === "C4 C3" && !f.off;
+    walkEscorts("you");
+    const k2 = sqName(e.x, e.y) === "C4" && f.off && f.n === 0 && B.T.you.held === 2 && B.T.you.safe === 1.5 &&
+      LOG.length === 1 && LOG[0] === words(LOG_WORDS.escortHome, { n: 2 });
+    walkEscorts("you");
+    const k3 = sqName(e.x, e.y) === "C3" && !e.off;
+    walkEscorts("you");
+    const k4 = e.off && e.n === 0 && e.pn === 0 && B.T.you.held === 5 && B.T.you.safe === 2.5 && LOG.length === 2;
+    testBoard(OPEN8);
+    const e3 = putEsc("you", "D4", "inf", 1, 1);
+    put("them", "inf", "F3", 6);
+    walkEscorts("you");
+    return k1 && k2 && k3 && k4 && sqName(e3.x, e3.y) === "D2";
+  });
+  // ---- phase 15: End Turn ----
+  T("turns", function () {
+    testBoard(OPEN8);
+    const a = put("you", "inf", "D4", 6);
+    const b = put("them", "inf", "D5", 2);
+    const c = put("you", "cav", "A8", 4);
+    put("them", "cav", "H8", 4);
+    const e = putEsc("them", "H3", "inf", 1, 1);
+    a.moved = true;
+    c.moved = true;
+    B.firedOn.you = true;
+    B.firedOn.them = true;
+    endTurn();
+    const k = b.n === 0 && a.n === 5 && B.units.length === 4 && B.side === "them" && B.round === 2 && B.gunsOpen && a.moved && B.result === null &&
+      sqName(e.x, e.y) === "H3" && B.T.you.held === 2 && B.T.you.safe === 1 && !B.firedOn.you && B.firedOn.them;
+    B.gunsOpen = false;
+    endTurn();
+    return k && B.side === "you" && B.round === 3 && B.gunsOpen && !a.moved && !c.moved && sqName(e.x, e.y) === "H5" && B.result === null && !B.firedOn.them;
+  });
+  T("backline", function () {
+    testBoard(OPEN8);
+    put("you", "cav", "E8", 3);
+    put("you", "inf", "B8", 2);
+    putEsc("you", "A8", "inf", 2, 2);
+    put("them", "inf", "C1", 3);
+    const k = [onBackLine("you", 3, "east"), onBackLine("you", 3, "west"), onBackLine("you", 2, "west"), onBackLine("you", 1, "all"),
+      onBackLine("them", 1, "all"), onBackLine("them", 4, "all")];
+    return k.map(Number).join("") === "101110";
+  });
+  // ---- phase 16: a raid ----
+  T("raid", function () {
+    testBoard(OPEN8, { type: "rear", rear: "west" });
+    put("you", "cav", "C8", 3);
+    const h = put("them", "inf", "H1", 2);
+    const g = put("them", "gun", "A1", 2);
+    putEsc("them", "G2", "inf", 2, 2);
+    B.raid = { by: "you", left: 3 };
+    const r = [raidOver()];
+    B.side = "them";
+    r.push(raidOver(), raidOver());
+    const k = r.every(function (x) { return x === null; }) && B.raid.left === 1;
+    const w = raidOver();
+    const k2 = w !== null && w.winner === "you" && w.why === "raid" && B.T.you.held === 5 && B.T.you.freed === 2 && g.side === "you" && g.n === 0 && h.n === 0 &&
+      LOG[LOG.length - 1] === words(LOG_WORDS.freed, { n: 2 });
+    testBoard(OPEN8, { type: "rear", rear: "all" });
+    putEsc("you", "D2", "inf", 1, 1);
+    put("them", "inf", "D1", 4);
+    B.raid = { by: "them", left: 3 };
+    B.side = "them";
+    const w2 = raidOver();
+    return k && k2 && w2 !== null && w2.winner === "them" && B.raid.left === 3 && B.T.them.held === 1 && B.T.them.freed === 1;
+  });
+  // ---- phase 17: the result ----
+  T("result", function () {
+    const k = function (r) { return r === null ? "-" : r.winner + "/" + r.why; };
+    testBoard(OPEN8);
+    const a = put("you", "inf", "D2", 3);
+    put("them", "inf", "D7", 3);
+    const r = [k(checkResult())];
+    a.n = 4;
+    r.push(k(checkResult()));
+    B.round = 10;
+    r.push(k(checkResult()));
+    B.side = "them";
+    r.push(k(checkResult()));
+    a.n = 0;
+    r.push(k(checkResult()));
+    B.row.type = "defend";
+    B.row.defender = "them";
+    B.start.you = 20;
+    a.n = 5;
+    B.round = 3;
+    r.push(k(checkResult()));
+    B.start.you = 24;
+    a.y = 0;
+    B.side = "you";
+    r.push(k(checkResult()));
+    B.start.you = 20;
+    r.push(k(checkResult()));
+    B.start.you = 16;
+    a.n = 4;
+    r.push(k(checkResult()));
+    return r.join(" ") === "draw/few - - draw/rounds them/none - them/quarter you/through -";
+  });
+  T("rear", function () {
+    testBoard(OPEN8, { type: "rear", rear: "west" });
+    const a = put("you", "cav", "E8", 3);
+    const b = put("you", "inf", "C7", 6);
+    put("you", "cav", "A8", 2);
+    put("them", "inf", "H1", 2);
+    const d = put("them", "inf", "B1", 3);
+    putEsc("them", "G2", "inf", 2, 2);
+    const r = [checkResult()];
+    const k0 = B.standing.you.length === 0 && LOG.length === 0;
+    a.x = 3;
+    r.push(checkResult());
+    const k1 = B.raid === null && B.standing.you.join() === String(a.id);
+    B.side = "them";
+    r.push(checkResult());
+    const k2 = B.standing.them.join() === String(d.id) && B.standing.you.join() === String(a.id);
+    B.side = "you";
+    a.y = 1;
+    b.y = 0;
+    r.push(checkResult());
+    b.y = 1;
+    a.y = 0;
+    r.push(checkResult());
+    const k3 = B.raid === null && B.standing.you.join() === String(a.id);
+    r.push(checkResult());
+    const k4 = B.raid !== null && B.raid.by === "you" && B.raid.left === 3;
+    const said = [words(LOG_WORDS.holdYou, { name: a.name }), words(LOG_WORDS.holdThem, { name: d.name }), words(LOG_WORDS.holdYou, { name: b.name }),
+      words(LOG_WORDS.holdYou, { name: a.name }), words(LOG_WORDS.raid, { n: 3 })];
+    const k5 = LOG.join("|") === said.join("|");
+    B.round = 10;
+    r.push(checkResult());
+    B.side = "them";
+    r.push(checkResult(), checkResult());
+    const w = checkResult();
+    return r.every(function (x) { return x === null; }) && k0 && k1 && k2 && k3 && k4 && k5 && w !== null && w.winner === "you" && w.why === "raid" &&
+      B.T.you.held === 6 && B.T.you.freed === 2 && b.n === 6;
+  });
+  // ---- phase 18: points and the campaign ----
+  T("points", function () {
+    testBoard(OPEN8);
+    put("you", "inf", "D4", 5);
+    put("you", "gun", "C1", 0);
+    put("them", "cav", "D7", 2);
+    putEsc("you", "E4", "cav", 3, 3);
+    putEsc("them", "H8", "inf", 1, 1.5);
+    const off = put("you", "gun", "A1", 0);
+    off.off = true;
+    B.T.you.held = 2;
+    B.T.you.safe = 4;
+    B.T.you.freed = 1.5;
+    B.T.them.gunsOff = 1;
+    B.result = { winner: "you", why: "test" };
+    const p = [battlePoints("you"), battlePoints("them")];
+    B.result = { winner: "draw", why: "test" };
+    p.push(battlePoints("you"), battlePoints("them"));
+    return p.join(",") === "125,17,75,67";
+  });
+  T("record", function () {
+    newCampaign("blue", true, 3);
+    testBoard(OPEN8);
+    B.lv = 0;
+    put("you", "inf", "D4", 6);
+    B.result = { winner: "you", why: "test" };
+    const p0 = recordBattle();
+    const k0 = CAMP.last.result === "won" && CAMP.last.points === 106 && CAMP.points === 0 && CAMP.done === 0 && CAMP.wins === 0;
+    B.lv = 4;
+    B.result = { winner: "draw", why: "test" };
+    recordBattle();
+    B.result = { winner: "them", why: "test" };
+    const p2 = recordBattle();
+    return p0 === 106 && k0 && p2 === 6 && CAMP.points === 62 && CAMP.done === 2 && CAMP.draws === 1 && CAMP.losses === 1 && CAMP.wins === 0 &&
+      CAMP.last.result === "lost" && CAMP.last.points === 6;
+  });
+  // ---- phase 19: the story's outcomes ----
+  T("row", function () {
+    const r1 = baseRow(7);
+    applyOutcome(r1, "head_start");
+    const r2 = baseRow(5);
+    applyOutcome(r2, "extra_troop");
+    const r3 = baseRow(6);
+    applyOutcome(r3, "more_rounds");
+    const r4 = Object.assign(baseRow(9), { knot: "foe_9" });
+    applyOutcome(r4, "bold");
+    const r5 = baseRow(3);
+    applyOutcome(r5, "wall");
+    const r6 = baseRow(2);
+    applyOutcome(r6, "nonsense");
+    const r7 = baseRow(5);
+    applyOutcome(r7, "forward");
+    const r8 = baseRow(4);
+    applyOutcome(r8, "horse_gun");
+    const r9 = baseRow(2);
+    applyOutcome(r9, "rear_east");
+    return r1.first === "you" && r1.scout && r2.extra.join() === "cav" && r3.rounds === 12 && r4.bot === "bold" && r5.pieces.join() === "wall" &&
+      r6.rear === "west" && !r6.scout && r7.youRows === 3 && r8.horseGun && !r8.scout && r9.rear === "east" &&
+      LEVELS[6].rounds === 10 && LEVELS[5].youRows === 2 && LEVELS[7].first === "them";
+  });
+  // ---- phase 20: the bots, 1 ----
+  T("style", function () {
+    testBoard(OPEN8);
+    const a = botStyle("them") === BOT_STYLES.steady && botStyle("you") === BOT_STYLES.newcomer;
+    B.row.bot = "clever";
+    return a && botStyle("them") === BOT_STYLES.clever;
+  });
+  T("shotval", function () {
+    testBoard(OPEN8);
+    const g = put("them", "gun", "D8");
+    put("you", "inf", "D4", 6);
+    put("you", "cav", "B6", 2);
+    put("you", "gun", "G3", 4);
+    put("you", "inf", "H6", 3);
+    put("them", "inf", "H7", 6);
+    return shotValue(g, 3, 4) === 45 && shotValue(g, 1, 2) === 60 && shotValue(g, 7, 2) === 38.125;
+  });
+  // ---- phase 21: the bots, 2 ----
+  T("botaim", function () {
+    testBoard(OPEN8);
+    const g = put("them", "gun", "D8");
+    put("you", "inf", "D4", 6);
+    put("you", "cav", "B6", 2);
+    put("you", "gun", "G3", 4);
+    put("them", "inf", "D5", 6);
+    const k = names([aimFor(g, BOT_STYLES.gentle), aimFor(g, BOT_STYLES.steady), aimFor(g, BOT_STYLES.bold), aimFor(g, BOT_STYLES.clever)]);
+    return k === "B6 G3 G3 B6";
+  });
+  // ---- phase 22: the bots, 3 ----
+  T("head", function () {
+    testBoard(OPEN8);
+    const a = put("them", "inf", "D8");
+    const y = put("you", "inf", "D2");
+    const c = put("them", "cav", "A8");
+    const S = BOT_STYLES;
+    const g1 = headGrid(a, S.steady);
+    a.goal = "A5";
+    const g2 = headGrid(a, S.gentle);
+    y.y = 3;
+    const g3 = headGrid(a, S.gentle);
+    put("you", "gun", "G3", 4);
+    const g4 = headGrid(c, S.bold);
+    const g5 = headGrid(c, S.steady);
+    B.row.type = "rear";
+    B.row.rear = "east";
+    c.n = 3;
+    const g6 = headGrid(c, S.steady);
+    const g7 = headGrid(a, S.steady);
+    c.n = 2;
+    const g10 = headGrid(c, S.steady);
+    B.raid = { by: "you", left: 3 };
+    const g8 = headGrid(a, S.steady);
+    B.raid = null;
+    B.row.type = "defend";
+    B.row.defender = "you";
+    c.n = 4;
+    const g9 = headGrid(c, S.steady);
+    c.n = 5;
+    const g11 = headGrid(c, S.steady);
+    return [g1[6][3], g1[0][3], g1[4][0], g2[3][0], g2[0][3], g3[3][3], g3[3][0], g4[5][6], g4[0][0], g5[5][6], g6[7][4], g6[7][3], g6[0][0],
+      g7[5][6], g7[3][3], g8[0][5], g8[7][0], g9[7][0], g10[0][0], g10[7][4], g11[7][0]].join(",") === "0,6,3,0,3,0,3,0,6,0,0,1,7,3,0,0,7,4,3,4,0";
+  });
+  // ---- phase 23: the bots, 4 ----
+  T("score", function () {
+    testBoard([". . . . . . . .", ". . . . . . . .", ". . . . . . . .", ". . . . . . . .", ". . w . . h . .", ". . . . . . . .", ". . . . . . . .", ". . . . . . . ."]);
+    const S = BOT_STYLES;
+    const u = put("them", "inf", "D5", 6);
+    const g = stepsFrom([sq("D1")]);
+    const r = [moveScore(u, 3, 4, S.steady, g), moveScore(u, 2, 4, S.steady, g), moveScore(u, 5, 4, S.steady, g), moveScore(u, 3, 3, S.cautious, g)];
+    put("them", "cav", "A4", 4);
+    r.push(moveScore(u, 2, 4, S.steady, g), moveScore(u, 3, 4, S.steady, g));
+    const w = put("them", "inf", "C4", 6);
+    r.push(moveScore(w, 2, 4, S.cautious, g), moveScore(w, 2, 5, S.cautious, g));
+    B.firedOn.them = true;
+    r.push(moveScore(w, 2, 4, S.cautious, g));
+    const gun = put("them", "gun", "G6", 2);
+    put("you", "cav", "G2", 4);
+    r.push(moveScore(u, 5, 3, S.clever, g), moveScore(u, 6, 3, S.clever, g), moveScore(u, 4, 6, S.clever, g));
+    put("you", "inf", "H1", 6);
+    r.push(moveScore(gun, 6, 2, S.steady, g), moveScore(gun, 5, 4, S.steady, g), moveScore(gun, 7, 1, S.steady, g));
+    return r.join(",") === "-9,-8,-8,-6,-5,-9,6,-2,0,-8,-8,-2,1,5,1";
+  });
+  // ---- phase 24: the bots, 5 ----
+  T("charge", function () {
+    testBoard(OPEN8);
+    const a = put("them", "inf", "D6", 6);
+    put("you", "inf", "D4", 4);
+    const f = put("them", "inf", "F6", 4);
+    const s = BOT_STYLES;
+    const k = [chargeOk(a, 3, 3, s.gentle), chargeOk(a, 3, 3, s.steady), chargeOk(a, 3, 3, s.cautious), chargeOk(a, 3, 3, s.bold),
+      chargeOk(a, 3, 3, s.clever), chargeOk(a, 4, 3, s.gentle)].map(Number).join("");
+    const back = sqName(a.x, a.y) === "D6";
+    f.n = 0;
+    return k === "011111" && back && !chargeOk(a, 3, 3, s.steady) && chargeOk(a, 3, 3, s.bold) && !chargeOk(a, 3, 1, s.bold);
+  });
+  T("pick", function () {
+    testBoard([". . . . . . . .", ". . . . w . . .", ". . . . . . . .", ". . . . . . . .", ". . . . . . . .", ". . . . . . . .", ". . . . . . . .", ". . . . . . . ."]);
+    const a = put("them", "inf", "D8");
+    put("you", "inf", "D2", 6);
+    rseed = 5;
+    const p1 = names([bestSquare(a, BOT_STYLES.cautious)]);
+    const k = rseed === 5;
+    const p2 = names([bestSquare(a, Object.assign({}, BOT_STYLES.cautious, { slip: 100 }))]);
+    const k2 = rseed === seedAfter(5, 1);
+    put("you", "inf", "B5", 6);
+    const p3 = names([bestSquare(a, BOT_STYLES.steady)]);
+    testBoard([". . . . . . . .", ". . . h . . . .", ". . . . . . . .", ". . . . . . . .", ". . . . . . . .", ". . . . . . . .", ". . . . . . . .", ". . . . . . . ."]);
+    const gun = put("them", "gun", "D8");
+    put("you", "inf", "D6", 1);
+    const p4 = names([bestSquare(gun, Object.assign({}, BOT_STYLES.bold, { cover: 5 }))]);
+    return p1 === "E7" && k && p2 === "B6" && k2 && p3 === "B7" && sqName(a.x, a.y) === "D8" && p4 === "B8";
+  });
+  // ---- phase 25: the bots, 6, and whole battles ----
+  T("botturn", function () {
+    testBoard(OPEN8);
+    B.side = "them";
+    const g = put("them", "gun", "D8");
+    put("them", "inf", "C7");
+    put("you", "inf", "D3", 6);
+    rseed = 3;
+    const a1 = botNext("them");
+    fireGun(a1.u, a1.x, a1.y);
+    const a2 = botNext("them");
+    moveTo(a2.u, a2.x, a2.y);
+    const a3 = botNext("them");
+    const k = a1.kind === "fire" && a1.u === g && sqName(a1.x, a1.y) === "D3" && a2.kind === "move" && a2.u.id === 2 && sqName(a2.x, a2.y) === "B6" &&
+      a3 === null && B.botKey === "2them";
+    testBoard(OPEN8, { type: "rear", rear: "all" });
+    B.side = "them";
+    B.raid = { by: "you", left: 2 };
+    const c = put("them", "cav", "C8", 2);
+    put("them", "inf", "F6", 3);
+    put("you", "inf", "D3", 6);
+    const b1 = botNext("them");
+    leaveField(b1.u);
+    const b2 = botNext("them");
+    return k && b1.kind === "leave" && b1.u === c && b2.kind === "move" && sqName(b2.x, b2.y).charAt(1) === "8";
+  });
+  T("replay", function () {
+    const got = REPLAY_RUNS.map(function (r) { return replayBattle(r[0], r[1], r[2]); });
+    window.REPLAY_GOT = got;
+    return got.length === REPLAY_EXPECT.length && got.every(function (g, i) { return g === REPLAY_EXPECT[i]; });
+  });
+  restoreAll(snap);
+  ERRORS.length = nErr;
+  const fails = res.filter(function (r) { return !r[1]; }).map(function (r) { return r[0]; });
+  const line = "SELF-TEST " + (res.length - fails.length) + "/" + res.length + (fails.length ? " FAIL: " + fails.slice(0, 3).join(" ") : " PASS");
+  say(line);
+  window.SELFTEST_LINE = line;
+  window.QT = res;
+}
+
+// A tiny compiled story for the "talk" probe - not the author's story: its
+// knot scene_1 shows "{player_side} {battles_done}." and two choices, Wait
+// (outcome "scout") and Go ("move_first"), and sends its outcome from finish
+// (compiled with inkjs 2.4.0, as Inky exports; dev/README.txt has its ink).
+const TEST_STORY = {"inkVersion":21,"root":[["done",["done",{"#f":5,"#n":"g-0"}],null],"done",{"scene_1":[["ev",{"VAR?":"player_side"},"out","/ev","^ ","ev",{"VAR?":"battles_done"},"out","/ev","^.","\n","ev","str","^Wait","/str","/ev",{"*":".^.c-0","flg":4},"ev","str","^Go","/str","/ev",{"*":".^.c-1","flg":4},{"c-0":["^ Waited. ",{"->":".^.^.^.finish"},"\n",{"#f":5}],"c-1":["\n","ev","str","^move_first","/str","/ev",{"VAR=":"scene_1_outcome","re":true},"^Went. ",{"->":".^.^.^.finish"},"\n",{"#f":5}]}],{"finish":["ev","str","^scene_1","/str",{"VAR?":"scene_1_outcome"},{"x()":"sceneDone","exArgs":2},"pop","/ev","\n","done",{"#f":1}],"#f":1}],"global decl":["ev","str","^red","/str",{"VAR=":"player_side"},0,{"VAR=":"battles_done"},"str","^scout","/str",{"VAR=":"scene_1_outcome"},"/ev","end",null],"#f":1}],"listDefs":{}};
+
+// ---- the tables' checks (the red banner when the page opens) ----
+function guard(fn) {
+  try {
+    fn();
+  } catch (e) {
+    ERRORS.push("data.js: " + fn.name + " could not finish (" + e.message + ") - a table is missing or misshapen.");
+  }
+}
+
+function bad(msg) {
+  if (ERRORS.indexOf(msg) < 0 && ERRORS.length < 8) ERRORS.push(msg);
+}
+
+function checkRules() {
+  for (const k of ["range", "shots", "crew", "isolation", "perEscort", "escortWalk", "raidSize", "withdraw", "throughSize", "win", "draw", "gunPts"]) {
+    if (!(RULES[k] >= 1) || Math.floor(RULES[k]) !== RULES[k]) bad("data.js RULES: " + k + " must be a whole number, 1 or more.");
+  }
+  for (const k of ["cover", "quarter"]) {
+    if (!(RULES[k] >= 0 && RULES[k] <= 100)) bad("data.js RULES: " + k + " is a percent, 0 to 100.");
+  }
+  if (!(RULES.prisonerPts >= 0)) bad("data.js RULES: prisonerPts must be 0 or more.");
+  let last = 0;
+  for (const t of ON_TARGET) {
+    if (!(t.upTo > last) || !(t.pct >= 0 && t.pct <= 100)) bad("data.js ON_TARGET: each band's upTo must be bigger than the one before, and pct 0 to 100.");
+    last = t.upTo;
+  }
+}
+
+function checkArms() {
+  for (const a of ["inf", "cav", "gun", "hgun", "esc"]) {
+    const r = ARMS[a];
+    if (!r) {
+      bad("data.js ARMS: the arm " + a + " is missing.");
+      continue;
+    }
+    if (!(r.figures >= 1) || !(r.move >= 1) || !(r.pts >= 0)) bad("data.js ARMS: " + a + " needs figures and move of 1 or more, and pts of 0 or more.");
+  }
+  if (ARMS.gun && !ARMS.gun.gun) bad("data.js ARMS: gun must say gun: true.");
+  for (const k of ["own", "other"]) {
+    const l = LOSS_ORDER[k] || [];
+    if (l.length !== 5 || ["inf", "cav", "gun", "hgun", "esc"].some(function (a) { return l.indexOf(a) < 0; })) bad("data.js LOSS_ORDER: " + k + " must list inf, cav, gun, hgun and esc, once each.");
+  }
+}
+
+const LOOKS = ["floor", "wood", "hill", "house", "church", "wall", "rock", "river", "ford", "bridge"];
+
+function checkPieces() {
+  for (const k in PIECES) {
+    const p = PIECES[k];
+    if (k.length !== 1 || k === " ") bad("data.js PIECES: each piece is one letter (not a space): \"" + k + "\".");
+    if (LOOKS.indexOf(p.look) < 0) bad("data.js PIECES \"" + k + "\": look must be one of " + LOOKS.join(", ") + ".");
+    if (p.enter && !(p.cost >= 1)) bad("data.js PIECES \"" + k + "\": a piece that can be entered needs a cost of 1 or more.");
+  }
+}
+
+function checkCountries() {
+  for (const c in COUNTRIES) {
+    const m = COUNTRIES[c].map(function (r) { return r.split(" ").join(""); });
+    if (!m.length || m.some(function (r) { return r.length !== m[0].length; })) bad("data.js COUNTRIES " + c + ": every row needs the same number of letters.");
+    if (m.length > 12 || m[0].length > 18) bad("data.js COUNTRIES " + c + ": at most 18 columns and 12 rows fit on the screen.");
+    for (const r of m) {
+      for (const ch of r) if (!PIECES[ch]) bad("data.js COUNTRIES " + c + ": the letter \"" + ch + "\" is not in PIECES.");
+    }
+    if (!COUNTRY_NAMES[c]) bad("data.js COUNTRY_NAMES: no name for " + c + ".");
+  }
+  for (const s of SWITCHES) {
+    const m = COUNTRIES[s.country];
+    if (!m) {
+      bad("data.js SWITCHES: no country " + s.country + ".");
+      continue;
+    }
+    const x = LETTERS.indexOf(s.at.charAt(0));
+    const y = m.length - Number(s.at.slice(1));
+    if (x < 0 || y < 0 || y >= m.length || x >= m[0].split(" ").join("").length) bad("data.js SWITCHES: " + s.at + " is not on " + s.country + ".");
+    if (!PIECES[s.piece]) bad("data.js SWITCHES: the piece \"" + s.piece + "\" is not in PIECES.");
+  }
+}
+
+function checkLevels() {
+  const knots = [];
+  LEVELS.forEach(function (r, i) {
+    const w = "data.js LEVELS line " + i + ": ";
+    if (r.lv !== i) bad(w + "lv must be " + i + " (the lines go in order).");
+    if (!SCREEN_WORDS.parts[r.part]) bad(w + "part must be tutorial, act1, act2, act3 or finale.");
+    if (["finish", "rear", "defend"].indexOf(r.type) < 0) bad(w + "type must be finish, rear or defend.");
+    if (!COUNTRIES[r.country]) bad(w + "no country " + r.country + " in COUNTRIES.");
+    if (r.first !== "you" && r.first !== "them") bad(w + "first must be \"you\" or \"them\".");
+    if (!BOT_STYLES[r.bot]) bad(w + "no bot style " + r.bot + " in BOT_STYLES.");
+    if (r.type === "rear" && ["west", "east", "all"].indexOf(r.rear) < 0) bad(w + "a rear battle needs rear: west, east or all.");
+    if (r.type === "defend" && r.defender !== "you" && r.defender !== "them") bad(w + "a defend battle needs defender: you or them.");
+    if (!(r.rounds >= 1) || !(r.youRows >= 1) || !(r.themRows >= 1)) bad(w + "rounds, youRows and themRows must be 1 or more.");
+    if (knots.indexOf(r.knot) >= 0) bad(w + "the knot " + r.knot + " is used twice.");
+    knots.push(r.knot);
+    if (i === 0 && r.foe) bad(w + "the tutorial has no foe knot (foe: \"\").");
+    if (i > 0 && !/^foe_/.test(r.foe || "")) bad(w + "foe must be a foe_ knot (foe_" + i + ").");
+    if (r.foe && knots.indexOf(r.foe) >= 0) bad(w + "the knot " + r.foe + " is used twice.");
+    if (r.foe) knots.push(r.foe);
+  });
+}
+
+function checkArmies() {
+  const seen = {};
+  for (const a of ARMIES) {
+    const r = LEVELS[a.lv];
+    const w = "data.js ARMIES (battle " + a.lv + ", " + a.at + "): ";
+    if (!r) {
+      bad(w + "no such battle in LEVELS.");
+      continue;
+    }
+    if (a.side !== "you" && a.side !== "them") bad(w + "side must be you or them.");
+    if (!ARMS[a.arm] || a.arm === "esc") bad(w + "arm must be inf, cav, gun or hgun.");
+    const m = COUNTRIES[r.country].map(function (s) { return s.split(" ").join(""); });
+    const x = LETTERS.indexOf(a.at.charAt(0));
+    const row = Number(a.at.slice(1));
+    const y = m.length - row;
+    if (x < 0 || y < 0 || y >= m.length || x >= m[0].length || !PIECES[m[y].charAt(x)] || !PIECES[m[y].charAt(x)].enter) {
+      bad(w + "a unit can't stand there.");
+      continue;
+    }
+    const fromBack = a.side === "you" ? row : m.length + 1 - row;
+    if (fromBack > (a.side === "you" ? r.youRows : r.themRows)) bad(w + "outside its set-up zone.");
+    const k = a.lv + ":" + a.at;
+    if (seen[k]) bad(w + "two units on one square.");
+    seen[k] = true;
+    if (a.goal && !/^[A-R]\d+$/.test(a.goal)) bad(w + "goal must be \"\" or a square like C6.");
+  }
+}
+
+const STEP_KINDS = { first: 1, scout: 0, rear: 1, piece: 1, horseGun: 0, setupRows: 1, unit: 1, rounds: 1, style: 1 };
+
+function checkEffects() {
+  for (const k in EFFECTS) {
+    const r = LEVELS.find(function (l) { return l.knot === k || l.foe === k; });
+    if (!r) bad("data.js EFFECTS: " + k + " is not a knot in LEVELS.");
+    if (/^foe_/.test(k)) {
+      for (const o in EFFECTS[k]) {
+        if (!BOT_STYLES[o] || EFFECTS[k][o].length !== 1 || EFFECTS[k][o][0][0] !== "style" || EFFECTS[k][o][0][1] !== o) bad("data.js EFFECTS " + k + " " + o + ": a foe_ knot's outcome is a bot style, [[\"style\", \"" + o + "\"]].");
+      }
+      if (r && !EFFECTS[k][r.bot]) bad("data.js EFFECTS " + k + ": list the row's own bot, " + r.bot + ", among its outcomes (it is the default).");
+      continue;
+    }
+    for (const o in EFFECTS[k]) {
+      for (const s of EFFECTS[k][o]) {
+        if (!(s[0] in STEP_KINDS)) bad("data.js EFFECTS " + k + " " + o + ": no step kind \"" + s[0] + "\".");
+        if (s[0] === "style" && !BOT_STYLES[s[1]]) bad("data.js EFFECTS " + k + " " + o + ": no bot style " + s[1] + ".");
+        if (s[0] === "unit" && ["inf", "cav", "gun"].indexOf(s[1]) < 0) bad("data.js EFFECTS " + k + " " + o + ": a unit must be inf, cav or gun.");
+        if (s[0] === "piece" && r && !SWITCHES.some(function (w) { return w.country === r.country && w.key === s[1]; })) bad("data.js EFFECTS " + k + " " + o + ": no switchable piece " + s[1] + " on that battle's country.");
+      }
+    }
+    if (!EFFECTS[k][DEFAULTS[k]]) bad("data.js DEFAULTS: " + k + "'s default must be one of its outcomes in EFFECTS.");
+  }
+}
+
+function checkBots() {
+  for (const k in BOT_STYLES) {
+    const s = BOT_STYLES[k];
+    if (["nearest", "most", "guns", "best"].indexOf(s.aim) < 0) bad("data.js BOT_STYLES " + k + ": aim must be nearest, most, guns or best.");
+    if (["twice", "more", "isolated", "even", "ahead"].indexOf(s.charge) < 0) bad("data.js BOT_STYLES " + k + ": charge must be twice, more, isolated, even or ahead.");
+    if (["advance", "cover", "together", "groups", "hold", "guard", "slip"].some(function (n) { return typeof s[n] !== "number"; })) bad("data.js BOT_STYLES " + k + ": advance, cover, together, groups, hold, guard and slip are numbers.");
+    if (s.hunt !== "guns" && s.hunt !== "") bad("data.js BOT_STYLES " + k + ": hunt must be \"guns\" or \"\".");
+  }
+  if (!BOT_STYLES.newcomer) bad("data.js BOT_STYLES: the newcomer style is missing (it plays your side in bot runs).");
+}
+
+function checkWords() {
+  const need = { LOG_WORDS: [LOG_WORDS, ["battle", "youFirst", "themFirst", "round", "yourTurn", "theirTurn", "quiet", "undone", "noUndo", "fired", "melee", "taken", "escortHome", "freed", "gunTaken", "leftField", "holdYou", "holdThem", "raid", "won", "drawn", "lost"]],
+    TIPS: [TIPS, ["select", "undo", "quiet", "aim", "cover", "contact", "melee", "isolated", "prisoners", "emptyGun", "leave", "points"]] };
+  for (const t in need) {
+    for (const k of need[t][1]) if (typeof need[t][0][k] !== "string") bad("data.js " + t + ": the line " + k + " is missing.");
+  }
+  for (const g of ["title", "parts", "types", "halves", "arms", "setup", "battle", "result", "end"]) {
+    if (!SCREEN_WORDS[g]) bad("data.js SCREEN_WORDS: the group " + g + " is missing.");
+  }
+  const most = { inf: 5, cav: 4, gun: 3, hgun: 1, esc: 1 };
+  for (const a in most) {
+    if (!UNIT_NAMES[a] || UNIT_NAMES[a].length < most[a]) bad("data.js UNIT_NAMES: " + a + " needs at least " + most[a] + " names.");
+  }
+}
+
+function checkTheme() {
+  for (const s of ["red", "blue"]) {
+    const t = THEME[s];
+    if (!t || ["tall", "dome"].indexOf(t.hat) < 0 || ["ring", "bar"].indexOf(t.base) < 0) bad("data.js THEME " + s + ": hat must be tall or dome, base ring or bar.");
+  }
+  if (THEME.red && THEME.blue && THEME.red.hat === THEME.blue.hat && THEME.red.base === THEME.blue.base) bad("data.js THEME: give red and blue different hats or bases, so the sides read without colour.");
+}
+
+// ===================================================================
+// DRAWING
+// ===================================================================
+function rect(c, x, y, w, h) {
+  cx.fillStyle = c;
+  cx.fillRect(x, y, w, h);
+}
+
+function frame(c, x, y, w, h, lw) {
+  cx.strokeStyle = c;
+  cx.lineWidth = lw || 1;
+  cx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+}
+
+function text(t, x, y, c, size, align, bold) {
+  cx.fillStyle = c;
+  cx.font = (bold ? "bold " : "") + (size || 7) + "px monospace";
+  cx.textAlign = align || "left";
+  cx.textBaseline = "alphabetic";
+  cx.fillText(String(t), x, y);
+}
+
+function wrap(t, width, size) {
+  cx.font = (size || 7) + "px monospace";
+  const out = [];
+  let line = "";
+  for (const w of String(t).split(" ")) {
+    const next = line ? line + " " + w : w;
+    if (cx.measureText(next).width > width && line) {
+      out.push(line);
+      line = w;
+    } else {
+      line = next;
+    }
+  }
+  if (line) out.push(line);
+  return out;
+}
+
+function button(label, x, y, w, h, action, on, lit) {
+  BUTTONS.push({ x: x, y: y, w: w, h: h, action: action, on: on !== false });
+  rect(on === false ? THEME.panel : (lit ? THEME.buttonLit : THEME.button), x, y, w, h);
+  frame(on === false ? THEME.panelEdge : THEME.gold, x, y, w, h);
+  text(label, x + w / 2, y + h - 4, on === false ? THEME.dim : THEME.text, 7, "center");
+}
+
+function hash2(x, y) {
+  let h = Math.imul(x * 374761393 + y * 668265263, 1274126177);
+  h = (h ^ (h >>> 13)) >>> 0;
+  return h;
+}
+
+function geom() {
+  const S = Math.floor(Math.min(356 / B.W, 246 / B.H));
+  return { S: S, x0: 6 + Math.floor((356 - S * B.W) / 2), y0: 18 };
+}
+
+// ---- the Country ----
+function drawSquare(x, y, px, py, S) {
+  const p = PIECES[B.map[y].charAt(x)] || PIECES["."];
+  const h = hash2(x, y);
+  rect((x + y) % 2 ? THEME.floor : THEME.floorLine, px, py, S, S);
+  rect(THEME.floorLine, px + (h % S), py + ((h >> 5) % S), 1, 1);
+  const look = p.look;
+  if (look === "wood") {
+    for (let i = 0; i < 3; i++) {
+      const tx = px + 3 + ((h >> (i * 4)) % Math.max(1, S - 8));
+      const ty = py + 4 + ((h >> (i * 4 + 2)) % Math.max(1, S - 10));
+      rect(THEME.twig, tx + 2, ty + 3, 1, 4);
+      cx.fillStyle = i % 2 ? THEME.wood : THEME.woodDark;
+      cx.beginPath();
+      cx.arc(tx + 2.5, ty + 2, Math.max(2, S / 7), 0, Math.PI * 2);
+      cx.fill();
+    }
+  } else if (look === "hill") {
+    // boards stacked on books: two books under the corners, two boards
+    rect(THEME.brick, px + 2, py + S - 6, 5, 4);
+    rect(THEME.wood, px + S - 7, py + S - 6, 5, 4);
+    rect(THEME.hillEdge, px + 1, py + 2, S - 2, S - 7);
+    rect(THEME.hill, px + 1, py + 2, S - 2, S - 9);
+    rect(THEME.hillEdge, px + 4, py + 4, S - 8, S - 12);
+    rect(THEME.hill, px + 4, py + 4, S - 8, S - 14);
+  } else if (look === "house" || look === "church") {
+    const t = look === "church" ? Math.floor(S / 3) : Math.floor(S / 4);
+    rect(THEME.brickDark, px + 2, py + t + 2, S - 4, S - t - 4);
+    rect(THEME.brick, px + 3, py + t + 3, S - 6, S - t - 6);
+    for (let r = py + t + 6; r < py + S - 3; r += 3) rect(THEME.brickDark, px + 3, r, S - 6, 1);
+    cx.fillStyle = THEME.roof;
+    cx.beginPath();
+    cx.moveTo(px + 1, py + t + 3);
+    cx.lineTo(px + S / 2, py + 1);
+    cx.lineTo(px + S - 1, py + t + 3);
+    cx.fill();
+    if (look === "church") rect(THEME.roof, px + S / 2 - 2, py, 4, t + 3);
+  } else if (look === "wall") {
+    rect(THEME.brickDark, px, py + S / 2 - 4, S, 8);
+    rect(THEME.brick, px + 1, py + S / 2 - 3, S - 2, 6);
+    rect(THEME.brickDark, px, py + S / 2, S, 1);
+  } else if (look === "rock") {
+    cx.fillStyle = THEME.rockDark;
+    cx.beginPath();
+    cx.moveTo(px + 3, py + S - 3);
+    cx.lineTo(px + 5, py + 5);
+    cx.lineTo(px + S - 6, py + 3);
+    cx.lineTo(px + S - 3, py + S - 4);
+    cx.fill();
+    rect(THEME.rock, px + 6, py + 6, S - 12, S - 11);
+  } else if (look === "river" || look === "ford" || look === "bridge") {
+    rect(THEME.river, px, py + 1, S, S - 2);
+    rect(THEME.chalk, px, py + 1, S, 1);
+    rect(THEME.chalk, px, py + S - 2, S, 1);
+    if (look === "ford") {
+      rect(THEME.floor, px + 3, py + 2, S - 6, S - 4);
+      for (let i = 0; i < 3; i++) rect(THEME.chalk, px + 4 + i * Math.floor((S - 8) / 3), py + S / 2, 2, 1);
+    }
+    if (look === "bridge") {
+      rect(THEME.plank, px + 2, py, S - 4, S);
+      for (let r = py + 2; r < py + S; r += 3) rect(THEME.twig, px + 2, r, S - 4, 1);
+    }
+  }
+}
+
+// ---- the toy soldiers ----
+function drawSoldier(x, y, h, paint, away) {
+  const pal = THEME[paint];
+  const w = Math.max(2, Math.round(h * 0.4));
+  const l = Math.round(x - w / 2);
+  const tr = Math.max(1, Math.round(h * 0.32));
+  const tu = Math.max(2, Math.round(h * 0.32));
+  const fa = Math.max(1, Math.round(h * 0.14));
+  const ha = Math.max(1, h - tr - tu - fa);
+  rect(THEME.trousers, l, y - tr, w, tr);
+  rect(away ? THEME.rockDark : pal.paint, l, y - tr - tu, w, tu);
+  if (!away) rect(THEME.belt, l, y - tr - Math.ceil(tu / 2), w, 1);
+  rect(away ? THEME.rockDark : THEME.face, l, y - tr - tu - fa, w, fa);
+  const top = y - tr - tu - fa - ha;
+  if (pal.hat === "tall") {
+    rect(pal.dark, l, top, w, ha);
+    rect(pal.dark, l - 1, top, w + 2, 1);
+  } else {
+    cx.fillStyle = pal.dark;
+    cx.beginPath();
+    cx.arc(x, top + ha, Math.max(1.5, w / 2 + 0.5), Math.PI, 0);
+    cx.fill();
+  }
+}
+
+function drawHorse(x, y, h, paint) {
+  const pal = THEME[paint];
+  const bw = Math.max(5, Math.round(h * 0.8));
+  const bh = Math.max(2, Math.round(h * 0.28));
+  rect(THEME.horse, x - bw / 2, y - bh - 2, bw, bh);
+  rect(THEME.horse, x - bw / 2, y - 2, 1, 2);
+  rect(THEME.horse, x + bw / 2 - 1, y - 2, 1, 2);
+  rect(THEME.horse, x + bw / 2 - 1, y - bh - 4, 2, 3);
+  drawSoldier(x - 1, y - bh, Math.max(5, Math.round(h * 0.75)), paint);
+  rect(pal.paint, x - bw / 2, y - bh - 2, 1, 1);
+}
+
+function drawGun(x, y, s, empty) {
+  const wr = Math.max(2, s / 6);
+  cx.strokeStyle = THEME.wheel;
+  cx.lineWidth = Math.max(1, s / 14);
+  cx.beginPath();
+  cx.moveTo(x - s * 0.35, y);
+  cx.lineTo(x + s * 0.1, y - s * 0.05);
+  cx.stroke();
+  cx.strokeStyle = empty ? THEME.rockDark : THEME.gunMetal;
+  cx.lineWidth = Math.max(1.5, s / 9);
+  cx.beginPath();
+  cx.moveTo(x - s * 0.05, y - s * 0.12);
+  cx.lineTo(x + s * 0.4, y - s * 0.32);
+  cx.stroke();
+  cx.fillStyle = THEME.wheel;
+  cx.beginPath();
+  cx.arc(x, y - wr / 2, wr, 0, Math.PI * 2);
+  cx.fill();
+  rect(THEME.gunMetal, x - 1, y - wr / 2 - 1, 2, 2);
+}
+
+function drawBase(px, py, S, paint) {
+  const pal = THEME[paint];
+  const cxm = px + S / 2;
+  const cy = py + S - 4;
+  cx.beginPath();
+  cx.ellipse(cxm, cy, S / 2 - 2, 3, 0, 0, Math.PI * 2);
+  if (pal.base === "ring") {
+    cx.strokeStyle = pal.dark;
+    cx.lineWidth = 1.5;
+    cx.stroke();
+  } else {
+    cx.fillStyle = pal.dark;
+    cx.fill();
+    rect(THEME.belt, cxm - S / 2 + 4, cy - 0.5, S - 8, 1);
+  }
+}
+
+function drawUnit(u, px, py, S, faded) {
+  const paint = paintOf(u.side);
+  if (faded) cx.globalAlpha = 0.45;
+  drawBase(px, py, S, paint);
+  const h = Math.max(6, Math.round(S * 0.42));
+  const foot = py + S - 4;
+  if (u.arm === "inf") {
+    const n = Math.min(u.n, 6);
+    const cols = 3;
+    for (let i = 0; i < n; i++) {
+      const r = Math.floor(i / cols);
+      const c = i % cols;
+      drawSoldier(px + S * (0.25 + c * 0.25), foot - (1 - r) * Math.round(S * 0.28), h, paint);
+    }
+  } else if (u.arm === "cav") {
+    const n = Math.min(u.n, 4);
+    for (let i = 0; i < n; i++) {
+      const r = Math.floor(i / 2);
+      const c = i % 2;
+      drawHorse(px + S * (0.3 + c * 0.42), foot - (1 - r) * Math.round(S * 0.32), h, paint);
+    }
+  } else if (u.arm === "gun" || u.arm === "hgun") {
+    drawGun(px + S * 0.42, foot - 1, S, u.n === 0);
+    const n = Math.min(u.n, 4);
+    for (let i = 0; i < n; i++) drawSoldier(px + S * (0.14 + (i % 2) * 0.72), foot - (i < 2 ? 0 : Math.round(S * 0.3)), Math.round(h * 0.85), paint);
+    if (u.arm === "hgun") rect(THEME.horse, px + S - 5, py + 3, 3, 2);
+  } else if (u.arm === "esc") {
+    drawSoldier(px + S * 0.25, foot, h, paint);
+    const pn = Math.min(u.pn, 5);
+    for (let i = 0; i < pn; i++) drawSoldier(px + S * (0.45 + (i % 3) * 0.18), foot - (i < 3 ? 0 : Math.round(S * 0.28)), Math.round(h * 0.8), paint === "red" ? "blue" : "red", true);
+  }
+  cx.globalAlpha = 1;
+  if (u.arm !== "esc" && !(isGun(u) && u.n === 0)) text(u.n, px + S - 2, py + 7, THEME.text, 6, "right", true);
+}
+
+function drawFallen(x, y, paint, a) {
+  cx.globalAlpha = Math.max(0, a);
+  rect(THEME[paint].paint, x - 4, y - 2, 6, 2);
+  rect(THEME[paint].dark, x + 2, y - 2, 2, 2);
+  cx.globalAlpha = 1;
+}
+
+// ---- the board, with what the player can do lit up ----
+function drawBoard(hideThem) {
+  const g = geom();
+  const S = g.S;
+  rect(THEME.panelEdge, g.x0 - 2, g.y0 - 2, S * B.W + 4, S * B.H + 4);
+  for (let y = 0; y < B.H; y++) {
+    for (let x = 0; x < B.W; x++) drawSquare(x, y, g.x0 + x * S, g.y0 + y * S, S);
+  }
+  // the set-up zone
+  if (screen === "setup") {
+    cx.globalAlpha = 0.18;
+    for (let y = 0; y < B.H; y++) {
+      for (let x = 0; x < B.W; x++) if (inZone("you", x, y)) rect(THEME.zone, g.x0 + x * S, g.y0 + y * S, S, S);
+    }
+    cx.globalAlpha = 1;
+  }
+  const s = selUnit();
+  const mine = screen === "battle" && B.side === "you" && !AUTO_YOU && !B.result;
+  // Test mode (G) lights the reach of a selected unit of yours, and the
+  // squares a selected gun can aim at, before they may move or fire (the
+  // CHECK walks use it while the PHASE blocks are being built).
+  const aiming = s !== null && isGun(s) && (MODE === "aim" || (test && !canMove(s)));
+  if (s && (mine || test) && !aiming && (canMove(s) || test)) {
+    cx.globalAlpha = 0.35;
+    for (const r of reach(s)) rect(THEME.reach, g.x0 + r.x * S + 1, g.y0 + r.y * S + 1, S - 2, S - 2);
+    cx.globalAlpha = 1;
+  }
+  if (s && aiming && ((mine && canFire(s)) || test)) {
+    for (let y = 0; y < B.H; y++) {
+      for (let x = 0; x < B.W; x++) {
+        if (canAim(s, x, y)) {
+          cx.fillStyle = THEME.aim;
+          cx.beginPath();
+          const t = unitAt(x, y);
+          cx.arc(g.x0 + x * S + S / 2, g.y0 + y * S + S / 2, t && t.side === "them" && t.n > 0 ? 3 : 1.5, 0, Math.PI * 2);
+          cx.fill();
+        }
+      }
+    }
+  }
+  if (s && screen === "setup") {
+    cx.globalAlpha = 0.35;
+    for (let y = 0; y < B.H; y++) {
+      for (let x = 0; x < B.W; x++) if (setupOk(x, y)) rect(THEME.reach, g.x0 + x * S + 1, g.y0 + y * S + 1, S - 2, S - 2);
+    }
+    cx.globalAlpha = 1;
+  }
+  for (const u of B.units) {
+    if (u.off || (u.n === 0 && !isGun(u))) continue;
+    if (hideThem && u.side === "them") continue;
+    const faded = mine && u.side === "you" && u.arm !== "esc" && u.n > 0 && !canMove(u) && !(isGun(u) && canFire(u));
+    drawUnit(u, g.x0 + u.x * S, g.y0 + u.y * S, S, faded);
+  }
+  for (const f of FX) {
+    if (f.kind === "fall") drawFallen(g.x0 + f.x * S + S / 2, g.y0 + f.y * S + S - 6, paintOf(f.side), f.t);
+  }
+  if (LASTSHOT.length && LASTSHOT[2] > 0) {
+    cx.globalAlpha = Math.min(1, LASTSHOT[2]);
+    frame(THEME.aim, g.x0 + (LASTSHOT[0] - 1) * S, g.y0 + (LASTSHOT[1] - 1) * S, S * 3, S * 3, 1);
+    cx.globalAlpha = 1;
+  }
+  if (s) frame(THEME.select, g.x0 + s.x * S, g.y0 + s.y * S, S, S, 2);
+  if (screen === "battle" || screen === "setup") frame(THEME.gold, g.x0 + CUR[0] * S, g.y0 + CUR[1] * S, S, S, 1);
+}
+
+function drawTop() {
+  rect(THEME.panel, 0, 0, VW, 14);
+  const part = SCREEN_WORDS.parts[B.row.part];
+  text(part + " - " + COUNTRY_NAMES[B.row.country] + ": " + SCREEN_WORDS.types[B.row.type], 6, 10, THEME.gold, 7);
+  text(words(SCREEN_WORDS.battle.round, { n: B.round, max: B.row.rounds }), VW - 6, 10, THEME.text, 7, "right");
+}
+
+function drawLog() {
+  const y0 = 270;
+  const lines = LOG.slice(-4);
+  lines.forEach(function (l, i) {
+    text(l.slice(0, 96), 6, y0 + 9 + i * 9, i === lines.length - 1 ? THEME.text : THEME.dim, 7);
+  });
+  if (NOTE) text(NOTE, VW - 6, VH - 3, THEME.dim, 6, "right");
+}
+
+function drawTip() {
+  if (!TIP) return;
+  const lines = wrap(TIPS[TIP], 440, 7);
+  const h = 8 + lines.length * 9;
+  const y = VH - h - 2;
+  rect(THEME.tip, 4, y, VW - 8, h);
+  frame(THEME.panelEdge, 4, y, VW - 8, h);
+  lines.forEach(function (l, i) { text(l, 10, y + 10 + i * 9, THEME.tipText, 7); });
+  text("(tap / Space)", VW - 10, y + h - 3, THEME.dim, 6, "right");
+  BUTTONS.push({ x: 4, y: y, w: VW - 8, h: h, action: closeTip, on: true });
+}
+
+function drawPanel() {
+  const x = 370;
+  const w = 104;
+  rect(THEME.panel, x, 16, w, 250);
+  frame(THEME.panelEdge, x, 16, w, 250);
+  const W = SCREEN_WORDS.battle;
+  let y = 28;
+  const mine = B.side === "you";
+  text(mine ? W.you : W.them, x + 6, y, mine ? THEME.gold : THEME.text, 8, "left", true);
+  y += 10;
+  if (mine) text(B.gunsOpen ? W.guns : W.moves, x + 6, y, THEME.dim, 7);
+  y += 10;
+  if (B.row.type === "rear") text(words(W.goal, { half: SCREEN_WORDS.halves[B.row.rear] }), x + 6, y, THEME.dim, 7);
+  if (B.row.type === "defend") text(B.row.defender === "you" ? W.defend : W.attack, x + 6, y, THEME.dim, 7);
+  y += 10;
+  if (B.raid) text(words(W.raidOn, { n: B.raid.left }), x + 6, y, THEME.hard, 7);
+  y += 12;
+  const s = selUnit() || (HOVER && unitAt(HOVER[0], HOVER[1]));
+  if (s) {
+    text(s.name, x + 6, y, THEME.text, 7, "left", true);
+    y += 9;
+    text(SCREEN_WORDS.arms[s.arm] + " " + sqName(s.x, s.y), x + 6, y, THEME.dim, 7);
+    y += 9;
+    let info = words(W.figures, { n: s.n });
+    if (isGun(s)) info = s.n === 0 ? W.empty : words(W.crew, { n: s.n, k: crewAt(s) });
+    if (s.arm === "esc") info = words(W.prisoners, { n: s.pn });
+    text(info, x + 6, y, THEME.dim, 7);
+  } else if (HOVER && onBoard(HOVER[0], HOVER[1])) {
+    text(pieceAt(HOVER[0], HOVER[1]).name + " " + sqName(HOVER[0], HOVER[1]), x + 6, y, THEME.dim, 7);
+  }
+  y = 112;
+  const live = screen === "battle" && mine && !AUTO_YOU && !B.result;
+  const sel = selUnit();
+  button(W.endTurn, x + 6, y, w - 12, 15, pressEndTurn, live, true);
+  button(W.undo, x + 6, y + 19, w - 12, 15, undo, live && UNDO.length > 0);
+  button(W.leave, x + 6, y + 38, w - 12, 15, function () { const u = selUnit(); if (u) playerLeave(u); }, live && sel !== null && canLeave(sel));
+  const gunSel = live && sel !== null && isGun(sel) && canFire(sel) && canMove(sel);
+  button(MODE === "aim" ? W.moveMode : W.aimMode, x + 6, y + 57, w - 12, 15, toggleMode, gunSel);
+  button(W.fast, x + 6, y + 76, w - 12, 15, function () { FAST = !FAST; }, true, FAST);
+  y = 222;
+  text(words(W.boxYou, { n: B.T.you.fallen }), x + 6, y, THEME.dim, 7);
+  for (let i = 0; i < Math.min(B.T.you.fallen, 12); i++) drawFallen(x + 10 + i * 7, y + 8, paintOf("you"), 1);
+  text(words(W.boxThem, { n: B.T.them.fallen }), x + 6, y + 22, THEME.dim, 7);
+  for (let i = 0; i < Math.min(B.T.them.fallen, 12); i++) drawFallen(x + 10 + i * 7, y + 30, paintOf("them"), 1);
+}
+
+// ---- the screens ----
+function drawTitle() {
+  rect(THEME.back, 0, 0, VW, VH);
+  const T = SCREEN_WORDS.title;
+  text(T.name, VW / 2, 42, THEME.gold, 24, "center", true);
+  text(T.sub, VW / 2, 58, THEME.text, 8, "center");
+  text(T.pick, VW / 2, 82, THEME.text, 8, "center");
+  ["red", "blue"].forEach(function (p, i) {
+    const bx = 70 + i * 190;
+    const by = 92;
+    BUTTONS.push({ x: bx, y: by, w: 150, h: 70, action: function () { startCampaign(p); }, on: true });
+    rect(THEME.panel, bx, by, 150, 70);
+    frame(THEME.gold, bx, by, 150, 70);
+    text(i === 0 ? T.red : T.blue, bx + 8, by + 13, THEME[p].paint, 9, "left", true);
+    text(i === 0 ? T.redLook : T.blueLook, bx + 8, by + 64, THEME.dim, 6);
+    rect(THEME.floor, bx + 40, by + 18, 70, 36);
+    const prev = CAMP;
+    CAMP = { paint: p };
+    for (let k = 0; k < 4; k++) drawSoldier(bx + 52 + k * 15, by + 50, 22, p);
+    CAMP = prev;
+  });
+  text(T.same, VW / 2, 176, THEME.dim, 7, "center");
+  const tl = titleTutorial ? T.tutorialOn : T.tutorialOff;
+  BUTTONS.push({ x: 120, y: 182, w: 240, h: 14, action: function () { titleTutorial = !titleTutorial; }, on: true });
+  frame(THEME.panelEdge, 120, 182, 240, 14);
+  text(tl, VW / 2, 192, THEME.text, 7, "center");
+  const s = loadSave();
+  if (s && s.camp.next < LEVELS.length) {
+    BUTTONS.push({ x: 120, y: 200, w: 240, h: 14, action: continueGame, on: true });
+    frame(THEME.panelEdge, 120, 200, 240, 14);
+    text(words(T.cont, { n: s.camp.next }), VW / 2, 210, THEME.text, 7, "center");
+  }
+  const lines = wrap(DISCLOSURE, 440, 7);
+  lines.forEach(function (l, i) { text(l, VW / 2, 236 + i * 9, THEME.gold, 7, "center"); });
+  wrap(T.credit, 440, 6).forEach(function (l, i) { text(l, VW / 2, 290 + i * 8, THEME.dim, 6, "center"); });
+  if (test) text("TEST", VW - 6, 10, THEME.hard, 7, "right", true);
+}
+
+function drawSetup() {
+  rect(THEME.back, 0, 0, VW, VH);
+  drawTop();
+  drawBoard(!B.row.scout);
+  const x = 370;
+  rect(THEME.panel, x, 16, 104, 250);
+  frame(THEME.panelEdge, x, 16, 104, 250);
+  const W = SCREEN_WORDS.setup;
+  let y = 30;
+  for (const l of wrap(W.title, 92, 7)) {
+    text(l, x + 6, y, THEME.gold, 7, "left", true);
+    y += 9;
+  }
+  y += 4;
+  for (const l of wrap(W.help, 92, 7)) {
+    text(l, x + 6, y, THEME.text, 7);
+    y += 9;
+  }
+  y += 4;
+  for (const l of wrap(B.row.scout ? W.scouted : W.hidden, 92, 7)) {
+    text(l, x + 6, y, THEME.dim, 7);
+    y += 9;
+  }
+  button(W.ready, x + 6, 230, 92, 16, beginBattle, true, true);
+  drawLog();
+}
+
+function drawBattle() {
+  rect(THEME.back, 0, 0, VW, VH);
+  drawTop();
+  drawBoard(false);
+  drawPanel();
+  drawLog();
+  drawTip();
+}
+
+function drawResult() {
+  rect(THEME.back, 0, 0, VW, VH);
+  const R = SCREEN_WORDS.result;
+  const w = B.result.winner;
+  const c = COUNTRY_NAMES[B.row.country];
+  const head = w === "you" ? R.won : (w === "draw" ? R.drawn : R.lost);
+  text(words(head, { country: c }), VW / 2, 50, THEME.gold, 14, "center", true);
+  text(R.total, VW / 2, 82, THEME.dim, 8, "center");
+  text(R.you, VW / 2 - 60, 100, THEME[paintOf("you")].paint, 9, "center", true);
+  text(R.them, VW / 2 + 60, 100, THEME[paintOf("them")].paint, 9, "center", true);
+  const fmt = function (n) { return String(Math.round(n * 2) / 2); };
+  text(fmt(B.pts.you), VW / 2 - 60, 124, THEME.text, 16, "center", true);
+  text(fmt(B.pts.them), VW / 2 + 60, 124, THEME.text, 16, "center", true);
+  const gunsYou = B.units.filter(function (u) { return isGun(u) && u.side === "you"; }).length + B.T.you.gunsOff;
+  const gunsThem = B.units.filter(function (u) { return isGun(u) && u.side === "them"; }).length + B.T.them.gunsOff;
+  text(R.lines.guns + ": " + gunsYou + " / " + gunsThem, VW / 2, 150, THEME.dim, 7, "center");
+  const pr = B.T.you.held + B.T.them.held + B.units.reduce(function (n, u) { return n + (u.arm === "esc" ? u.pn : 0); }, 0);
+  text(R.lines.prisoners + ": " + pr, VW / 2, 162, THEME.dim, 7, "center");
+  if (B.lv === 0) text(R.tutorial, VW / 2, 186, THEME.text, 7, "center");
+  else text(words(R.campaign, { n: fmt(CAMP.points) }), VW / 2, 186, THEME.text, 8, "center", true);
+  text(R.next, VW / 2, 230, THEME.dim, 7, "center");
+  BUTTONS.push({ x: 0, y: 0, w: VW, h: VH, action: afterResult, on: true });
+  drawTip();
+}
+
+function drawEnd() {
+  rect(THEME.back, 0, 0, VW, VH);
+  const E = SCREEN_WORDS.end;
+  const fmt = function (n) { return String(Math.round(n * 2) / 2); };
+  text(E.title, VW / 2, 90, THEME.gold, 14, "center", true);
+  text(words(E.score, { n: fmt(CAMP.points) }), VW / 2, 130, THEME.text, 10, "center", true);
+  text(words(E.record, { a: CAMP.wins, b: CAMP.draws, n: CAMP.losses }), VW / 2, 150, THEME.dim, 8, "center");
+  text(E.again, VW / 2, 220, THEME.dim, 7, "center");
+  BUTTONS.push({ x: 0, y: 0, w: VW, h: VH, action: function () { screen = "title"; }, on: true });
+}
+
+function drawTalk() {
+  rect(THEME.back, 0, 0, VW, VH);
+  for (let y = 0; y < 10; y++) {
+    for (let x = 0; x < 15; x++) rect((x + y) % 2 ? THEME.floor : THEME.floorLine, 20 + x * 29, 10 + y * 22, 29, 22);
+  }
+  cx.globalAlpha = 0.5;
+  rect(THEME.back, 0, 0, VW, VH);
+  cx.globalAlpha = 1;
+  if (typeof dlgDraw === "function") dlgDraw(cx, VW, VH);
+}
+
+function drawBanner() {
+  const lines = ERRORS.concat(typeof DLG_ERRORS === "undefined" ? [] : DLG_ERRORS).slice(0, 6);
+  if (!lines.length) return;
+  rect(THEME.banner, 0, 0, VW, 4 + lines.length * 9);
+  lines.forEach(function (l, i) { text(l.slice(0, 100), 3, 9 + i * 9, "#ffffff", 6); });
+}
+
+function draw() {
+  BUTTONS = [];
+  cx.setTransform(SC, 0, 0, SC, 0, 0);
+  if (screen === "title") drawTitle();
+  else if (screen === "talk") drawTalk();
+  else if (screen === "setup") drawSetup();
+  else if (screen === "battle") drawBattle();
+  else if (screen === "result") drawResult();
+  else if (screen === "end") drawEnd();
+  if (test && screen !== "title") text("TEST" + (AUTO_YOU ? " BOT" : ""), 6, VH - 3, THEME.hard, 7, "left", true);
+  drawBanner();
+}
+
+// ===================================================================
+// INPUT
+// ===================================================================
+const TALK_KEYS = ["Enter", " ", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "1", "2", "3", "4"];
+
+function toGame(e) {
+  const r = cv.getBoundingClientRect();
+  return [(e.clientX - r.left) * VW / r.width, (e.clientY - r.top) * VH / r.height];
+}
+
+function squareAt(px, py) {
+  if (!B) return null;
+  const g = geom();
+  const x = Math.floor((px - g.x0) / g.S);
+  const y = Math.floor((py - g.y0) / g.S);
+  if (x < 0 || y < 0 || x >= B.W || y >= B.H) return null;
+  return [x, y];
+}
+
+function onTap(px, py) {
+  if (screen === "talk") {
+    if (typeof dlgTap === "function") dlgTap(px, py);
+    return;
+  }
+  for (let i = BUTTONS.length - 1; i >= 0; i--) {
+    const b = BUTTONS[i];
+    if (px >= b.x && px < b.x + b.w && py >= b.y && py < b.y + b.h) {
+      if (b.on) b.action();
+      return;
+    }
+  }
+  const s = squareAt(px, py);
+  if (!s) return;
+  if (screen === "setup") tapSetup(s[0], s[1]);
+  if (screen === "battle" && B.side === "you" && !AUTO_YOU && !B.result) tapSquare(s[0], s[1]);
+}
+
+function onMove(px, py) {
+  if (screen === "talk") {
+    if (typeof dlgHover === "function") dlgHover(px, py);
+    return;
+  }
+  HOVER = squareAt(px, py);
+}
+
+function onKey(k) {
+  if (screen === "talk") {
+    if (typeof dlgKey === "function" && TALK_KEYS.indexOf(k) >= 0) dlgKey(k);
+    return;
+  }
+  if (k === "g" || k === "G") {
+    test = !test;
+    if (!test) AUTO_YOU = false;
+    return;
+  }
+  if (test && (k === "t" || k === "T") && screen !== "title") {
+    selfTest();
+    return;
+  }
+  if (screen === "title") {
+    if (k === "1") startCampaign("red");
+    if (k === "2") startCampaign("blue");
+    if (k === "t" || k === "T") titleTutorial = !titleTutorial;
+    if (k === "c" || k === "C") continueGame();
+    return;
+  }
+  if (screen === "result") {
+    if (k === "Enter" || k === " ") afterResult();
+    return;
+  }
+  if (screen === "end") {
+    if (k === "r" || k === "R" || k === "Enter") screen = "title";
+    return;
+  }
+  if (TIP && (k === " " || k === "Escape")) {
+    closeTip();
+    return;
+  }
+  if (screen === "setup" || screen === "battle") {
+    const d = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[k];
+    if (d) {
+      CUR = [Math.max(0, Math.min(B.W - 1, CUR[0] + d[0])), Math.max(0, Math.min(B.H - 1, CUR[1] + d[1]))];
+      return;
+    }
+  }
+  if (screen === "setup") {
+    if (k === "Enter" && SEL < 0 && !unitAt(CUR[0], CUR[1])) beginBattle();
+    else if (k === "Enter") tapSetup(CUR[0], CUR[1]);
+    if (k === "r" || k === "R") beginBattle();
+    return;
+  }
+  if (screen !== "battle") return;
+  if (test) {
+    if (k === "k" || k === "K") {
+      B.result = { winner: "you", why: "test" };
+      finishBattle();
+      return;
+    }
+    if (k === "n" || k === "N") {
+      B.result = { winner: "them", why: "test" };
+      finishBattle();
+      return;
+    }
+    if (k === "b" || k === "B") {
+      AUTO_YOU = !AUTO_YOU;
+      botWait = 0.3;
+      return;
+    }
+    if (k === "j" || k === "J") {
+      B.round += 1;
+      B.gunsOpen = true;
+      for (const u of B.units) if (u.side === B.side) { u.moved = false; u.fired = false; }
+      say(words(LOG_WORDS.round, { n: B.round, max: B.row.rounds }));
+      return;
+    }
+  }
+  if (k === "f" || k === "F") FAST = !FAST;
+  if (B.side !== "you" || AUTO_YOU || B.result) return;
+  if (k === "Enter") tapSquare(CUR[0], CUR[1]);
+  if (k === "e" || k === "E") pressEndTurn();
+  if (k === "u" || k === "U") undo();
+  if (k === "m" || k === "M") toggleMode();
+  if (k === "Escape") SEL = -1;
+  if (k === "l" || k === "L") {
+    const u = selUnit();
+    if (u) playerLeave(u);
+  }
+  if (k === "Tab") {
+    const mine = B.units.filter(function (u) { return u.side === "you" && u.n > 0 && (canMove(u) || (isGun(u) && canFire(u))); });
+    if (!mine.length) return;
+    const i = mine.findIndex(function (u) { return u.id === SEL; });
+    selectUnit(mine[(i + 1) % mine.length]);
+  }
+}
+
+cv.addEventListener("pointerdown", function (e) {
+  e.preventDefault();
+  window.focus();
+  const p = toGame(e);
+  onTap(p[0], p[1]);
+});
+cv.addEventListener("pointermove", function (e) {
+  const p = toGame(e);
+  onMove(p[0], p[1]);
+});
+addEventListener("keydown", function (e) {
+  if (screen === "talk" && TALK_KEYS.indexOf(e.key) >= 0) e.preventDefault();
+  if (e.key === "Tab" || e.key.indexOf("Arrow") === 0 || e.key === " ") e.preventDefault();
+  if (e.repeat && e.key.indexOf("Arrow") !== 0) return;
+  onKey(e.key);
+});
+
+// ===================================================================
+// THE LOOP AND THE START
+// ===================================================================
+let lastTime = performance.now();
+
+function step(dt) {
+  for (const f of FX) f.t -= dt * 0.8;
+  FX = FX.filter(function (f) { return f.t > 0; });
+  if (LASTSHOT.length) LASTSHOT[2] -= dt;
+  if (screen !== "battle" || paused || !B || B.result) return;
+  if (!isBotTurn()) return;
+  botWait -= dt;
+  if (botWait > 0) return;
+  const a = botNext(B.side);
+  if (a) {
+    doAction(a);
+    botWait = FAST ? 0.06 : (a.kind === "fire" ? 0.7 : 0.3);
+  } else {
+    finishTurn();
+    botWait = FAST ? 0.1 : 0.5;
+  }
+}
+
+function loop(t) {
+  const dt = Math.min(0.1, (t - lastTime) / 1000);
+  lastTime = t;
+  try {
+    step(dt);
+  } catch (e) {
+    bad("Error: " + e.message + " (the game loop)");
+  }
+  try {
+    draw();
+  } catch (e) {
+    bad("Error while drawing: " + e.message);
+  }
+  requestAnimationFrame(loop);
+}
+
+if (typeof DATA_OK !== "undefined" && DATA_OK) {
+  guard(checkRules);
+  guard(checkArms);
+  guard(checkPieces);
+  guard(checkCountries);
+  guard(checkLevels);
+  guard(checkArmies);
+  guard(checkEffects);
+  guard(checkBots);
+  guard(checkWords);
+  guard(checkTheme);
+  if (typeof dlgReady === "function") dlgReady();
+  screen = "title";
+  if (location.hash === "#test") {
+    test = true;
+    newCampaign("red", true, 1);
+    rseed = 1;
+    newBattle(0, "");
+    screen = "battle";
+    paused = true; // nothing plays on its own under the self-test's line
+    selfTest();
+  }
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
