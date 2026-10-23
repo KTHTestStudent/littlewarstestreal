@@ -53,6 +53,16 @@ THE TOOLS
       the board, all your figures alive, every enemy figure a prisoner) and
       the average as a share of that. Needs every PHASE block built.
       node dev/points.js . 1000 (about 10 minutes; it plays all four styles)
+  snowball.js <folder> <prototype.js | -> <runs> <battles> [youTurtle] [themTurtle] [label]
+      The gun snowball (GDD 12, 2026-10-23): bot runs that also say which
+      side lost a gun first and how often that side still won or drew
+      ("comeback"), the points in a win and in a loss, and the median gap
+      between the sides' points. A file from dev/prototypes/ tries a rule
+      idea for the run only (two guns, ammunition, held places, scoring);
+      youTurtle / themTurtle = 1 makes that side's bot sit by its guns once
+      it has more crewed guns - a stand-in for a player sitting on a lead.
+      Measuring only: a prototype the author keeps is a rule change for the
+      spec. node dev/snowball.js . dev/prototypes/twoguns.js 200 1,4,7,10
   tryout.js <changes.js | -> [runs] [battles] [all]
       Bot runs with data.js's tables changed for the run only (a file of
       plain JavaScript table edits, such as RULES.withdraw = 4), to try

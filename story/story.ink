@@ -238,7 +238,7 @@ EXTERNAL foeDone(name, outcome)
 === foe_1 ===
 // SUMMARY: just before scene_1, for battle 1: how their side plays it.
 // POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
-//   (the contract above says how each plays). DEFAULT: "steady" (the
+//   (the contract above says how each plays). DEFAULT: "clever" (the
 //   battle's own bot).
 -> DONE
 
@@ -276,7 +276,7 @@ EXTERNAL foeDone(name, outcome)
 === foe_3 ===
 // SUMMARY: just before scene_3, for battle 3: how their side plays it.
 // POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
-//   (the contract above says how each plays). DEFAULT: "steady" (the
+//   (the contract above says how each plays). DEFAULT: "clever" (the
 //   battle's own bot).
 -> DONE
 
@@ -312,7 +312,7 @@ EXTERNAL foeDone(name, outcome)
 === foe_5 ===
 // SUMMARY: just before scene_5, for battle 5: how their side plays it.
 // POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
-//   (the contract above says how each plays). DEFAULT: "bold" (the
+//   (the contract above says how each plays). DEFAULT: "clever" (the
 //   battle's own bot).
 -> DONE
 
@@ -331,7 +331,7 @@ EXTERNAL foeDone(name, outcome)
 === foe_6 ===
 // SUMMARY: just before scene_6, for battle 6: how their side plays it.
 // POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
-//   (the contract above says how each plays). DEFAULT: "cautious" (the
+//   (the contract above says how each plays). DEFAULT: "steady" (the
 //   battle's own bot).
 -> DONE
 
@@ -368,7 +368,7 @@ EXTERNAL foeDone(name, outcome)
 === foe_8 ===
 // SUMMARY: just before scene_8, for battle 8: how their side plays it.
 // POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
-//   (the contract above says how each plays). DEFAULT: "clever" (the
+//   (the contract above says how each plays). DEFAULT: "steady" (the
 //   battle's own bot).
 -> DONE
 

@@ -1,6 +1,11 @@
-# Little Wars (working title) - Game Design Document, v0.7
+# Little Wars (working title) - Game Design Document, v0.8
 
-Status: v0.7, 2026-10-22: the data tuning against section 5 (HANDOFF NEXT
+Status: v0.8, 2026-10-23: section 12, proposals for catch-up and turtling
+after the author's playtest notes (two guns a side, a toll and a hurry in
+the points, cover between the halves), with prototype bot runs and the
+author's questions (Q1-Q6). No rule, map or army has changed yet.
+
+v0.7, 2026-10-22: the data tuning against section 5 (HANDOFF NEXT
 2), with the author's answer to Q1b (section 10): the armies, first moves,
 their bots, three maps and four outcome effects changed (6.1, 7.2); what
 the tuning could not reach is in section 5.2's last list. Later the same
@@ -1008,7 +1013,7 @@ tables a person can hand-edit.
 | `ink/dialogue.js`, `tools/` (knotcheck, viewer, pack) | unedited copies from Knotwork 3.8-alpha, brought in before the skeleton (section 9, step 3) | Knotwork (its own AI disclosure) |
 | `story/story.ink` | the story. The skeleton writes only the contract header and empty knots with their summaries | the author |
 | `story/CONTRACT.txt` | the contract on one page, for the writer | Claude |
-| `dev/` | headless checks: `selftest.js` (prints the SELF-TEST line), `bots.js` (the bot runs), `linemap.py` (the spec's LINE MAP), `inkc.sh` (compiles ink as Inky does), `README.txt`; `outcomes.js` (the outcome measure, 5.3) and `tryout.js` (bot runs with a table changed for one run); `playruns.js` when the story needs it (Knotwork's `tools/knotcheck.js` runs headless as it is); and `disclosure.js`, the Auto-Disclosure-Tool's unedited copy | Claude |
+| `dev/` | headless checks: `selftest.js` (prints the SELF-TEST line), `bots.js` (the bot runs), `linemap.py` (the spec's LINE MAP), `inkc.sh` (compiles ink as Inky does), `README.txt`; `outcomes.js` (the outcome measure, 5.3), `tryout.js` (bot runs with a table changed for one run), `points.js` (the points per battle) and `snowball.js` with `prototypes/` (rule ideas measured before a decision, section 12); `playruns.js` when the story needs it (Knotwork's `tools/knotcheck.js` runs headless as it is); and `disclosure.js`, the Auto-Disclosure-Tool's unedited copy | Claude |
 | `specs/LITTLEWARS-SPEC.txt` | the builder's spec: steps per phase, EXPECTED self-test lines, CHECK walks, FIXER PROMPT, LINE MAP | Claude |
 | `CREDITS.txt` | who made what, the disclosure line, Knotwork's version and repository, inkjs's licence (from the Knotwork step on) | Claude (the author's words where he gives them) |
 | `hand-edits.txt` | the author's hand-edit guide to data.js (from the skeleton on) | Claude |
@@ -1033,3 +1038,106 @@ tables a person can hand-edit.
   count; the line's last sentence names them instead (section 10).
   CREDITS.txt joined the files that hold the line in the Knotwork step;
   game.html (the title screen) joins with the skeleton.
+
+## 12 Proposals: catch-up and turtling (2026-10-23, for the author)
+
+Nothing in this section is in the game yet. The author's notes after
+playing (HANDOFF, 2026-10-23): melee is exact and each side starts with
+one gun, so the side that first silences the other's gun usually wins
+by sitting around its own; the losing side has little reason to go into
+melee, since the enemy's gun is hard to take and its back line hard to
+reach; and the scores are lopsided. He listed nine ideas (a-i below) and
+asked for catch-up that keeps Wells's game in mind and stays simple. The
+ideas were tried as prototypes in bot runs (dev/snowball.js, with the
+files in dev/prototypes/; 200 seeds a battle, each knot's default
+outcome, the row's bot). The bots stand in for players, not for
+judgement: they never sit on a lead unless told to, so whatever is about
+turtling needs human playtests too.
+
+### 12.1 What the numbers say now
+
+- **The first gun lost decides the battle.** The side whose gun goes
+  quiet first (its crew all fallen or taken, or the gun taken) still wins
+  0-3% of the time in battles 1, 2, 3, 4, 8 and 10, and draws 0-15% (40%
+  in 10, where each side has two guns; 57% in 7, by the draw line). Only
+  where a raid or a defender's hill offers another way to win does it
+  win more often: 5 (11%), 6 (20%), 7 (14%), 9 (26%). The first gun goes
+  quiet in round 5 or 6 (median) of 10-12, so about half of a battle is
+  played out after it is settled.
+- **The scores are lopsided** (as dev/points.js found): a win gives 117
+  to 142 points, a loss 9 to 24 - a loss is worth about a tenth of a win,
+  whatever happened in it. The median gap between the two sides' points
+  in a battle is 100-120 (battle 7, mostly drawn, about 10).
+- **Sitting on a lead.** With both bots told to stay by their guns once
+  they have more crewed guns than the other side, Fight to the Finish
+  battles that the leader used to finish end at the round limit instead:
+  Hook's Farm's draws go from 18% to 42%, battle 7's from 60% to 71%,
+  battle 2's from 17% to 37%. Under the rules as they are, a turtle gives
+  up the win's 100 for a draw's 50 - but the bots that are behind keep
+  walking into it, which a person won't.
+- **The default bot is not always the easiest** (GDD 5.2's table): this
+  matches the earlier sessions - NEXT 2's numbers named the same two
+  battles (2: cautious 79 against the row's steady 72; 7: cautious 71
+  against clever 57), the ones the data tuning could not fix.
+
+### 12.2 The nine ideas, tried
+
+"Comeback" is how often the side that lost a gun first still won / drew.
+
+| Idea | Tried as | What the bots showed | Claude's take |
+|---|---|---|---|
+| a. More guns | a second gun section a side in battles 1-9 (4 more figures; 10 has two already) | comeback rises in Fight to the Finish and Blow at the Rear: 1 from 0 / 2% to 6 / 34%, 2 from 2 / 15% to 7 / 29%, 5 from 11 / 3% to 13 / 30%; 8 from 0 to 25% wins, 9 from 26 to 49%; battles run about 2 rounds longer (closer to section 5.1's 8-12). Win rates move a lot (4: 58 to 38; 6: 69 to 0 - their two guns on the Mill Hill), so the armies need retuning | **Yes.** The biggest effect for the smallest change, a data change only, and nearer Wells: his Hook's Farm had three guns a side |
+| b. Objectives | two held places in the middle of each Fight to the Finish and Blow at the Rear (four on the Whole Floor): 3 points a round to the side holding each (a unit on it or next to it, no enemy next to it), and at the round limit the side holding more of them wins instead of a draw | no more comebacks (the stronger side takes the places too); the gap in points grows (10: 110 to 182); battles 2 and 9 swing hard (95 and 79) | **Maybe, after a human playtest.** It is the one idea aimed straight at a human turtle - a leader who sits at home gives the places, and at the limit the battle, away - and Wells's own worked example is a fight over a farm and a church. Bots can't show that |
+| c. Map design | gun range 7 instead of 10, so a gun at home can't reach the other half | no change to comebacks; battles 3, 7, 10 get much harder | **Yes, as map work, not range:** more houses, walls and hills between the halves give a side that is behind somewhere to stand out of a turtle's line of fire, so the turtle has to come out. Section 6.2's layout rule already asks for cover |
+| d. Scouts | not tried | - | **Not now.** Wells's cavalry is already the fast arm (twice the infantry's move); a new arm means new drawing, names, loss order, bot rules and a change to the "units are fixed" decision. An Appendix candidate |
+| e. Easier gun capture | not tried | - | **Not now.** A gun is protected by the units next to it because they count toward its crew (decision 8); loosening that is a bigger change than (a) and (h) |
+| f. Limited ammunition | each gun fires 4 times a battle | battles stall: 63% of battle 1, 70% of 4 and 95% of 10 run to the round limit; comebacks don't rise | **No.** Once the guns are empty, exact melee leaves nothing to break a line |
+| g. Side-grades, the other side gets the one you didn't pick | not tried | - | **Later, if at all.** The `scene_` outcomes already are sidegrades, so this is a change to the story contract (7.2) rather than to a battle; it balances choices, but doesn't help a side that is behind in a battle |
+| h. Scoring that pushes the leader and helps the side behind | two simple forms: **toll** - each side also scores 1 for each enemy figure that fell; **hurry** - a win scores 5 more for each round left unused. (And the win worth 50, not 100, for comparison) | no change to who wins (the bots don't play for points). Toll: a loss goes from 9-24 points to 17-37 (about a fifth of a win instead of a tenth); a melee the losing side fights is worth points even when it loses it. Hurry: a win early is worth up to 40 more; a turtle that wins late, or draws, gives that up. A win worth 50: the gap halves | **Yes, toll and hurry.** The author's version (points that fade while you are winning, a bonus while losing if the winner only used a gun) needs a running judgement of who is winning each round and of how they played; these two give the same two pushes with one number each that the result screen can show |
+| i. Wells's unused ideas (the Appendix) | not tried | - | Roads, shells with a blast, entrenchments, surrender (W25) and the muster screen stay with the Appendix (6.5). Of them, **surrender** is the one that speaks to this: a side that is beaten could give up what is left as prisoners and end the battle, rather than play out the rounds after its gun is gone |
+
+### 12.3 Claude's proposal
+
+Keep it to three changes, then retune the armies once:
+
+1. **Two gun sections a side** in every battle (a): each army gains one
+   gun section of 4 crew - the smallest change that makes one lost gun
+   survivable. Battle 6's defender keeps its gun on the hill; its armies
+   need the most work.
+2. **Toll and hurry** in the points (h): 1 for each enemy figure that fell
+   (a new number in RULES, beside the prisoner's 0.5); a win 5 more for
+   each round left. Both are numbers the author can hand-edit, and a 0
+   turns either off.
+3. **Cover between the halves** in the maps (c), checked by human
+   playtests: somewhere for a side that is behind to stand out of the
+   enemy guns' line of fire, so a turtle has to come out to finish.
+
+Held places (b) are the next step if playtests still show turtling after
+these three.
+
+### 12.4 Questions for the author
+
+- Q1 Two gun sections a side (a) - yes / no? From the tutorial on, or
+  from battle 1 (Hook's Farm stays as Wells's scaled-down example)?
+- Q2 "Units are fixed" stays (no scouts, d) - yes / no?
+- Q3 Toll (1 a figure) and hurry (5 a round) in the points - either,
+  both, neither? Or the win worth less than 100?
+- Q4 Held places (b) now, or only if playtests show turtling after Q1-Q3?
+  If now: points only, or also the winner at the round limit?
+- Q5 Limited ammunition (f) left out - yes?
+- Q6 Surrender (W25) - stays in the Appendix, or a main-campaign rule?
+
+### 12.5 What carrying it out would take
+
+- Two gun sections (Q1): data.js ARMIES (a RULE edit), then the retune of
+  section 5.2 with dev/bots.js, dev/outcomes.js and dev/points.js - a
+  cloud session like NEXT 2, with the probes and replay lines brought in
+  step. The bots need no change (they already play two guns in 10).
+- Toll and hurry (Q3): PHASE 18 (`battlePoints`) and two numbers in RULES,
+  the result screen's lines (SCREEN_WORDS), the self-test's probes - a rule
+  change by the recipe (HANDOFF RECIPES: cloud at high effort for the
+  steps and reference, the runner, the cloud check). Section 3.9 changes.
+- Held places (Q4): PIECES or a per-row list of squares, PHASE 17 (the
+  result) and 18 (points), the bots (PHASE 22-23: heading for them), the
+  drawing - the largest of the three.
+- Each changes section 3 and the spec; none changes the story contract.

@@ -20,8 +20,14 @@ START HERE (2026-10-22)
   flag, count badges - each a switch in data.js THEME.pieces, the
   author's to keep or turn off (OPEN ITEMS). No human has played a battle
   through yet.
-  Next: tag v0.1-alpha on main (NEXT 1, by hand; the tuning and the new
-  look can go in it or after it), then NEXT 4-6.
+  2026-10-23: the title screen shows the build's version (VERSION in
+  game.html, "v0.2-alpha": v0.1-alpha was tagged at b26b17f, before the
+  tuning and the new look). The author's first plays found the gun
+  snowball and turtling; GDD section 12 measures his nine ideas in bot
+  runs (dev/snowball.js, dev/prototypes/) and proposes three changes,
+  with his questions Q1-Q6. Nothing in the rules has changed yet.
+  Next: his answers to GDD 12's Q1-Q6 and the hold lines' words (NEXT 4),
+  then the session that carries them out (NEXT 4b), then playtests.
   On reference (cloud sessions only - never on the laptop): dev-reference/
   - Claude's reference game.html (42/42), stub.html (the skeleton with
   every block a stub), the phase builds, 75 planted bugs, a block-by-block
@@ -36,6 +42,12 @@ long conversation - it reads less)
   (Opus 5.5, medium). Start from origin/working-claude (merge origin/working
   into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 4 (the
   version on the title screen; the hold lines' words as I give them).
+  For NEXT 4b, once the author has answered GDD 12's Q1-Q6 (paste the
+  answers after the prompt):
+  Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
+  (Opus 5.5, high). Start from origin/working-claude (merge origin/working
+  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 4b
+  with my answers to GDD 12's questions: <answers>.
   For a triage after a runner stop (a block the fixer couldn't fix):
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
   (Sonnet 5.5, medium). Start from origin/working-claude (merge origin/working
@@ -48,8 +60,11 @@ long conversation - it reads less)
   into HANDOFF.txt for an Opus session instead of fixing it.
 
 NEXT (to the design freeze)
-  1 Tag v0.1-alpha on main (the author, by hand). main is an ancestor of
-    working, so working fast-forwards onto it. Before tagging, his calls
+  1 v0.1-alpha is tagged (b26b17f). The next tag, before the playtests,
+    is v0.2-alpha (the author, by hand), the same way: set VERSION in
+    game.html to the tag's name first (a one-word hand edit; the title
+    screen shows it). main is an ancestor of working, so working
+    fast-forwards onto it. Before tagging, his calls
     (OPEN ITEMS): README's Status line still says "Design only. There is
     no game code yet."; the littlewarstest/ nested link; the licence
     ("To be decided" - with none, the public repository is all rights
@@ -61,8 +76,8 @@ NEXT (to the design freeze)
       git checkout main && git pull
       git merge --ff-only working
       git push origin main
-      git tag -a v0.1-alpha -m "Little Wars 0.1 alpha: ..."
-      git push origin v0.1-alpha
+      git tag -a v0.2-alpha -m "Little Wars 0.2 alpha: ..."
+      git push origin v0.2-alpha
       git checkout working
     Tags are the game's versions; GDD.md has its own (v0.6 now).
   2 The data tuning: done (2026-10-22, HISTORY). What is left is the
@@ -72,11 +87,23 @@ NEXT (to the design freeze)
     pieces' look").
   4 Small things worth doing before the playtests (cloud, Opus 5.5
     medium):
-    - the version on the title screen ("v0.1-alpha"), so a playtester's
-      report names the build;
-    - the hold lines' words (OPEN ITEMS, his).
+    - the version on the title screen: done 2026-10-23 (VERSION in
+      game.html, top left of the title screen, "v0.2-alpha");
+    - the hold lines' words (OPEN ITEMS, his): still Claude's drafts,
+      waiting for his words - LOG_WORDS holdYou / holdThem and
+      SCREEN_WORDS battle raidNext / raidNextThem in data.js. SAFE edits:
+      by hand, or pasted into the next cloud session.
+  4b Catch-up and turtling (GDD 12, 2026-10-23): his answers to Q1-Q6,
+    then a cloud session (Opus 5.5 high; the starter prompt above).
+    What each answer costs is in GDD 12.5: two guns a side is data and a
+    retune like NEXT 2; toll and hurry are a rule change in PHASE 18
+    (RECIPES: steps, reference, probes, stub, runner, cloud check); held
+    places are the largest (PHASE 17, 18, 22-23 and drawing). Retune
+    against GDD 5.2 after, with dev/bots.js, outcomes.js and points.js,
+    and check comebacks with dev/snowball.js.
   5 Human playtests (the author, and anyone he asks): the bots are a
-    stand-in for players, not players. One battle of each type at least,
+    stand-in for players, not players - and they never sit on a lead, so
+    turtling is the playtests' to judge (GDD 12). One battle of each type at least,
     and the tutorial with someone new to it. Watch: does a turn take
     about a minute, does the raid hold read (the log and step 3f), can
     you tell your units from theirs and from the board, which outcome a
@@ -295,7 +322,9 @@ THE FILES
                      path; the author's limits: builder 20, fixer 60
                      minutes, 2 fixer tries)
   story/story.ink    the story: the contract and empty knots (the author's
-                     to write); story/CONTRACT.txt, the writer's one page
+                     to write); story/CONTRACT.txt, the writer's one page;
+                     story/NOTES-FROM-AMONTILLADO.txt, Amontillado's ink
+                     patterns and what they mean here (Claude's notes)
   ink/config.js      the contract for the kit and knotcheck
   ink/story.js       the compiled story (from the empty skeleton for now)
   ink/ink.js, ink/dialogue.js, tools/ (knotcheck.html and .js, pack.html
@@ -305,6 +334,8 @@ THE FILES
                      3.8-alpha tag). Never edit them here (CLAUDE.md)
   dev/               selftest.js, bots.js, outcomes.js, tryout.js,
                      points.js, shots.js, linemap.py, inkc.sh, README.txt;
+                     snowball.js and prototypes/ (GDD 12's rule ideas,
+                     measured only);
                      disclosure.js, an unedited copy of Auto-Disclosure-
                      Tool's disclosure.js (branch working, af06b0f)
   run-local.sh, run-phases.js, LOCAL-SUBAGENTS.md, phase-plan.example.txt
@@ -318,6 +349,9 @@ THE FILES
   stub.html, blocks.py, phasebuilds.py, plant.py, compare.py).
 
 OPEN ITEMS (the author, by hand)
+  * GDD 12's questions Q1-Q6 (2026-10-23): two guns a side; units stay
+    fixed; toll and hurry in the points; held places now or later;
+    ammunition left out; surrender. Claude's lean is in 12.3.
   * The pieces' look (NEXT 3, 2026-10-22) - your eyes decide:
     - Play a battle or two and say what stays. Every part is a switch in
       data.js THEME.pieces (true / false): outline, detail, stand, shadow,
@@ -541,3 +575,13 @@ HISTORY
               dev/README.txt. Reference: game.html and stub.html rebuilt
               around the new skeleton; 25 phase builds OK, 75 of 75 caught;
               42/42; disclosure OK. No PHASE block, rule or bot change.
+  2026-10-23  NEXT 4 in part, and the author's playtest notes (cloud, Opus
+              5.5): VERSION on the title screen (skeleton; reference in
+              step, 25 phase builds OK, 75 of 75 caught, 42/42). GDD v0.8,
+              section 12: the gun snowball measured (the side that loses
+              a gun first wins 0-3% in 1, 2, 3, 4, 8, 10), his nine
+              ideas tried as prototypes (dev/snowball.js,
+              dev/prototypes/), three changes proposed, Q1-Q6. The foe_
+              knots' DEFAULT comments in story.ink brought in step with
+              NEXT 2's bots; story/NOTES-FROM-AMONTILLADO.txt (a review of
+              Amontillado's ink). No rule, data or PHASE change.
