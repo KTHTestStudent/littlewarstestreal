@@ -457,34 +457,39 @@ counts as half a win.
   choice of difficulty everywhere.
 
 - **Your side's points in each battle (2026-10-23, 1,000 seeds,
-  `node dev/points.js . 1000`).** Section 3.9's points, with the newcomer
-  bot on your side against the easiest `foe_` style (the row's bot) and
-  the knot's default outcome. "Max possible" is the ceiling a battle
-  could give: a win (100), 10 for every gun on the board (both sides'),
-  every figure of yours alive at its arm's points, and half a point for
-  every enemy figure as a prisoner. No run gets there: the best of 1,000
-  is shown. Toll and hurry (decision 17) are not in these yet.
+  `node dev/points.js . 1000`, with toll and hurry).** Section 3.9's
+  points, with the newcomer bot on your side against the easiest `foe_`
+  style (the row's bot) and the knot's default outcome, measured on
+  Claude's reference build of PHASE 18 (the runner rebuilds the block;
+  the cloud check confirms it gives the same). "Toll" and "Hurry" are
+  their share of the average. "Max possible" is the ceiling a battle
+  could give: a win in round 1 (100, and the hurry for every other
+  round), 10 for every gun on the board (both sides'), every figure of
+  yours alive at its arm's points, and every enemy figure fallen for the
+  toll. No run gets there: the best of 1,000 is shown. Who wins is the
+  same as before toll and hurry (the bots don't play for points).
 
-| # | Country | Easiest style | Average | In a win | In a loss | Best run | Max possible | Average / max |
-|---|---|---|---|---|---|---|---|---|
-| 0 | Hook's Farm | gentle | 115.2 | 131.5 | 15.1 | 151 | 152 | 76% |
-| 1 | The Two Hills | steady | 106.2 | 134.1 | 20.7 | 149 | 178 | 60% |
-| 2 | The Long Wall | clever | 116.6 | 145.8 | 22.8 | 175 | 192 | 61% |
-| 3 | The Cottages | clever | 112.0 | 133.1 | 24.3 | 155 | 189 | 59% |
-| 4 | The Chalk Brook | clever | 100.8 | 132.4 | 24.6 | 147 | 186 | 54% |
-| 5 | The Orchard | clever | 97.7 | 143.1 | 12.9 | 162.5 | 186 | 53% |
-| 6 | The Mill Hill | steady | 102.0 | 142.5 | 29.8 | 169 | 192 | 53% |
-| 7 | The Ridge | clever | 102.7 | 136.5 | 24.7 | 165 | 204 | 50% |
-| 8 | The Village | steady | 96.4 | 149.4 | 33.3 | 177 | 187 | 52% |
-| 9 | The Two Fords | steady | 89.9 | 149.6 | 11.8 | 173 | 197 | 46% |
-| 10 | The Whole Floor | clever | 73.6 | 141.6 | 24.1 | 166.5 | 212 | 35% |
-| 1-10 | the campaign | | 997.9 | | | | 1,923 | 52% |
+| # | Country | Easiest style | Average | In a win | In a loss | Toll | Hurry | Best run | Max possible | Average / max |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | Hook's Farm | gentle | 134.7 | 154.9 | 20.6 | 9.2 | 10.4 | 173.5 | 197 | 68% |
+| 1 | The Two Hills | steady | 137.9 | 173.2 | 35.5 | 20.6 | 11.2 | 189.5 | 235 | 59% |
+| 2 | The Long Wall | clever | 144.7 | 178.4 | 39.7 | 20.0 | 8.1 | 211 | 251 | 58% |
+| 3 | The Cottages | clever | 156.6 | 184.6 | 40.4 | 24.5 | 20.1 | 211 | 251 | 62% |
+| 4 | The Chalk Brook | clever | 134.0 | 175.7 | 39.2 | 22.5 | 10.7 | 194.5 | 250 | 54% |
+| 5 | The Orchard | clever | 125.1 | 175.6 | 30.8 | 17.8 | 9.6 | 206 | 245 | 51% |
+| 6 | The Mill Hill | steady | 143.9 | 198.3 | 46.8 | 19.4 | 22.5 | 226 | 259 | 56% |
+| 7 | The Ridge | clever | 144.3 | 188.8 | 49.8 | 32.1 | 9.5 | 232 | 279 | 52% |
+| 8 | The Village | steady | 134.3 | 206.5 | 48.0 | 14.9 | 23.0 | 237.5 | 267 | 50% |
+| 9 | The Two Fords | steady | 127.0 | 197.7 | 35.3 | 27.8 | 9.3 | 225 | 271 | 47% |
+| 10 | The Whole Floor | clever | 112.9 | 215.2 | 48.5 | 30.9 | 8.4 | 247 | 319 | 35% |
+| 1-10 | the campaign | | 1,360.7 | | | | | | 2,627 | 52% |
 
   - The tutorial scores nothing in the campaign (3.9), so battle 0 is left
     out of the last row.
-  - A loss is still worth about a sixth of a win (12 to 33 points against
-    133 to 150): the second gun adds 10 to whoever keeps it, which lifts
-    both. Toll and hurry are the change aimed at this (section 12).
+  - A loss is now worth a fifth to a quarter of a win (31 to 50 points
+    against 173 to 215); before toll and hurry it was about a sixth (12
+    to 33 against 133 to 150). The toll adds 15 to 32 points a battle on
+    average, the hurry 8 to 23 (most where wins come early: 3, 6 and 8).
 
 ### 5.3 How it is checked
 
