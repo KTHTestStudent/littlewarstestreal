@@ -75,7 +75,12 @@ cx.imageSmoothingEnabled = false;
 
 // The AI disclosure, shown on the title screen. The author's words: keep
 // it on ONE line (dev/disclosure.js checks it against the commits).
-const DISCLOSURE = "AI Disclosure: code by Claude Opus 5.5, Qwen 3.6 and Qwen 3.8. Code hand-edits by Kenton Howard. Design and decisions by Kenton Howard. Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT).";
+const DISCLOSURE = "AI Disclosure: code by Claude Opus 5.5, Claude Sonnet 5.5, Qwen 3.6 and Qwen 3.8. Code hand-edits by Kenton Howard. Design and decisions by Kenton Howard. Includes Knotwork (see its own AI disclosure) and inkjs (inkle, MIT).";
+
+// The build's version, shown on the title screen so a playtester's report
+// names the build. The author's tags are the versions: set this to the tag
+// you are about to make (HANDOFF, NEXT 1's steps), before tagging.
+const VERSION = "v0.2-alpha";
 
 let B = null; // the battle (newBattle)
 let CAMP = null; // the campaign (newCampaign)
@@ -3069,6 +3074,7 @@ function drawTitle() {
   const lines = wrap(DISCLOSURE, 440, 7);
   lines.forEach(function (l, i) { text(l, VW / 2, 236 + i * 9, THEME.gold, 7, "center"); });
   wrap(T.credit, 440, 6).forEach(function (l, i) { text(l, VW / 2, 290 + i * 8, THEME.dim, 6, "center"); });
+  text(VERSION, 6, 10, THEME.dim, 6);
   if (test) text("TEST", VW - 6, 10, THEME.hard, 7, "right", true);
 }
 
