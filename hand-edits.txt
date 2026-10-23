@@ -59,7 +59,8 @@ THE TABLES, IN FILE ORDER
          as long as the others; at most 18 columns and 12 rows. Keep each
          battle's set-up rows clear for its ARMIES (the red banner names a
          unit on a square it can't stand on). Battles 1-10 were tuned by
-         bot runs on 2026-10-22 (HANDOFF's NUMBERS FOR THE TUNING): after
+         bot runs on 2026-10-22 and again for two guns a side on
+         2026-10-23 (HANDOFF's NUMBERS FOR THE TUNING): after
          a map, army or row change, run the bot runs again.
   COUNTRY_NAMES  (SAFE)  the battles' names (about 22 letters). Working
          names: rename any.
@@ -72,7 +73,9 @@ THE TABLES, IN FILE ORDER
          scene_ knot), and the target win rate. Keep lv in order (0-10).
   ARMIES  (RULE)  every unit of every battle with its square (and the
          gentle bot's goal square). A side's units of one arm get their
-         names in this order.
+         names in this order. Two gun sections a side from battle 1 on
+         (2026-10-23). Moving a line changes the bot runs' numbers, not
+         only the names: the bots act in this order.
   EFFECTS, DEFAULTS  (RULE)  what each scene_ knot's outcomes do to the
          next battle, and the default used while a knot is unwritten; and
          each foe_ knot's bot styles (its default is the row's bot, so it

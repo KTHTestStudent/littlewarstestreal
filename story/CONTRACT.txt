@@ -32,9 +32,9 @@ THE KNOTS (when they play; outcomes; what each does to the NEXT battle)
                              at even numbers
               clever         keeps its guns supported, counts a melee
                              before it charges
-             *the battle's own bot: foe_1 clever, foe_2 steady, foe_3
-              clever, foe_4 steady, foe_5 clever, foe_6 steady, foe_7
-              clever, foe_8 steady, foe_9 cautious, foe_10 clever
+             *the battle's own bot: foe_1 steady, foe_2 clever, foe_3
+              clever, foe_4 clever, foe_5 clever, foe_6 steady, foe_7
+              clever, foe_8 steady, foe_9 steady, foe_10 clever
               A choice of how hard, not a sidegrade: the four differ a lot.
   scene_1     before battle 1, The Two Hills, Fight to the Finish
              *scout          you see their set-up while you arrange yours
@@ -48,14 +48,14 @@ THE KNOTS (when they play; outcomes; what each does to the NEXT battle)
                              of your cottages
   scene_4     before battle 4, The Chalk Brook, Fight to the Finish
              *bridge         two more bridges over the brook
-              horse_gun      your gun section is a horse gun (moves 4)
+              horse_gun      your first gun section is a horse gun (moves 4)
   scene_5     before battle 5, The Orchard, Blow at the Rear (west half)
              *forward        your set-up zone is your back 3 rows
               extra_troop    you have a cavalry troop more, and they move first
   scene_6     before battle 6, The Mill Hill, Defensive Game - you attack
              *more_rounds    the round limit is 2 more
-              horse_gun      your gun section is a horse gun (in battle 6 it
-                             already is: an open item, HANDOFF)
+              horse_gun      your other gun section is a horse gun too
+                             (both your guns move 4)
   scene_7     before battle 7, The Ridge, Fight to the Finish
              *head_start     you move first, see their set-up and have a
                              cavalry troop more

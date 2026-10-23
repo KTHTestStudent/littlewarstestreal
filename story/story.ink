@@ -75,9 +75,9 @@
 //               "clever"    keeps its guns supported, counts a melee
 //                           before it charges
 //               DEFAULT (while the knot is not written): the battle's
-//               own bot - foe_1 clever, foe_2 steady, foe_3 clever,
-//               foe_4 steady, foe_5 clever, foe_6 steady, foe_7 clever,
-//               foe_8 steady, foe_9 cautious, foe_10 clever.
+//               own bot - foe_1 steady, foe_2 clever, foe_3 clever,
+//               foe_4 clever, foe_5 clever, foe_6 steady, foe_7 clever,
+//               foe_8 steady, foe_9 steady, foe_10 clever.
 //               This is a choice of how hard, not a sidegrade: the four
 //               differ a lot.
 //   The two outcomes of a scene_ knot give different kinds of help,
@@ -100,8 +100,8 @@
 //                               ground in front of your cottages
 //     scene_4   battle 4, The Chalk Brook, Fight to the Finish
 //               "bridge"        two more bridges over the brook  DEFAULT
-//               "horse_gun"     your gun section is a horse gun (it
-//                               moves 4)
+//               "horse_gun"     your first gun section is a horse
+//                               gun (it moves 4)
 //     scene_5   battle 5, The Orchard, Blow at the Rear (the west half)
 //               "forward"       your set-up zone is your back 3 rows
 //                                                                DEFAULT
@@ -109,8 +109,8 @@
 //                               they move first
 //     scene_6   battle 6, The Mill Hill, Defensive Game - you attack
 //               "more_rounds"   the round limit is 2 more        DEFAULT
-//               "horse_gun"     your gun section is a horse gun (in
-//                               battle 6 it already is: an open item)
+//               "horse_gun"     your other gun section is a horse
+//                               gun too (both your guns move 4)
 //     scene_7   battle 7, The Ridge, Fight to the Finish
 //               "head_start"    you move first, see their set-up and
 //                               have a cavalry troop more
@@ -238,7 +238,7 @@ EXTERNAL foeDone(name, outcome)
 === foe_1 ===
 // SUMMARY: just before scene_1, for battle 1: how their side plays it.
 // POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
-//   (the contract above says how each plays). DEFAULT: "clever" (the
+//   (the contract above says how each plays). DEFAULT: "steady" (the
 //   battle's own bot).
 -> DONE
 
@@ -257,7 +257,7 @@ EXTERNAL foeDone(name, outcome)
 === foe_2 ===
 // SUMMARY: just before scene_2, for battle 2: how their side plays it.
 // POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
-//   (the contract above says how each plays). DEFAULT: "steady" (the
+//   (the contract above says how each plays). DEFAULT: "clever" (the
 //   battle's own bot).
 -> DONE
 
@@ -295,7 +295,7 @@ EXTERNAL foeDone(name, outcome)
 === foe_4 ===
 // SUMMARY: just before scene_4, for battle 4: how their side plays it.
 // POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
-//   (the contract above says how each plays). DEFAULT: "steady" (the
+//   (the contract above says how each plays). DEFAULT: "clever" (the
 //   battle's own bot).
 -> DONE
 
@@ -305,7 +305,8 @@ EXTERNAL foeDone(name, outcome)
 // Fight to the Finish (14 x 10): a brook across the middle.
 // POTENTIAL OUTCOMES (sceneDone):
 //   "bridge"      game: two more bridges over the brook      DEFAULT
-//   "horse_gun"   game: your gun section is a horse gun (moves 4)
+//   "horse_gun"   game: your first gun section is a horse gun
+//                 (moves 4)
 -> DONE
 
 
@@ -341,8 +342,8 @@ EXTERNAL foeDone(name, outcome)
 // Defensive Game (14 x 10). You attack their hill.
 // POTENTIAL OUTCOMES (sceneDone):
 //   "more_rounds"  game: the round limit is 2 more           DEFAULT
-//   "horse_gun"    game: your gun section is a horse gun (in battle 6
-//                  it already is: an open item)
+//   "horse_gun"    game: your other gun section is a horse gun too
+//                  (both your guns move 4)
 -> DONE
 
 
@@ -385,7 +386,7 @@ EXTERNAL foeDone(name, outcome)
 === foe_9 ===
 // SUMMARY: just before scene_9, for battle 9: how their side plays it.
 // POTENTIAL OUTCOMES (foeDone): "steady", "cautious", "bold", "clever"
-//   (the contract above says how each plays). DEFAULT: "cautious" (the
+//   (the contract above says how each plays). DEFAULT: "steady" (the
 //   battle's own bot).
 -> DONE
 

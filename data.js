@@ -357,15 +357,15 @@ const SWITCHES = [
 //   target    your side's win rate the bot runs aim at, percent (GDD 5.2)
 const LEVELS = [
   { lv: 0, part: "tutorial", type: "finish", country: "hooks", first: "them", curtain: false, youRows: 2, themRows: 2, rounds: 8, drawLine: 4, bot: "gentle", rear: "", defender: "", foe: "", knot: "tutorial", target: 90 },
-  { lv: 1, part: "act1", type: "finish", country: "twohills", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "clever", rear: "", defender: "", foe: "foe_1", knot: "scene_1", target: 75 },
-  { lv: 2, part: "act1", type: "rear", country: "longwall", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "steady", rear: "west", defender: "", foe: "foe_2", knot: "scene_2", target: 75 },
+  { lv: 1, part: "act1", type: "finish", country: "twohills", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "steady", rear: "", defender: "", foe: "foe_1", knot: "scene_1", target: 75 },
+  { lv: 2, part: "act1", type: "rear", country: "longwall", first: "them", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "clever", rear: "west", defender: "", foe: "foe_2", knot: "scene_2", target: 75 },
   { lv: 3, part: "act1", type: "defend", country: "cottages", first: "them", curtain: true, youRows: 3, themRows: 2, rounds: 10, drawLine: 0, bot: "clever", rear: "", defender: "you", foe: "foe_3", knot: "scene_3", target: 75 },
-  { lv: 4, part: "act2", type: "finish", country: "chalkbrook", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 11, drawLine: 4, bot: "steady", rear: "", defender: "", foe: "foe_4", knot: "scene_4", target: 65 },
-  { lv: 5, part: "act2", type: "rear", country: "orchard", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "clever", rear: "west", defender: "", foe: "foe_5", knot: "scene_5", target: 65 },
+  { lv: 4, part: "act2", type: "finish", country: "chalkbrook", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 11, drawLine: 4, bot: "clever", rear: "", defender: "", foe: "foe_4", knot: "scene_4", target: 65 },
+  { lv: 5, part: "act2", type: "rear", country: "orchard", first: "them", curtain: true, youRows: 2, themRows: 2, rounds: 10, drawLine: 4, bot: "clever", rear: "west", defender: "", foe: "foe_5", knot: "scene_5", target: 65 },
   { lv: 6, part: "act2", type: "defend", country: "millhill", first: "you", curtain: true, youRows: 2, themRows: 3, rounds: 10, drawLine: 0, bot: "steady", rear: "", defender: "them", foe: "foe_6", knot: "scene_6", target: 65 },
   { lv: 7, part: "act3", type: "finish", country: "ridge", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 12, drawLine: 5, bot: "clever", rear: "", defender: "", foe: "foe_7", knot: "scene_7", target: 55 },
   { lv: 8, part: "act3", type: "defend", country: "village", first: "you", curtain: true, youRows: 2, themRows: 4, rounds: 12, drawLine: 0, bot: "steady", rear: "", defender: "them", foe: "foe_8", knot: "scene_8", target: 55 },
-  { lv: 9, part: "act3", type: "rear", country: "twofords", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 12, drawLine: 5, bot: "cautious", rear: "all", defender: "", foe: "foe_9", knot: "scene_9", target: 55 },
+  { lv: 9, part: "act3", type: "rear", country: "twofords", first: "you", curtain: true, youRows: 2, themRows: 2, rounds: 12, drawLine: 5, bot: "steady", rear: "all", defender: "", foe: "foe_9", knot: "scene_9", target: 55 },
   { lv: 10, part: "finale", type: "finish", country: "wholefloor", first: "them", curtain: true, youRows: 3, themRows: 3, rounds: 18, drawLine: 7, bot: "clever", rear: "", defender: "", foe: "foe_10", knot: "scene_10", target: 50 }
 ];
 
@@ -378,7 +378,10 @@ const LEVELS = [
 // tutorial's two groups: the main body for the farm, the small group for
 // the church). A story outcome may add a unit (EFFECTS: ["unit", arm]):
 // it stands on the free square of your zone nearest your back line's
-// middle.
+// middle. Two gun sections a side from battle 1 on (the author's decision,
+// 2026-10-23; Hook's Farm keeps Wells's one). The order of the lines
+// matters to the bots as well as to the names: the bot runs (GDD 5.2)
+// were measured with the lines in this order.
 const ARMIES = [
   // 0 Hook's Farm: G 2I C a side (GDD 6.3)
   { lv: 0, side: "them", arm: "gun", at: "C9", goal: "C6" },
@@ -389,99 +392,125 @@ const ARMIES = [
   { lv: 0, side: "you", arm: "inf", at: "D2", goal: "" },
   { lv: 0, side: "you", arm: "inf", at: "I2", goal: "" },
   { lv: 0, side: "you", arm: "cav", at: "F1", goal: "" },
-  // 1 The Two Hills: G 2I C a side
+  // 1 The Two Hills: 2G 2I C a side
   { lv: 1, side: "them", arm: "gun", at: "I10", goal: "" },
+  { lv: 1, side: "them", arm: "gun", at: "D10", goal: "" },
   { lv: 1, side: "them", arm: "inf", at: "E9", goal: "" },
   { lv: 1, side: "them", arm: "inf", at: "J9", goal: "" },
   { lv: 1, side: "them", arm: "cav", at: "G10", goal: "" },
   { lv: 1, side: "you", arm: "gun", at: "D1", goal: "" },
+  { lv: 1, side: "you", arm: "gun", at: "I1", goal: "" },
   { lv: 1, side: "you", arm: "inf", at: "C2", goal: "" },
   { lv: 1, side: "you", arm: "inf", at: "H2", goal: "" },
   { lv: 1, side: "you", arm: "cav", at: "F1", goal: "" },
-  // 2 The Long Wall: you G 3I 2C; they G 2I 2C
+  // 2 The Long Wall: you 2G 3I 2C; they 2G 2I 2C
   { lv: 2, side: "them", arm: "gun", at: "F10", goal: "" },
+  { lv: 2, side: "them", arm: "gun", at: "I10", goal: "" },
   { lv: 2, side: "them", arm: "inf", at: "D9", goal: "" },
   { lv: 2, side: "them", arm: "inf", at: "H9", goal: "" },
   { lv: 2, side: "them", arm: "cav", at: "B10", goal: "" },
   { lv: 2, side: "them", arm: "cav", at: "K10", goal: "" },
   { lv: 2, side: "you", arm: "gun", at: "F1", goal: "" },
+  { lv: 2, side: "you", arm: "gun", at: "I1", goal: "" },
   { lv: 2, side: "you", arm: "inf", at: "D2", goal: "" },
   { lv: 2, side: "you", arm: "inf", at: "H2", goal: "" },
-  { lv: 2, side: "you", arm: "inf", at: "I2", goal: "" },
   { lv: 2, side: "you", arm: "cav", at: "B1", goal: "" },
   { lv: 2, side: "you", arm: "cav", at: "K1", goal: "" },
-  // 3 The Cottages: you defend with G 2I; they attack with G 2I 2C
-  { lv: 3, side: "them", arm: "gun", at: "G10", goal: "" },
+  { lv: 2, side: "you", arm: "inf", at: "I2", goal: "" },
+  // 3 The Cottages: you defend with 2G 3I C; they attack with 2G 3I 2C
+  { lv: 3, side: "them", arm: "gun", at: "D10", goal: "" },
+  { lv: 3, side: "them", arm: "gun", at: "J10", goal: "" },
   { lv: 3, side: "them", arm: "inf", at: "E9", goal: "" },
   { lv: 3, side: "them", arm: "inf", at: "I9", goal: "" },
+  { lv: 3, side: "them", arm: "inf", at: "H9", goal: "" },
   { lv: 3, side: "them", arm: "cav", at: "B10", goal: "" },
   { lv: 3, side: "them", arm: "cav", at: "K10", goal: "" },
-  { lv: 3, side: "you", arm: "gun", at: "E2", goal: "" },
+  { lv: 3, side: "you", arm: "gun", at: "D1", goal: "" },
+  { lv: 3, side: "you", arm: "gun", at: "H1", goal: "" },
   { lv: 3, side: "you", arm: "inf", at: "C3", goal: "" },
+  { lv: 3, side: "you", arm: "inf", at: "G3", goal: "" },
   { lv: 3, side: "you", arm: "inf", at: "I3", goal: "" },
-  // 4 The Chalk Brook: G 2I 2C a side
-  { lv: 4, side: "them", arm: "gun", at: "G10", goal: "" },
+  { lv: 3, side: "you", arm: "cav", at: "A2", goal: "" },
+  // 4 The Chalk Brook: 2G 2I 2C a side
+  { lv: 4, side: "them", arm: "gun", at: "F10", goal: "" },
+  { lv: 4, side: "them", arm: "gun", at: "I10", goal: "" },
   { lv: 4, side: "them", arm: "inf", at: "D9", goal: "" },
   { lv: 4, side: "them", arm: "inf", at: "K9", goal: "" },
   { lv: 4, side: "them", arm: "cav", at: "B10", goal: "" },
   { lv: 4, side: "them", arm: "cav", at: "M10", goal: "" },
-  { lv: 4, side: "you", arm: "gun", at: "G1", goal: "" },
+  { lv: 4, side: "you", arm: "gun", at: "F1", goal: "" },
+  { lv: 4, side: "you", arm: "gun", at: "I1", goal: "" },
   { lv: 4, side: "you", arm: "inf", at: "D2", goal: "" },
   { lv: 4, side: "you", arm: "inf", at: "K2", goal: "" },
   { lv: 4, side: "you", arm: "cav", at: "B1", goal: "" },
   { lv: 4, side: "you", arm: "cav", at: "M1", goal: "" },
-  // 5 The Orchard: you G 2I C; they G 2I 2C
-  { lv: 5, side: "them", arm: "gun", at: "H10", goal: "" },
+  // 5 The Orchard: you 2G 3I C; they 2G 2I 2C
+  { lv: 5, side: "them", arm: "gun", at: "G10", goal: "" },
+  { lv: 5, side: "them", arm: "gun", at: "J10", goal: "" },
   { lv: 5, side: "them", arm: "inf", at: "D9", goal: "" },
   { lv: 5, side: "them", arm: "inf", at: "K9", goal: "" },
   { lv: 5, side: "them", arm: "cav", at: "B10", goal: "" },
   { lv: 5, side: "them", arm: "cav", at: "L10", goal: "" },
-  { lv: 5, side: "you", arm: "gun", at: "H1", goal: "" },
+  { lv: 5, side: "you", arm: "gun", at: "G1", goal: "" },
+  { lv: 5, side: "you", arm: "gun", at: "J1", goal: "" },
   { lv: 5, side: "you", arm: "inf", at: "D2", goal: "" },
   { lv: 5, side: "you", arm: "inf", at: "K2", goal: "" },
+  { lv: 5, side: "you", arm: "inf", at: "G2", goal: "" },
   { lv: 5, side: "you", arm: "cav", at: "B1", goal: "" },
-  // 6 The Mill Hill: you attack with a horse gun, 2I 2C; they defend with
-  // G 2I C
+  // 6 The Mill Hill: you attack with a horse gun, a gun, 2I 3C; they defend
+  // with 2G 2I C
   { lv: 6, side: "them", arm: "gun", at: "H8", goal: "" },
+  { lv: 6, side: "them", arm: "gun", at: "L10", goal: "" },
   { lv: 6, side: "them", arm: "inf", at: "F9", goal: "" },
   { lv: 6, side: "them", arm: "inf", at: "J8", goal: "" },
   { lv: 6, side: "them", arm: "cav", at: "L9", goal: "" },
   { lv: 6, side: "you", arm: "hgun", at: "G1", goal: "" },
+  { lv: 6, side: "you", arm: "gun", at: "J1", goal: "" },
   { lv: 6, side: "you", arm: "inf", at: "C2", goal: "" },
   { lv: 6, side: "you", arm: "inf", at: "K2", goal: "" },
+  { lv: 6, side: "you", arm: "cav", at: "H1", goal: "" },
   { lv: 6, side: "you", arm: "cav", at: "A1", goal: "" },
   { lv: 6, side: "you", arm: "cav", at: "N1", goal: "" },
-  // 7 The Ridge: you G 2I 2C; they G 3I 2C
+  // 7 The Ridge: you 2G 3I 2C; they 2G 4I 2C
   { lv: 7, side: "them", arm: "gun", at: "H12", goal: "" },
+  { lv: 7, side: "them", arm: "gun", at: "J12", goal: "" },
   { lv: 7, side: "them", arm: "inf", at: "K11", goal: "" },
   { lv: 7, side: "them", arm: "inf", at: "G11", goal: "" },
   { lv: 7, side: "them", arm: "inf", at: "D11", goal: "" },
+  { lv: 7, side: "them", arm: "inf", at: "J11", goal: "" },
   { lv: 7, side: "them", arm: "cav", at: "M12", goal: "" },
   { lv: 7, side: "them", arm: "cav", at: "B12", goal: "" },
   { lv: 7, side: "you", arm: "gun", at: "G1", goal: "" },
+  { lv: 7, side: "you", arm: "gun", at: "E1", goal: "" },
   { lv: 7, side: "you", arm: "inf", at: "D2", goal: "" },
   { lv: 7, side: "you", arm: "inf", at: "H2", goal: "" },
   { lv: 7, side: "you", arm: "cav", at: "B1", goal: "" },
   { lv: 7, side: "you", arm: "cav", at: "M1", goal: "" },
-  // 8 The Village: you attack with G 3I C; they defend with G 3I C
+  { lv: 7, side: "you", arm: "inf", at: "K2", goal: "" },
+  // 8 The Village: you attack with 2G 3I C; they defend with 2G 3I C
   { lv: 8, side: "them", arm: "gun", at: "H12", goal: "" },
+  { lv: 8, side: "them", arm: "gun", at: "E12", goal: "" },
   { lv: 8, side: "them", arm: "inf", at: "G9", goal: "" },
   { lv: 8, side: "them", arm: "inf", at: "I10", goal: "" },
   { lv: 8, side: "them", arm: "inf", at: "L9", goal: "" },
   { lv: 8, side: "them", arm: "cav", at: "D12", goal: "" },
   { lv: 8, side: "you", arm: "gun", at: "G1", goal: "" },
+  { lv: 8, side: "you", arm: "gun", at: "J1", goal: "" },
   { lv: 8, side: "you", arm: "inf", at: "D2", goal: "" },
   { lv: 8, side: "you", arm: "inf", at: "H2", goal: "" },
   { lv: 8, side: "you", arm: "inf", at: "L2", goal: "" },
   { lv: 8, side: "you", arm: "cav", at: "B1", goal: "" },
-  // 9 The Two Fords: G 3I 2C a side
+  // 9 The Two Fords: you 2G 3I 2C; they 2G 3I 3C
   { lv: 9, side: "them", arm: "gun", at: "D12", goal: "" },
+  { lv: 9, side: "them", arm: "gun", at: "J12", goal: "" },
   { lv: 9, side: "them", arm: "inf", at: "F11", goal: "" },
   { lv: 9, side: "them", arm: "inf", at: "I11", goal: "" },
   { lv: 9, side: "them", arm: "inf", at: "L11", goal: "" },
   { lv: 9, side: "them", arm: "cav", at: "B12", goal: "" },
+  { lv: 9, side: "them", arm: "cav", at: "H12", goal: "" },
   { lv: 9, side: "them", arm: "cav", at: "O12", goal: "" },
   { lv: 9, side: "you", arm: "gun", at: "D1", goal: "" },
+  { lv: 9, side: "you", arm: "gun", at: "J1", goal: "" },
   { lv: 9, side: "you", arm: "inf", at: "F2", goal: "" },
   { lv: 9, side: "you", arm: "inf", at: "I2", goal: "" },
   { lv: 9, side: "you", arm: "inf", at: "L2", goal: "" },
@@ -515,7 +544,7 @@ const ARMIES = [
 //   ["rear", "west"]        the half of a back line a raid must reach
 //                           ("west", "east" or "all")
 //   ["piece", "wall"]       a switchable piece goes in (SWITCHES)
-//   ["horseGun"]            your first gun section is a horse gun
+//   ["horseGun"]            your first (foot) gun section is a horse gun
 //   ["setupRows", 3]        your set-up zone is your back 3 rows
 //   ["unit", "cav"]         you have a unit more (inf, cav or gun)
 //   ["rounds", 2]           the round limit is 2 more
