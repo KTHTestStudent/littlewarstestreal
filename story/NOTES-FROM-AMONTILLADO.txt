@@ -1,0 +1,91 @@
+============================================================================
+ NOTES FROM AMONTILLADO'S STORY (2026-10-23, a Claude review, for the
+ writer). Amontillado (KTHTestStudent/amontillado-test, story/story.ink)
+ is a finished Knotwork game by the same writer, passing knotcheck. These
+ are its ink patterns and what each means for Little Wars' knots. Notes on
+ structure only: no prose here, and none to copy. CONTRACT.txt and the
+ header of story.ink still decide what the game expects.
+============================================================================
+
+1 SENDING THE OUTCOME
+  Amontillado uses two ways:
+  - The VAR way (rest_casks, the meet_ knots, chapter_preNiche,
+    chapter_niche): VAR <knot>_outcome = "<default>" above the knot, a
+    leaf stitch per choice that sets it (~ rest_casks_outcome = "tasted"),
+    then one = finish stitch that calls the hook once.
+  - The read-count way (chapter_vaults, chapter_crypt): the leaf stitches
+    set nothing, and finish asks which was visited:
+    {flambeaux: ~chapterDone("chapter_vaults", "took_flambeaux")}.
+  Both pass knotcheck there. For Little Wars, the VAR way is the one the
+  contract gives, and the safer one: its default is sent on any path the
+  writer didn't foresee, where the read-count way sends nothing. Keep each
+  VAR's default the same as the contract's DEFAULT - for the foe_ knots
+  that is the battle's own bot (CONTRACT.txt lists them; five changed in
+  the 2026-10-22 tuning).
+
+2 BRANCHING ON WHAT THE GAME SETS
+  Amontillado opens most knots with one line per value, e.g.
+  {player_role == "fortunato": -> FortunatoVaults}, and no line for "none
+  of these". Little Wars' VARs have more values: last_result is "none"
+  (scene_1 straight after intro, tutorial off), "won", "drawn" or "lost".
+  A switch with an else keeps every value on some path:
+    { last_result:
+    - "won":  -> after_win
+    - "lost": -> after_loss
+    - else:   -> after_draw
+    }
+  The same goes for numbers: {campaign_points > 400: ...} or wins, draws,
+  losses, battles_done. (player_side is paint only - the content rules
+  give both sides the same treatment, so branch on it for its name, not
+  for who they are.)
+
+3 STITCHES AS CONDITIONS
+  Inside a knot, a stitch's name counts how often it was read:
+  {flambeaux: ...} is true once that stitch was visited. A knot's name
+  does the same from anywhere: Amontillado's rest_casks reads
+  {rest_casks > 1: ...} for a second visit. In Little Wars every knot
+  plays once a campaign, so the useful form is looking back at an earlier
+  knot's stitch - {scene_3.wall: ...} in a later scene, to remember what
+  the player chose before - as long as the earlier knot was written (an
+  unwritten knot is skipped, so its stitches read 0; the game's DEFAULT
+  was used instead).
+
+4 GATED CHOICES
+  Amontillado hides a choice that would do nothing:
+  *{nerve < max_nerve} [Compose yourself.] -> compose
+  It always leaves other choices open. In Little Wars, keep at least one
+  choice with no condition in each choice set, so no path runs out of
+  choices before finish (that would end the knot with only the default
+  sent). Not needed in a foe_ knot - all four styles are always open.
+
+5 CHOICE TEXT IN BRACKETS
+  chapter_niche's *Wall->wall has no [ ], so ink also prints "Wall" as a
+  line of the story after it is picked. Text in [ ] shows only on the
+  button; text outside them shows on the button and again as a line.
+
+6 SPEAKERS
+  A #speaker name stays on every line after it until the next #speaker,
+  so a narration line straight after a spoken one shows under the
+  speaker's name (in Amontillado, the thought line after Montresor's
+  line in FortunatoVaults does). #speaker:none goes back to narration.
+  Amontillado's story writes #SPEAKER: Montresor where its contract says
+  #speaker:montresor; knotcheck passes it there, but the form the contract
+  and Knotwork's docs describe is #speaker:key, the key as in ink/config.js.
+  Little Wars' ink/config.js has no names yet: once you decide who
+  speaks, a Claude session adds them (names: { key: "Shown name" }).
+
+7 THE SHAPE OF A KNOT
+  Amontillado's knots run: a SUMMARY / POTENTIAL OUTCOMES comment (the
+  contract, kept by Claude), a routing line or two on the game's VARs, a
+  few lines as short stitches (Luchesi1 -> Luchesi2 ...), one Choice
+  stitch, a leaf stitch per outcome, and finish. Stitch names are local to
+  their knot, so every knot can reuse Choice and finish. Little Wars' 22
+  knots can follow the same shape; the foe_ and scene_ knots before one
+  battle can be two halves of one scene.
+
+8 THE ENDING
+  chapter_niche picks its path with a routing stitch that reads only the
+  game's VARs (FightCheck: final_fight, won_final, then player_role)
+  before any prose. Little Wars has one ending (decision: the score
+  never picks a knot), but the same routing stitch at the top of ending
+  can pick its closing lines by wins, losses or campaign_points.

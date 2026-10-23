@@ -1,6 +1,16 @@
-# Little Wars (working title) - Game Design Document, v0.7
+# Little Wars (working title) - Game Design Document, v0.9
 
-Status: v0.7, 2026-10-22: the data tuning against section 5 (HANDOFF NEXT
+Status: v0.9, 2026-10-23: the author's answers to section 12's questions
+(decision 17, section 10). Two gun sections a side from battle 1 on, with
+the armies, first moves and default bots retuned (6.1, 5.2; 12.6 has the
+comebacks); toll and hurry come next, as a rule change (HANDOFF NEXT 4b).
+
+v0.8, 2026-10-23: section 12, proposals for catch-up and turtling
+after the author's playtest notes (two guns a side, a toll and a hurry in
+the points, cover between the halves), with prototype bot runs and the
+author's questions (Q1-Q6). No rule, map or army has changed yet.
+
+v0.7, 2026-10-22: the data tuning against section 5 (HANDOFF NEXT
 2), with the author's answer to Q1b (section 10): the armies, first moves,
 their bots, three maps and four outcome effects changed (6.1, 7.2); what
 the tuning could not reach is in section 5.2's last list. Later the same
@@ -381,82 +391,79 @@ counts as half a win.
   (the author's decision 14); the `scene_` pairs are judged with the
   row's own bot (its default), which the tuning made the easiest style,
   or near it, in each battle.
-- **After the tuning (2026-10-22, 1,000 seeds).** Your side's score
-  against the easiest style (its name when it is not the row's bot), with
-  the knot's default outcome: 0 86 (target 90); 1 80 (75); 2 cautious 79,
-  the row's steady 72 (75); 3 83 (75); 4 60 (65); 5 67 (65); 6 70 (65); 7
-  cautious 71, the row's clever 57 (55); 8 52 (55); 9 52 (55); 10 43 (50).
-  The `scene_` pairs are within 5 points except 3 (7), 7 (7) and 10 (41).
-  What data alone could not reach: battle 7's cautious bot and its pair;
-  battle 10's pair (a gun section more is worth far more than a troop);
-  battle 6's pair (neither outcome changes anything in bot runs); the
-  length of battles 6 and 8 (most end in round 4 or 5 of 10-14, under
-  section 5.3's half). HANDOFF has the details.
+- **After the retune for two gun sections a side (2026-10-23, 1,000
+  seeds; the author's decision 17).** Your side's score against the
+  easiest style, which is now the row's own bot in every battle, with the
+  knot's default outcome: 0 86 (target 90); 1 76 (75); 2 77 (75); 3 81
+  (75); 4 70 (65); 5 65 (65); 6 64 (65); 7 69 (55); 8 54 (55); 9 57 (55);
+  10 43 (50). Outside about 5 points: 3 (+6), 7 (+14) and 10 (-7, not
+  retuned: it had two guns already). The `scene_` pairs are within 5
+  points except 6 (5.2), 8 (7) and 10 (41). Battle 6's `horse_gun` now
+  does something (your second gun becomes a horse gun too). What data
+  could not reach: battle 7 (with one squad fewer your side drops to
+  about 37, and `extra_squad`, which also hands them the first move,
+  falls far behind its pair); battle 10's pair (as before); battles 3, 6
+  and 8 still end in round 4-5 of 10-14, under section 5.3's half. The
+  bots proved sensitive to the order of a side's lines in ARMIES (they
+  act in that order): battle 2's `rear_east` scored 36 or 73 with the
+  same units in two orders, so the order in data.js is part of the
+  tuning. The previous tuning's numbers (2026-10-22, one gun a side) are
+  in HANDOFF's HISTORY.
 
-- **Your side's score against each `foe_` style (2026-10-22, 1,000 seeds,
+- **Your side's score against each `foe_` style (2026-10-23, 1,000 seeds,
   `node dev/outcomes.js . 1000`, each battle with its `scene_` knot's
   default outcome).** A draw counts as half a win. Each row runs from the
   easiest style to the hardest; the default (the row's bot, 6.1) is meant
-  to be the easiest. A tie in score is ordered with the default first,
-  then by win rate. Sampling noise is about 1.5 points.
+  to be the easiest. Sampling noise is about 1.5 points.
 
 | # | Country | Target | Default | Easiest | 2nd | 3rd | Hardest | Default is easiest? |
 |---|---|---|---|---|---|---|---|---|
 | 0 | Hook's Farm | 90 | gentle | gentle 86 | - | - | - | yes (no `foe_` knot) |
-| 1 | The Two Hills | 75 | clever | **clever 80** | bold 76 | cautious 59 | steady 51 | yes |
-| 2 | The Long Wall | 75 | steady | cautious 79 | clever 73 | **steady 72** | bold 54 | no: 3rd, 7 points under cautious |
-| 3 | The Cottages | 75 | clever | **clever 83** | cautious 32 | steady 18 | bold 0 | yes |
-| 4 | The Chalk Brook | 65 | steady | **steady 60** | clever 60 | bold 53 | cautious 37 | yes (tied with clever) |
-| 5 | The Orchard | 65 | clever | **clever 67** | cautious 62 | steady 44 | bold 5 | yes |
-| 6 | The Mill Hill | 65 | steady | **steady 70** | bold 18 | clever 13 | cautious 7 | yes |
-| 7 | The Ridge | 55 | clever | cautious 71 | steady 59 | bold 59 | **clever 57** | no: the hardest, 14 points under cautious |
-| 8 | The Village | 55 | steady | **steady 52** | bold 38 | cautious 16 | clever 16 | yes |
-| 9 | The Two Fords | 55 | cautious | **cautious 52** | steady 48 | clever 41 | bold 32 | yes |
+| 1 | The Two Hills | 75 | steady | **steady 76** | clever 72 | bold 46 | cautious 39 | yes |
+| 2 | The Long Wall | 75 | clever | **clever 77** | cautious 68 | steady 66 | bold 17 | yes |
+| 3 | The Cottages | 75 | clever | **clever 81** | cautious 70 | bold 46 | steady 45 | yes |
+| 4 | The Chalk Brook | 65 | clever | **clever 70** | steady 40 | bold 20 | cautious 10 | yes |
+| 5 | The Orchard | 65 | clever | **clever 65** | cautious 57 | steady 29 | bold 20 | yes |
+| 6 | The Mill Hill | 65 | steady | **steady 64** | bold 54 | cautious 48 | clever 32 | yes |
+| 7 | The Ridge | 55 | clever | **clever 69** | steady 60 | bold 36 | cautious 34 | yes |
+| 8 | The Village | 55 | steady | **steady 54** | bold 34 | cautious 13 | clever 10 | yes |
+| 9 | The Two Fords | 55 | steady | **steady 57** | clever 46 | cautious 27 | bold 9 | yes |
 | 10 | The Whole Floor | 50 | clever | **clever 43** | steady 21 | bold 8 | cautious 7 | yes |
 
-  The default is the easiest style in 9 of 11 rows (battle 4's is tied).
-  The two exceptions, 2 and 7, are ones HANDOFF's numbers already show
-  (cautious 79 and 71): in those battles the cautious bot leaves your
-  side more room than the row's own bot. The spread between easiest and
-  hardest is over 50 points in 3, 5 and 6 and under 20 only in 7, so the
-  `foe_` knot is a real choice of difficulty in most battles. The hardest
-  styles are close to unwinnable for the newcomer bot: bold in 3 and 5
-  (0 and 5), cautious in 6 and 10 (7 each).
+  The default is the easiest style in every row (four defaults changed:
+  1 to steady, 2 and 4 to clever, 9 to steady). The spread between
+  easiest and hardest is 30-60 points, so the `foe_` knot stays a real
+  choice of difficulty everywhere.
 
-- **Your side's points in each battle (2026-10-22, 1,000 seeds,
+- **Your side's points in each battle (2026-10-23, 1,000 seeds,
   `node dev/points.js . 1000`).** Section 3.9's points, with the newcomer
-  bot on your side against the easiest `foe_` style (the one in the table
-  above; the row's bot where it is the easiest) and the knot's default
-  outcome. "Max possible" is the ceiling a battle could give: a win (100),
-  10 for every gun on the board (both sides'), every figure of yours alive
-  at its arm's points, and half a point for every enemy figure as a
-  prisoner. No run gets there: the best of 1,000 is shown.
+  bot on your side against the easiest `foe_` style (the row's bot) and
+  the knot's default outcome. "Max possible" is the ceiling a battle
+  could give: a win (100), 10 for every gun on the board (both sides'),
+  every figure of yours alive at its arm's points, and half a point for
+  every enemy figure as a prisoner. No run gets there: the best of 1,000
+  is shown. Toll and hurry (decision 17) are not in these yet.
 
 | # | Country | Easiest style | Average | In a win | In a loss | Best run | Max possible | Average / max |
 |---|---|---|---|---|---|---|---|---|
 | 0 | Hook's Farm | gentle | 115.2 | 131.5 | 15.1 | 151 | 152 | 76% |
-| 1 | The Two Hills | clever | 99.6 | 120.9 | 12.6 | 142.5 | 152 | 66% |
-| 2 | The Long Wall | cautious | 115.3 | 142.1 | 16.3 | 160 | 166 | 69% |
-| 3 | The Cottages | clever | 99.2 | 117.2 | 9.0 | 124 | 148 | 67% |
-| 4 | The Chalk Brook | clever | 76.4 | 118.1 | 12.7 | 125.5 | 160 | 48% |
-| 5 | The Orchard | clever | 85.7 | 122.3 | 11.5 | 136 | 154 | 56% |
-| 6 | The Mill Hill | steady | 97.0 | 132.4 | 16.4 | 147.5 | 160 | 61% |
-| 7 | The Ridge | cautious | 98.6 | 132.5 | 12.1 | 160.5 | 169 | 58% |
-| 8 | The Village | steady | 78.6 | 130.2 | 23.3 | 158.5 | 161 | 49% |
-| 9 | The Two Fords | cautious | 73.9 | 129.4 | 13.4 | 153.5 | 169 | 44% |
+| 1 | The Two Hills | steady | 106.2 | 134.1 | 20.7 | 149 | 178 | 60% |
+| 2 | The Long Wall | clever | 116.6 | 145.8 | 22.8 | 175 | 192 | 61% |
+| 3 | The Cottages | clever | 112.0 | 133.1 | 24.3 | 155 | 189 | 59% |
+| 4 | The Chalk Brook | clever | 100.8 | 132.4 | 24.6 | 147 | 186 | 54% |
+| 5 | The Orchard | clever | 97.7 | 143.1 | 12.9 | 162.5 | 186 | 53% |
+| 6 | The Mill Hill | steady | 102.0 | 142.5 | 29.8 | 169 | 192 | 53% |
+| 7 | The Ridge | clever | 102.7 | 136.5 | 24.7 | 165 | 204 | 50% |
+| 8 | The Village | steady | 96.4 | 149.4 | 33.3 | 177 | 187 | 52% |
+| 9 | The Two Fords | steady | 89.9 | 149.6 | 11.8 | 173 | 197 | 46% |
 | 10 | The Whole Floor | clever | 73.6 | 141.6 | 24.1 | 166.5 | 212 | 35% |
-| 1-10 | the campaign | | 897.8 | | | | 1,651 | 54% |
+| 1-10 | the campaign | | 997.9 | | | | 1,923 | 52% |
 
   - The tutorial scores nothing in the campaign (3.9), so battle 0 is left
-    out of the last row. In battle 4 steady and clever are within a point
-    (steady, the row's bot, averages 75.8).
-  - An average is mostly the win rate: a win is worth 117 to 142 points on
-    average and a loss 9 to 24, so a battle with a lower win rate (4, 8,
-    9, 10) averages lower however well the wins go. A win reaches 74% to
-    87% of the ceiling in battles 0-9; in battle 10, with 4 guns and 88
-    figures, 67%.
-  - A campaign of easiest-style battles gives about 900 points of 1,651
-    (54%). The score doesn't change the ending (3.9).
+    out of the last row.
+  - A loss is still worth about a sixth of a win (12 to 33 points against
+    133 to 150): the second gun adds 10 to whoever keeps it, which lifts
+    both. Toll and hurry are the change aimed at this (section 12).
 
 ### 5.3 How it is checked
 
@@ -501,7 +508,8 @@ Eleven battles, played in order:
 ### 6.1 The level table
 
 Units: G = gun section, I = infantry squad, C = cavalry troop (section 3.2),
-with the figures in brackets. "First" is who moves first. The set-up zone
+with the figures in brackets. Two gun sections a side from battle 1 on (the
+author's decision 17, 2026-10-23); Hook's Farm keeps Wells's one. "First" is who moves first. The set-up zone
 is the back 2 rows unless the row says otherwise. The draw line is for
 Fight to the Finish and Blow at the Rear (section 4). Country names are
 working names: the author may rename any of them by hand in data.js
@@ -510,15 +518,15 @@ working names: the author may rename any of them by hand in data.js
 | # | Part | Type | Country (board) | You | Them | First | Set-up | Rounds | Draw line | Their bot (`foe_` default) | Knots before | Target |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 0 | Tutorial | Fight to the Finish | Hook's Farm (12×9) | G 2I C (20) | G 2I C (20) | them | fixed (6.3), no curtain | 8 | 4 | gentle | `tutorial` (sends nothing) | 90% |
-| 1 | Act I | Fight to the Finish | The Two Hills (12×10) | G 2I C (20) | G 2I C (20) | you | curtain | 10 | 4 | clever | `foe_1`, `scene_1` | 75% |
-| 2 | Act I | Blow at the Rear: the half `scene_2` picks | The Long Wall (12×10) | G 3I 2C (30) | G 2I 2C (24) | you | curtain | 10 | 4 | steady | `foe_2`, `scene_2` | 75% |
-| 3 | Act I | Defensive Game: you defend | The Cottages (12×10) | G 2I (16) | G 2I 2C (24) | them | curtain; you rows 1-3, them rows 9-10 | 10 | - | clever | `foe_3`, `scene_3` | 75% |
-| 4 | Act II | Fight to the Finish | The Chalk Brook (14×10) | G 2I 2C (24) | G 2I 2C (24) | you | curtain | 11 | 4 | steady | `foe_4`, `scene_4` | 65% |
-| 5 | Act II | Blow at the Rear: the west half | The Orchard (14×10) | G 2I C (20) | G 2I 2C (24) | you | curtain | 10 | 4 | clever | `foe_5`, `scene_5` | 65% |
-| 6 | Act II | Defensive Game: you attack | The Mill Hill (14×10) | HG 2I 2C (24; HG a horse gun) | G 2I C (20) | you | curtain; you rows 1-2, them rows 8-10 | 10 | - | steady | `foe_6`, `scene_6` | 65% |
-| 7 | Act III | Fight to the Finish | The Ridge (14×12) | G 2I 2C (24) | G 3I 2C (30) | you | curtain | 12 | 5 | clever | `foe_7`, `scene_7` | 55% |
-| 8 | Act III | Defensive Game: you attack | The Village (16×12) | G 3I C (26) | G 3I C (26) | you | curtain; you rows 1-2, them rows 9-12 | 12 | - | steady | `foe_8`, `scene_8` | 55% |
-| 9 | Act III | Blow at the Rear: the whole line | The Two Fords (16×12) | G 3I 2C (30) | G 3I 2C (30) | you | curtain | 12 | 5 | cautious | `foe_9`, `scene_9` | 55% |
+| 1 | Act I | Fight to the Finish | The Two Hills (12×10) | 2G 2I C (24) | 2G 2I C (24) | you | curtain | 10 | 4 | steady | `foe_1`, `scene_1` | 75% |
+| 2 | Act I | Blow at the Rear: the half `scene_2` picks | The Long Wall (12×10) | 2G 3I 2C (34) | 2G 2I 2C (28) | them | curtain | 10 | 4 | clever | `foe_2`, `scene_2` | 75% |
+| 3 | Act I | Defensive Game: you defend | The Cottages (12×10) | 2G 3I C (30) | 2G 3I 2C (34) | them | curtain; you rows 1-3, them rows 9-10 | 10 | - | clever | `foe_3`, `scene_3` | 75% |
+| 4 | Act II | Fight to the Finish | The Chalk Brook (14×10) | 2G 2I 2C (28) | 2G 2I 2C (28) | you | curtain | 11 | 4 | clever | `foe_4`, `scene_4` | 65% |
+| 5 | Act II | Blow at the Rear: the west half | The Orchard (14×10) | 2G 3I C (30) | 2G 2I 2C (28) | them | curtain | 10 | 4 | clever | `foe_5`, `scene_5` | 65% |
+| 6 | Act II | Defensive Game: you attack | The Mill Hill (14×10) | HG G 2I 3C (32; HG a horse gun) | 2G 2I C (24) | you | curtain; you rows 1-2, them rows 8-10 | 10 | - | steady | `foe_6`, `scene_6` | 65% |
+| 7 | Act III | Fight to the Finish | The Ridge (14×12) | 2G 3I 2C (34) | 2G 4I 2C (40) | you | curtain | 12 | 5 | clever | `foe_7`, `scene_7` | 55% |
+| 8 | Act III | Defensive Game: you attack | The Village (16×12) | 2G 3I C (30) | 2G 3I C (30) | you | curtain; you rows 1-2, them rows 9-12 | 12 | - | steady | `foe_8`, `scene_8` | 55% |
+| 9 | Act III | Blow at the Rear: the whole line | The Two Fords (16×12) | 2G 3I 2C (34) | 2G 3I 3C (38) | you | curtain | 12 | 5 | steady | `foe_9`, `scene_9` | 55% |
 | 10 | Finale | Fight to the Finish | The Whole Floor (18×12) | 2G 4I 2C (40) | 2G 4I 3C (44) | them | curtain; each side's back 3 rows | 18 | 7 | clever | `foe_10`, `scene_10` | 50% |
 
 The story outcomes (section 7) change the row of the battle after their
@@ -735,9 +743,9 @@ they fit any frame the author picks.
 | `scene_1` | 1, Fight to the Finish | *"scout" → you see their set-up while you arrange yours; "move_first" → you move first and set up in your back 3 rows | scout |
 | `scene_2` | 2, Blow at the Rear | *"rear_west" → raids must reach the west half of a back line; "rear_east" → the east half | rear_west |
 | `scene_3` | 3, Defensive Game (you defend) | *"scout" → as above; "wall" → a broken wall stands across the ground in front of your cottages (row 5) | scout |
-| `scene_4` | 4, Fight to the Finish | *"bridge" → two more bridges over the brook (D and K); "horse_gun" → your gun section is a horse gun (moves 4) | bridge |
+| `scene_4` | 4, Fight to the Finish | *"bridge" → two more bridges over the brook (D and K); "horse_gun" → your first gun section is a horse gun (moves 4) | bridge |
 | `scene_5` | 5, Blow at the Rear | *"forward" → your set-up zone is your back 3 rows; "extra_troop" → you have a cavalry troop more, and they move first | forward |
-| `scene_6` | 6, Defensive Game (you attack) | *"more_rounds" → the round limit is 2 more; "horse_gun" → your gun section is a horse gun (in battle 6 it already is since the 2026-10-22 tuning: an open item) | more_rounds |
+| `scene_6` | 6, Defensive Game (you attack) | *"more_rounds" → the round limit is 2 more; "horse_gun" → your other gun section is a horse gun too (both your guns move 4) | more_rounds |
 | `scene_7` | 7, Fight to the Finish | *"head_start" → you move first, see their set-up and have a cavalry troop more; "extra_squad" → you have an infantry squad more, and they move first | head_start |
 | `scene_8` | 8, Defensive Game (you attack) | *"more_rounds" → the round limit is 2 more; "wood" → a wood stands west of the middle | more_rounds |
 | `scene_9` | 9, Blow at the Rear | *"scout" → as above; "forward" → your set-up zone is your back 3 rows | scout |
@@ -986,6 +994,18 @@ bot runs' questions):
 - Q1b (2026-10-22): the Defensive Game's defender may get more than
   two-thirds of the force and more cover on its half; not fewer rounds.
 
+Decided by the author, 2026-10-23 (decision 17, his answers to section
+12.4):
+
+- **Two gun sections a side** from battle 1 on; Hook's Farm keeps one a
+  side, as Wells's scaled-down example.
+- **Units stay fixed:** no scouts.
+- **Toll and hurry** both go into the points (1 for each enemy figure
+  that fell; a win 5 more for each round left).
+- **Held places** only if playtests still show turtling after these.
+- **No limited ammunition.**
+- **Surrender** stays in the Appendix.
+
 Still open (later):
 
 - The author: the title, the story's frame and speakers, the Country
@@ -1008,7 +1028,7 @@ tables a person can hand-edit.
 | `ink/dialogue.js`, `tools/` (knotcheck, viewer, pack) | unedited copies from Knotwork 3.8-alpha, brought in before the skeleton (section 9, step 3) | Knotwork (its own AI disclosure) |
 | `story/story.ink` | the story. The skeleton writes only the contract header and empty knots with their summaries | the author |
 | `story/CONTRACT.txt` | the contract on one page, for the writer | Claude |
-| `dev/` | headless checks: `selftest.js` (prints the SELF-TEST line), `bots.js` (the bot runs), `linemap.py` (the spec's LINE MAP), `inkc.sh` (compiles ink as Inky does), `README.txt`; `outcomes.js` (the outcome measure, 5.3) and `tryout.js` (bot runs with a table changed for one run); `playruns.js` when the story needs it (Knotwork's `tools/knotcheck.js` runs headless as it is); and `disclosure.js`, the Auto-Disclosure-Tool's unedited copy | Claude |
+| `dev/` | headless checks: `selftest.js` (prints the SELF-TEST line), `bots.js` (the bot runs), `linemap.py` (the spec's LINE MAP), `inkc.sh` (compiles ink as Inky does), `README.txt`; `outcomes.js` (the outcome measure, 5.3), `tryout.js` (bot runs with a table changed for one run), `points.js` (the points per battle) and `snowball.js` with `prototypes/` (rule ideas measured before a decision, section 12); `playruns.js` when the story needs it (Knotwork's `tools/knotcheck.js` runs headless as it is); and `disclosure.js`, the Auto-Disclosure-Tool's unedited copy | Claude |
 | `specs/LITTLEWARS-SPEC.txt` | the builder's spec: steps per phase, EXPECTED self-test lines, CHECK walks, FIXER PROMPT, LINE MAP | Claude |
 | `CREDITS.txt` | who made what, the disclosure line, Knotwork's version and repository, inkjs's licence (from the Knotwork step on) | Claude (the author's words where he gives them) |
 | `hand-edits.txt` | the author's hand-edit guide to data.js (from the skeleton on) | Claude |
@@ -1033,3 +1053,143 @@ tables a person can hand-edit.
   count; the line's last sentence names them instead (section 10).
   CREDITS.txt joined the files that hold the line in the Knotwork step;
   game.html (the title screen) joins with the skeleton.
+
+## 12 Proposals: catch-up and turtling (2026-10-23, for the author)
+
+Nothing in this section is in the game yet. The author's notes after
+playing (HANDOFF, 2026-10-23): melee is exact and each side starts with
+one gun, so the side that first silences the other's gun usually wins
+by sitting around its own; the losing side has little reason to go into
+melee, since the enemy's gun is hard to take and its back line hard to
+reach; and the scores are lopsided. He listed nine ideas (a-i below) and
+asked for catch-up that keeps Wells's game in mind and stays simple. The
+ideas were tried as prototypes in bot runs (dev/snowball.js, with the
+files in dev/prototypes/; 200 seeds a battle, each knot's default
+outcome, the row's bot). The bots stand in for players, not for
+judgement: they never sit on a lead unless told to, so whatever is about
+turtling needs human playtests too.
+
+### 12.1 What the numbers say now
+
+- **The first gun lost decides the battle.** The side whose gun goes
+  quiet first (its crew all fallen or taken, or the gun taken) still wins
+  0-3% of the time in battles 1, 2, 3, 4, 8 and 10, and draws 0-15% (40%
+  in 10, where each side has two guns; 57% in 7, by the draw line). Only
+  where a raid or a defender's hill offers another way to win does it
+  win more often: 5 (11%), 6 (20%), 7 (14%), 9 (26%). The first gun goes
+  quiet in round 5 or 6 (median) of 10-12, so about half of a battle is
+  played out after it is settled.
+- **The scores are lopsided** (as dev/points.js found): a win gives 117
+  to 142 points, a loss 9 to 24 - a loss is worth about a tenth of a win,
+  whatever happened in it. The median gap between the two sides' points
+  in a battle is 100-120 (battle 7, mostly drawn, about 10).
+- **Sitting on a lead.** With both bots told to stay by their guns once
+  they have more crewed guns than the other side, Fight to the Finish
+  battles that the leader used to finish end at the round limit instead:
+  Hook's Farm's draws go from 18% to 42%, battle 7's from 60% to 71%,
+  battle 2's from 17% to 37%. Under the rules as they are, a turtle gives
+  up the win's 100 for a draw's 50 - but the bots that are behind keep
+  walking into it, which a person won't.
+- **The default bot is not always the easiest** (GDD 5.2's table): this
+  matches the earlier sessions - NEXT 2's numbers named the same two
+  battles (2: cautious 79 against the row's steady 72; 7: cautious 71
+  against clever 57), the ones the data tuning could not fix.
+
+### 12.2 The nine ideas, tried
+
+"Comeback" is how often the side that lost a gun first still won / drew.
+
+| Idea | Tried as | What the bots showed | Claude's take |
+|---|---|---|---|
+| a. More guns | a second gun section a side in battles 1-9 (4 more figures; 10 has two already) | comeback rises in Fight to the Finish and Blow at the Rear: 1 from 0 / 2% to 6 / 34%, 2 from 2 / 15% to 7 / 29%, 5 from 11 / 3% to 13 / 30%; 8 from 0 to 25% wins, 9 from 26 to 49%; battles run about 2 rounds longer (closer to section 5.1's 8-12). Win rates move a lot (4: 58 to 38; 6: 69 to 0 - their two guns on the Mill Hill), so the armies need retuning | **Yes.** The biggest effect for the smallest change, a data change only, and nearer Wells: his Hook's Farm had three guns a side |
+| b. Objectives | two held places in the middle of each Fight to the Finish and Blow at the Rear (four on the Whole Floor): 3 points a round to the side holding each (a unit on it or next to it, no enemy next to it), and at the round limit the side holding more of them wins instead of a draw | no more comebacks (the stronger side takes the places too); the gap in points grows (10: 110 to 182); battles 2 and 9 swing hard (95 and 79) | **Maybe, after a human playtest.** It is the one idea aimed straight at a human turtle - a leader who sits at home gives the places, and at the limit the battle, away - and Wells's own worked example is a fight over a farm and a church. Bots can't show that |
+| c. Map design | gun range 7 instead of 10, so a gun at home can't reach the other half | no change to comebacks; battles 3, 7, 10 get much harder | **Yes, as map work, not range:** more houses, walls and hills between the halves give a side that is behind somewhere to stand out of a turtle's line of fire, so the turtle has to come out. Section 6.2's layout rule already asks for cover |
+| d. Scouts | not tried | - | **Not now.** Wells's cavalry is already the fast arm (twice the infantry's move); a new arm means new drawing, names, loss order, bot rules and a change to the "units are fixed" decision. An Appendix candidate |
+| e. Easier gun capture | not tried | - | **Not now.** A gun is protected by the units next to it because they count toward its crew (decision 8); loosening that is a bigger change than (a) and (h) |
+| f. Limited ammunition | each gun fires 4 times a battle | battles stall: 63% of battle 1, 70% of 4 and 95% of 10 run to the round limit; comebacks don't rise | **No.** Once the guns are empty, exact melee leaves nothing to break a line |
+| g. Side-grades, the other side gets the one you didn't pick | not tried | - | **Later, if at all.** The `scene_` outcomes already are sidegrades, so this is a change to the story contract (7.2) rather than to a battle; it balances choices, but doesn't help a side that is behind in a battle |
+| h. Scoring that pushes the leader and helps the side behind | two simple forms: **toll** - each side also scores 1 for each enemy figure that fell; **hurry** - a win scores 5 more for each round left unused. (And the win worth 50, not 100, for comparison) | no change to who wins (the bots don't play for points). Toll: a loss goes from 9-24 points to 17-37 (about a fifth of a win instead of a tenth); a melee the losing side fights is worth points even when it loses it. Hurry: a win early is worth up to 40 more; a turtle that wins late, or draws, gives that up. A win worth 50: the gap halves | **Yes, toll and hurry.** The author's version (points that fade while you are winning, a bonus while losing if the winner only used a gun) needs a running judgement of who is winning each round and of how they played; these two give the same two pushes with one number each that the result screen can show |
+| i. Wells's unused ideas (the Appendix) | not tried | - | Roads, shells with a blast, entrenchments, surrender (W25) and the muster screen stay with the Appendix (6.5). Of them, **surrender** is the one that speaks to this: a side that is beaten could give up what is left as prisoners and end the battle, rather than play out the rounds after its gun is gone |
+
+### 12.3 Claude's proposal
+
+Keep it to three changes, then retune the armies once:
+
+1. **Two gun sections a side** in every battle (a): each army gains one
+   gun section of 4 crew - the smallest change that makes one lost gun
+   survivable. Battle 6's defender keeps its gun on the hill; its armies
+   need the most work.
+2. **Toll and hurry** in the points (h): 1 for each enemy figure that fell
+   (a new number in RULES, beside the prisoner's 0.5); a win 5 more for
+   each round left. Both are numbers the author can hand-edit, and a 0
+   turns either off.
+3. **Cover between the halves** in the maps (c), checked by human
+   playtests: somewhere for a side that is behind to stand out of the
+   enemy guns' line of fire, so a turtle has to come out to finish.
+
+Held places (b) are the next step if playtests still show turtling after
+these three.
+
+### 12.4 Questions for the author
+
+- Q1 Two gun sections a side (a) - yes / no? From the tutorial on, or
+  from battle 1 (Hook's Farm stays as Wells's scaled-down example)?
+- Q2 "Units are fixed" stays (no scouts, d) - yes / no?
+- Q3 Toll (1 a figure) and hurry (5 a round) in the points - either,
+  both, neither? Or the win worth less than 100?
+- Q4 Held places (b) now, or only if playtests show turtling after Q1-Q3?
+  If now: points only, or also the winner at the round limit?
+- Q5 Limited ammunition (f) left out - yes?
+- Q6 Surrender (W25) - stays in the Appendix, or a main-campaign rule?
+
+The author's answers (2026-10-23, decision 17 in section 10): Q1 yes,
+from battle 1 (Hook's Farm keeps one gun a side); Q2 units stay fixed;
+Q3 both toll and hurry; Q4 held places only if playtests still show
+turtling after Q1-Q3; Q5 no limited ammunition; Q6 surrender stays in
+the Appendix.
+
+### 12.5 What carrying it out would take
+
+- Two gun sections (Q1): data.js ARMIES (a RULE edit), then the retune of
+  section 5.2 with dev/bots.js, dev/outcomes.js and dev/points.js - a
+  cloud session like NEXT 2, with the probes and replay lines brought in
+  step. The bots need no change (they already play two guns in 10).
+- Toll and hurry (Q3): PHASE 18 (`battlePoints`) and two numbers in RULES,
+  the result screen's lines (SCREEN_WORDS), the self-test's probes - a rule
+  change by the recipe (HANDOFF RECIPES: cloud at high effort for the
+  steps and reference, the runner, the cloud check). Section 3.9 changes.
+- Held places (Q4): PIECES or a per-row list of squares, PHASE 17 (the
+  result) and 18 (points), the bots (PHASE 22-23: heading for them), the
+  drawing - the largest of the three.
+- Each changes section 3 and the spec; none changes the story contract.
+
+### 12.6 What has been done (2026-10-23)
+
+- **Two gun sections a side (Q1): in.** Battles 1-9 got a second gun
+  section a side (data.js ARMIES), then the armies, first moves and
+  default bots were retuned against section 5.2 (its numbers are there).
+  The comebacks (`node dev/snowball.js . - 1000 1,...,10`, each knot's
+  default, the row's bot): how often the side whose gun went quiet first
+  still won / drew, before (12.1, one gun, 200 seeds) and now (1,000
+  seeds):
+
+| # | Before: wins / draws | Now: wins / draws |
+|---|---|---|
+| 1 | 0% / 2% | 2% / 12% |
+| 2 | 2% / 15% | 7% / 22% |
+| 3 | 0-3% / 0-15% | 10% / 0% |
+| 4 | 0-3% / 0-15% | 4% / 17% |
+| 5 | 11% / 3% | 51% / 2% |
+| 6 | 20% / - | 32% / 0% |
+| 7 | 14% / 57% | 7% / 32% |
+| 8 | 0% / - | 20% / 0% |
+| 9 | 26% / - | 11% / 5% |
+| 10 | 0-3% / 40% (two guns already) | 3% / 40% |
+
+  A lost gun is survivable more often in 2, 3, 5, 6 and 8; in 1 and 4
+  it mostly turns a loss into a draw, and in 7 and 9 comebacks went down
+  (both have new armies). The bots still never sit on a lead, so the turtling question
+  is the playtests'.
+- **Toll and hurry (Q3): not yet in.** A rule change in PHASE 18 by the
+  recipe (12.5): HANDOFF NEXT 4b.
+- Q2, Q5, Q6: nothing to change. Q4 (held places) waits for the playtests.
