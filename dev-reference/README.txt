@@ -15,14 +15,15 @@ THE FILES
   stub.html       the stub game: the skeleton exactly as at the latest
                   stub commit, with EVERY PHASE block a stub (5beb94c's
                   stubs; PHASE 17's from the 2026-10-21 stub commit, with
-                  raiders). The phase builds' second argument once the
+                  raiders; PHASE 18's from the 2026-10-23 stub commit,
+                  with tollPoints and hurryPoints). The phase builds' second argument once the
                   builder has filled the blocks on working - a partial
                   stub commit (NEXT 5d) has builder blocks in it.
   blocks.py       reads and swaps PHASE blocks (the scripts below use it).
   phasebuilds.py  the phase builds: for N = 1..25, the stub game with PHASE
                   2..N taken from the reference; checks each build's
                   self-test line against the spec's EXPECTED line for N.
-  plant.py        the planted bugs: 75 typical builder slips, one at a time
+  plant.py        the planted bugs: 84 typical builder slips, one at a time
                   in the reference; the self-test must fail each one.
   compare.py      a builder's game.html, block by block, against the
                   reference (code only: comment lines, blank lines and
@@ -40,7 +41,7 @@ working-claude or any branch with the game)
       with the skeleton: when the skeleton changes, rebuild it from the
       new game.html with every block swapped for its stub - blocks.py).
   python3 ../lw-ref/dev-reference/plant.py .
-      "75 of 75 caught" = every probe still catches its slips.
+      "84 of 84 caught" = every probe still catches its slips.
   python3 ../lw-ref/dev-reference/compare.py game.html
       after a local build: which blocks match the reference call for call.
   git worktree remove ../lw-ref        when done

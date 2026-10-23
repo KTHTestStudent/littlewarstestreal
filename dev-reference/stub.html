@@ -738,7 +738,18 @@ PHASE_OK[17] = true;
 <script>
 // ==== PHASE 18 START ====
 // STUBS for now - PHASE 18 fills them in.
-// Points and the campaign: a battle's points, a battle recorded.
+// Points and the campaign: a battle's points (with the toll and the
+// hurry), a battle recorded.
+
+// RETURNS the toll side scores in the finished battle B (B.result is set).
+function tollPoints(side) {
+  return 0;
+}
+
+// RETURNS the hurry side scores in the finished battle B (B.result is set).
+function hurryPoints(side) {
+  return 0;
+}
 
 // RETURNS side's points for the finished battle B (B.result is set).
 function battlePoints(side) {
@@ -1473,11 +1484,11 @@ const OPEN8 = [
 // lines (dev/selftest.js prints them) once the change is meant.
 const REPLAY_RUNS = [[0, 5, ""], [2, 11, "rear_west"], [6, 23, "more_rounds"], [9, 8, "scout"], [10, 3, "extra_troop"]];
 const REPLAY_EXPECT = [
-  "lv0 s5 you/none r6 you 121.5 them 13 acts 31 #tb3lnp",
-  "lv2 s11 you/none r10 you 134 them 23 acts 67 #oelfhq",
-  "lv6 s23 them/quarter r5 you 29.5 them 129 acts 34 #4u532v",
-  "lv9 s8 you/none r11 you 131.5 them 24.5 acts 79 #1yvare0",
-  "lv10 s3 draw/few r12 you 78 them 79 acts 84 #1j9uhl0"
+  "lv0 s5 you/none r6 you 145.5 them 25 acts 31 #tb3lnp",
+  "lv2 s11 you/none r10 you 156 them 46 acts 67 #oelfhq",
+  "lv6 s23 them/quarter r5 you 44.5 them 189 acts 34 #4u532v",
+  "lv9 s8 you/none r11 you 172.5 them 47.5 acts 79 #1yvare0",
+  "lv10 s3 draw/few r12 you 112 them 117 acts 84 #1j9uhl0"
 ];
 
 function selfTest() {
@@ -2022,11 +2033,21 @@ function selfTest() {
     B.T.you.safe = 4;
     B.T.you.freed = 1.5;
     B.T.them.gunsOff = 1;
+    B.T.you.fallen = 3;
+    B.T.them.fallen = 4;
+    // round 2 of 10 (testBoard): a win now leaves 8 rounds unused
     B.result = { winner: "you", why: "test" };
-    const p = [battlePoints("you"), battlePoints("them")];
+    const p = [battlePoints("you"), battlePoints("them"), tollPoints("you"), tollPoints("them"), hurryPoints("you"), hurryPoints("them")];
     B.result = { winner: "draw", why: "test" };
-    p.push(battlePoints("you"), battlePoints("them"));
-    return p.join(",") === "125,17,75,67";
+    p.push(battlePoints("you"), battlePoints("them"), hurryPoints("you"), hurryPoints("them"));
+    B.result = { winner: "them", why: "test" };
+    B.round = 7;
+    p.push(battlePoints("you"), battlePoints("them"), hurryPoints("them"));
+    B.round = 12;
+    p.push(hurryPoints("them"));
+    B.round = 10;
+    p.push(hurryPoints("them"));
+    return p.join(",") === "169,20,4,3,40,0,79,70,0,0,29,135,15,0,0";
   });
   T("record", function () {
     newCampaign("blue", true, 3);
@@ -2035,13 +2056,13 @@ function selfTest() {
     put("you", "inf", "D4", 6);
     B.result = { winner: "you", why: "test" };
     const p0 = recordBattle();
-    const k0 = CAMP.last.result === "won" && CAMP.last.points === 106 && CAMP.points === 0 && CAMP.done === 0 && CAMP.wins === 0;
+    const k0 = CAMP.last.result === "won" && CAMP.last.points === 146 && CAMP.points === 0 && CAMP.done === 0 && CAMP.wins === 0;
     B.lv = 4;
     B.result = { winner: "draw", why: "test" };
     recordBattle();
     B.result = { winner: "them", why: "test" };
     const p2 = recordBattle();
-    return p0 === 106 && k0 && p2 === 6 && CAMP.points === 62 && CAMP.done === 2 && CAMP.draws === 1 && CAMP.losses === 1 && CAMP.wins === 0 &&
+    return p0 === 146 && k0 && p2 === 6 && CAMP.points === 62 && CAMP.done === 2 && CAMP.draws === 1 && CAMP.losses === 1 && CAMP.wins === 0 &&
       CAMP.last.result === "lost" && CAMP.last.points === 6;
   });
   // ---- phase 19: the story's outcomes ----
@@ -2249,7 +2270,9 @@ function checkRules() {
   for (const k of ["cover", "quarter"]) {
     if (!(RULES[k] >= 0 && RULES[k] <= 100)) bad("data.js RULES: " + k + " is a percent, 0 to 100.");
   }
-  if (!(RULES.prisonerPts >= 0)) bad("data.js RULES: prisonerPts must be 0 or more.");
+  for (const k of ["prisonerPts", "toll", "hurry"]) {
+    if (!(RULES[k] >= 0)) bad("data.js RULES: " + k + " must be 0 or more.");
+  }
   let last = 0;
   for (const t of ON_TARGET) {
     if (!(t.upTo > last) || !(t.pct >= 0 && t.pct <= 100)) bad("data.js ON_TARGET: each band's upTo must be bigger than the one before, and pct 0 to 100.");
@@ -3132,12 +3155,22 @@ function drawResult() {
   text(fmt(B.pts.them), VW / 2 + 60, 124, THEME.text, 16, "center", true);
   const gunsYou = B.units.filter(function (u) { return isGun(u) && u.side === "you"; }).length + B.T.you.gunsOff;
   const gunsThem = B.units.filter(function (u) { return isGun(u) && u.side === "them"; }).length + B.T.them.gunsOff;
-  text(R.lines.guns + ": " + gunsYou + " / " + gunsThem, VW / 2, 150, THEME.dim, 7, "center");
+  // Toll and hurry (decision 17): what each added to the totals above, so
+  // a player sees how much they counted. A line is left out when its RULES
+  // number is 0 (switched off) or its words are missing.
+  const plus = function (n) { return "+" + fmt(n); };
+  if (RULES.toll > 0 && R.lines.toll) {
+    text(words(R.lines.toll, { n: fmt(RULES.toll) }) + ": " + plus(tollPoints("you")) + " / " + plus(tollPoints("them")), VW / 2, 146, THEME.text, 7, "center");
+  }
+  if (RULES.hurry > 0 && R.lines.hurry) {
+    text(words(R.lines.hurry, { n: fmt(RULES.hurry) }) + ": " + plus(hurryPoints("you")) + " / " + plus(hurryPoints("them")), VW / 2, 158, THEME.text, 7, "center");
+  }
+  text(R.lines.guns + ": " + gunsYou + " / " + gunsThem, VW / 2, 174, THEME.dim, 7, "center");
   const pr = B.T.you.held + B.T.them.held + B.units.reduce(function (n, u) { return n + (u.arm === "esc" ? u.pn : 0); }, 0);
-  text(R.lines.prisoners + ": " + pr, VW / 2, 162, THEME.dim, 7, "center");
-  if (B.lv === 0) text(R.tutorial, VW / 2, 186, THEME.text, 7, "center");
-  else text(words(R.campaign, { n: fmt(CAMP.points) }), VW / 2, 186, THEME.text, 8, "center", true);
-  text(R.next, VW / 2, 230, THEME.dim, 7, "center");
+  text(R.lines.prisoners + ": " + pr, VW / 2, 186, THEME.dim, 7, "center");
+  if (B.lv === 0) text(R.tutorial, VW / 2, 208, THEME.text, 7, "center");
+  else text(words(R.campaign, { n: fmt(CAMP.points) }), VW / 2, 208, THEME.text, 8, "center", true);
+  text(R.next, VW / 2, 240, THEME.dim, 7, "center");
   BUTTONS.push({ x: 0, y: 0, w: VW, h: VH, action: afterResult, on: true });
   drawTip();
 }
