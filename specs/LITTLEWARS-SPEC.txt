@@ -17,20 +17,20 @@
 ============================================================================
 
 LINE MAP (for read tools that take a line range)
-  rules, game, files, API, traps, numbers: lines 96-428
-  PHASE 2 (armies): 452-491   PHASE 3 (steps and contact): 493-526
-  PHASE 4 (reach): 528-567   PHASE 5 (moving units): 569-608
-  PHASE 6 (line of fire): 610-650   PHASE 7 (crews and support): 652-686
-  PHASE 8 (gunfire): 688-734   PHASE 9 (who fights): 736-768
-  PHASE 10 (melee results): 770-797   PHASE 11 (losses): 799-835
-  PHASE 12 (escorts): 837-872   PHASE 13 (fighting): 874-914
-  PHASE 14 (escorts walk): 916-949   PHASE 15 (End Turn): 951-988
-  PHASE 16 (raid): 990-1013   PHASE 17 (result): 1015-1068
-  PHASE 18 (points): 1070-1102   PHASE 19 (outcomes): 1104-1128
-  PHASE 20 (bots 1): 1130-1156   PHASE 21 (bots 2): 1158-1186
-  PHASE 22 (bots 3): 1188-1222   PHASE 23 (bots 4): 1224-1255
-  PHASE 24 (bots 5): 1257-1296   PHASE 25 (bots 6): 1298-1331
-  fixer prompt: 1333-1471
+  rules, game, files, API, traps, numbers: lines 96-433
+  PHASE 2 (armies): 457-496   PHASE 3 (steps and contact): 498-531
+  PHASE 4 (reach): 533-572   PHASE 5 (moving units): 574-613
+  PHASE 6 (line of fire): 615-655   PHASE 7 (crews and support): 657-691
+  PHASE 8 (gunfire): 693-739   PHASE 9 (who fights): 741-773
+  PHASE 10 (melee results): 775-802   PHASE 11 (losses): 804-840
+  PHASE 12 (escorts): 842-877   PHASE 13 (fighting): 879-919
+  PHASE 14 (escorts walk): 921-954   PHASE 15 (End Turn): 956-993
+  PHASE 16 (raid): 995-1018   PHASE 17 (result): 1020-1073
+  PHASE 18 (points): 1075-1126   PHASE 19 (outcomes): 1128-1152
+  PHASE 20 (bots 1): 1154-1180   PHASE 21 (bots 2): 1182-1210
+  PHASE 22 (bots 3): 1212-1246   PHASE 23 (bots 4): 1248-1279
+  PHASE 24 (bots 5): 1281-1320   PHASE 25 (bots 6): 1322-1355
+  fixer prompt: 1357-1502
   (If you edit this spec, these numbers go stale - run python3 dev/linemap.py.)
 
 HOW THE HUMAN RUNS IT
@@ -206,7 +206,9 @@ HOW THE GAME WORKS (read before any phase)
   its figures). A side with no armed figures left loses.
   POINTS (GDD 3.9): 100 for a win (50 each for a draw), 10 a gun held, 1
   an infantry figure alive, 1.5 a cavalry one, 0.5 each prisoner for both
-  sides.
+  sides; the toll, 1 for each enemy figure that fell; the hurry, 5 more to
+  the winner for each round of the limit left unused (the author's
+  decision 17). The result screen shows each side's toll and hurry.
   THE BOTS (phases 20-25): their side is played by a bot whose STYLE is a
   row of numbers in data.js (BOT_STYLES); in bot runs and test mode the
   "newcomer" style plays your side. A bot's turn is a series of actions -
@@ -336,7 +338,7 @@ API - everything the phase blocks can use (all already exist)
   RULES       {range: 10, shots: 4, crew: 4, cover: 50, isolation: 2,
               perEscort: 7, escortWalk: 2, raidSize: 3, withdraw: 3,
               throughSize: 5, quarter: 25, win: 100, draw: 50, gunPts: 10,
-              prisonerPts: 0.5}
+              prisonerPts: 0.5, toll: 1, hurry: 5}
   ON_TARGET   [{upTo: 3, pct: 60}, {upTo: 6, pct: 45}, {upTo: 10, pct: 30}]
   ARMS        {inf: {figures: 6, move: 2, pts: 1, gun: false},
               cav: {figures: 4, move: 4, pts: 1.5, gun: false},
@@ -375,7 +377,8 @@ API - everything the phase blocks can use (all already exist)
     phase15: endTurn(), onBackLine(side, size, half)
     phase16: surrender(side), raidOver()
     phase17: raiders(side), checkResult()
-    phase18: battlePoints(side), recordBattle()
+    phase18: tollPoints(side), hurryPoints(side), battlePoints(side),
+             recordBattle()
     phase19: applyOutcome(row, outcome)
     phase20: botStyle(side), shotValue(g, x, y)
     phase21: friendNear(side, v), aimFor(g, st)
@@ -424,7 +427,9 @@ SHARED NUMBERS (all from data.js - read the tables, never write them in)
   many) on the defender's back line and a quarter (25%) of its starting
   figures.
   Points: win 100, draw 50 each, a gun 10, a figure its arm's pts
-  (infantry 1, cavalry 1.5, crew as their arm), 0.5 each prisoner.
+  (infantry 1, cavalry 1.5, crew as their arm), 0.5 each prisoner; the
+  toll 1 for each enemy figure that fell; the hurry 5 to the winner for
+  each round of the limit left unused.
 
 ============================================================================
  PHASE 1 - the skeleton (already in the repository - no model needed)
@@ -1070,7 +1075,23 @@ NOT YET: points (phase 18).
 ============================================================================
  PHASE 18 - points, and the campaign
 ============================================================================
-Block: PHASE 18. Fill battlePoints(side) and recordBattle().
+Block: PHASE 18. Fill tollPoints(side), hurryPoints(side),
+battlePoints(side) and recordBattle(). Keep them in that order.
+
+  tollPoints(side): the toll side scores in the finished battle B (B.result
+  is set): RULES.toll for each figure of the OTHER side's that fell.
+  1 Return B.T[other(side)].fallen * RULES.toll.
+  (B.T[s].fallen counts side s's OWN figures that fell, so a side's toll
+  is read from the other side's tally.)
+
+  hurryPoints(side): the hurry side scores in the finished battle B: for a
+  win, RULES.hurry for each round of the limit left unused; otherwise 0.
+  1 If B.result.winner !== side: return 0 (a draw and a loss score no
+    hurry).
+  2 Return Math.max(0, B.row.rounds - B.round) * RULES.hurry.
+  (The round the battle ended in was used: a win in round 7 of 10 leaves
+  3 rounds. A win at the limit, as the defender's in a Defensive Game,
+  leaves 0. Math.max keeps it from going below 0.)
 
   battlePoints(side): side's points for the finished battle B (B.result is
   set).
@@ -1081,7 +1102,8 @@ Block: PHASE 18. Fill battlePoints(side) and recordBattle().
     prisoners += u.pn. If u.side === side: p += u.n * figVal(u), and if
     isGun(u): p += RULES.gunPts.
   4 p += B.T[side].gunsOff * RULES.gunPts + B.T[side].safe + B.T[side].freed.
-  5 Return p + prisoners * RULES.prisonerPts.
+  5 Return p + prisoners * RULES.prisonerPts + tollPoints(side) +
+    hurryPoints(side).
   (Every prisoner - held at a back line or still walking with its escort -
   is worth RULES.prisonerPts to BOTH sides. An empty gun still counts for
   the side it belongs to.)
@@ -1097,7 +1119,9 @@ Block: PHASE 18. Fill battlePoints(side) and recordBattle().
 
 CHECK: as phase 17's walk: the result screen now shows 82 for you and 82
 for them (50 for the draw, 10 for the gun, 1 for each infantry figure, 1.5
-for each cavalry figure).
+for each cavalry figure), and under the totals "Toll, 1 a figure the other
+side lost: +0 / +0" (no figure fell) and "Hurry, 5 a round left to the
+winner: +0 / +0" (a draw scores no hurry).
 EXPECTED SELF-TEST (the FAILs named are later phases):
   SELF-TEST 32/42 FAIL: row style shotval
 
@@ -1438,7 +1462,14 @@ EXPECTED SELF-TEST (the FAILs named are later phases):
                                         or the half left out of raiders
     [points] [record] (18)           -> units that left the field counted,
                                         prisoners scored for one side only,
-                                        or the tutorial added to CAMP
+                                        the tutorial added to CAMP, the
+                                        toll from the side's OWN fallen
+                                        (it is the other side's), the
+                                        hurry given to a draw or a loser,
+                                        the round it won in counted as
+                                        unused, no Math.max(0, ...) past
+                                        the limit, or toll or hurry not
+                                        added in battlePoints
     [row] (19)                       -> rounds set instead of added, or
                                         LEVELS itself changed
     [style] [shotval] (20)           -> cover or the line of fire left out

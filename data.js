@@ -39,6 +39,13 @@
 //               Defensive Game must keep on the field
 //   win, draw, gunPts, prisonerPts   points (GDD 3.9); a figure's points
 //               are in ARMS
+//   toll        points a side scores for each enemy figure that fell (to
+//               the box: knocked over or fallen in a melee) - so a side that
+//               is behind still scores for the fight it puts up (0: off)
+//   hurry       points the winner scores for each round of the limit it
+//               didn't need - so a win sooner beats sitting on a lead
+//               (0: off). Toll and hurry are the author's decision 17 (GDD
+//               12); the result screen shows each side's toll and hurry.
 const RULES = {
   range: 10,
   shots: 4,
@@ -54,7 +61,9 @@ const RULES = {
   win: 100,
   draw: 50,
   gunPts: 10,
-  prisonerPts: 0.5
+  prisonerPts: 0.5,
+  toll: 1,
+  hurry: 5
 };
 
 // ---- ON TARGET: how often a shot lands on the aimed square ----
@@ -738,7 +747,7 @@ const SCREEN_WORDS = {
     won: "You won {country}",
     drawn: "{country} is a draw",
     lost: "You lost {country}",
-    lines: { win: "Win or draw", guns: "Guns held", figures: "Figures alive", prisoners: "Prisoners" },
+    lines: { win: "Win or draw", guns: "Guns held", figures: "Figures alive", prisoners: "Prisoners", toll: "Toll, {n} a figure the other side lost", hurry: "Hurry, {n} a round left to the winner" },
     you: "You",
     them: "Them",
     total: "Points",
@@ -770,7 +779,7 @@ const TIPS = {
   prisoners: "Prisoners walk to the back line with an escort. Knock the escort over, or catch it, and they go free.",
   emptyGun: "A gun with no crew stands empty. End a turn next to it with 4 figures, and no enemy beside it, and it is yours.",
   leave: "A unit on your back line may leave the field (L): its figures are safe, and still count for points.",
-  points: "Points: 100 to win (50 each for a draw), 10 a gun, 1 an infantry figure, 1.5 a cavalry one, half a prisoner."
+  points: "Points: 100 to win (50 each for a draw) and 5 more a round left when you win, 10 a gun, 1 an infantry figure, 1.5 a cavalry one, half a prisoner, 1 for each of theirs in the box."
 };
 
 // ---- THE LOOK (GDD 8) ----
