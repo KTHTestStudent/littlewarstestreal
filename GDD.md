@@ -1,6 +1,13 @@
-# Little Wars (working title) - Game Design Document, v0.9
+# Little Wars (working title) - Game Design Document, v0.10
 
-Status: v0.9, 2026-10-23: the author's answers to section 12's questions
+Status: v0.10, 2026-10-23: toll and hurry in the points (decision 17's
+Q3; 3.9, 3.10, 5.2, 12.6): each side scores 1 for each enemy figure that
+fell, and the winner 5 for each round of the limit left unused; the
+result screen shows each side's toll and hurry, so a player sees how much
+they counted (the author's request). PHASE 18's steps are written; the
+block is rebuilt by the runner (HANDOFF NEXT 4b).
+
+v0.9, 2026-10-23: the author's answers to section 12's questions
 (decision 17, section 10). Two gun sections a side from battle 1 on, with
 the armies, first moves and default bots retuned (6.1, 5.2; 12.6 has the
 comebacks); toll and hurry come next, as a rule change (HANDOFF NEXT 4b).
@@ -258,7 +265,20 @@ At the end of a battle each side scores (W27):
   their arm (a foot gun's crew as infantry, a horse gun's as cavalry);
 - 0.5 for each figure of its own held prisoner by the other side, and 0.5
   for each prisoner it holds (held at its back line or still with an
-  escort).
+  escort);
+- the **toll**: 1 for each figure of the other side that fell (knocked
+  over by gunfire or fallen in a melee - the figures in the other side's
+  box). A side that is behind still scores for the fight it puts up, and
+  a melee it loses is worth something;
+- the **hurry**, for the winner only: 5 for each round of the limit it
+  didn't need (a win in round 7 of 10 scores 15; a win at the limit, as a
+  defender's, scores 0). A win sooner is worth more than sitting on a
+  lead and winning late, or settling for a draw.
+
+Toll and hurry are the author's decision 17 (section 12). The result
+screen shows each side's toll and hurry under its total, so a player sees
+how much each added. Either is switched off by setting its number in
+RULES to 0.
 
 The campaign score is the sum of your points in battles 1-10. The tutorial
 scores nothing. The score shows on each battle's result screen and at the
@@ -286,6 +306,7 @@ ending plays (the author's decision, 2026-10-20).
 | Attacker's quarter (Defensive Game) | a quarter | W29 |
 | Set-up rows | 2 | - |
 | Points | 100 / 10 / 1.5 / 1 / 0.5 / 0.5 | W27 |
+| Toll (each enemy figure that fell) / hurry (the winner, each round left) | 1 / 5 | not Wells's: the author's decision 17 (section 12) |
 
 ### 3.11 What changes from Wells, and why
 
@@ -1190,6 +1211,13 @@ the Appendix.
   it mostly turns a loss into a draw, and in 7 and 9 comebacks went down
   (both have new armies). The bots still never sit on a lead, so the turtling question
   is the playtests'.
-- **Toll and hurry (Q3): not yet in.** A rule change in PHASE 18 by the
-  recipe (12.5): HANDOFF NEXT 4b.
+- **Toll and hurry (Q3): written, the block to be rebuilt.** data.js
+  RULES toll 1 and hurry 5 (0 turns either off); PHASE 18's steps
+  (tollPoints, hurryPoints, and battlePoints adding both); the result
+  screen's two lines (SCREEN_WORDS result lines toll and hurry, Claude's
+  drafts), so the player sees how much each added; the points probe; the
+  replay lines. The block itself is rebuilt by the runner, then a cloud
+  check (HANDOFF NEXT 4b). Section 5.2's points table has the numbers, from
+  Claude's reference build. Who wins is unchanged: the bots don't play
+  for points.
 - Q2, Q5, Q6: nothing to change. Q4 (held places) waits for the playtests.

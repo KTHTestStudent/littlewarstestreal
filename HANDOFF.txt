@@ -27,11 +27,15 @@ START HERE (2026-10-22)
   answered its questions (decision 17). Two gun sections a side are in
   for battles 1-9 (10 had two already; Hook's Farm keeps one), with the
   armies, first moves and default bots retuned (NUMBERS FOR THE TUNING);
-  SELF-TEST 42/42 PASS. Toll and hurry in the points are not in yet: a
-  rule change in PHASE 18 (NEXT 4b).
-  Next: toll and hurry (NEXT 4b, a high-effort cloud session, then the
-  runner, then the cloud check), the hold lines' words when he gives them
-  (NEXT 4), then playtests.
+  SELF-TEST 42/42 PASS. Later the same day toll and hurry went in as a
+  rule change (NEXT 4b): data.js RULES toll 1 and hurry 5, PHASE 18's
+  steps, the result screen's two new lines (each side's toll and hurry
+  under its total, the author's request), the probes and replay lines,
+  and PHASE 18 back to its stub: working-claude's self-test now says
+  SELF-TEST 39/42 FAIL: points record replay until the runner rebuilds it.
+  Next: the runner on the laptop (PHASE 18 only, phase-plan-4b.txt), then
+  the cloud check (NEXT 4b); the hold lines' words when he gives them
+  (NEXT 4); then playtests.
   On reference (cloud sessions only - never on the laptop): dev-reference/
   - Claude's reference game.html (42/42), stub.html (the skeleton with
   every block a stub), the phase builds, 75 planted bugs, a block-by-block
@@ -46,13 +50,12 @@ long conversation - it reads less)
   (Opus 5.5, medium). Start from origin/working-claude (merge origin/working
   into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 4 (the
   version on the title screen; the hold lines' words as I give them).
-  For NEXT 4b, toll and hurry (decision 17's Q3; the spec's steps, the
-  reference, the probes and the stub commit - the runner and the cloud
-  check come after):
+  For NEXT 4b's cloud check, after the runner has rebuilt PHASE 18 and
+  the build branch is merged into working and pushed:
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
-  (Opus 5.5, high). Start from origin/working-claude (merge origin/working
-  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 4b
-  (toll and hurry in the points).
+  (Opus 5.5, medium). Start from origin/working-claude (merge origin/working
+  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 4b's
+  cloud check (PHASE 18, toll and hurry).
   For a triage after a runner stop (a block the fixer couldn't fix):
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
   (Sonnet 5.5, medium). Start from origin/working-claude (merge origin/working
@@ -97,26 +100,38 @@ NEXT (to the design freeze)
     - the hold lines' words (OPEN ITEMS, his): still Claude's drafts,
       waiting for his words - LOG_WORDS holdYou / holdThem and
       SCREEN_WORDS battle raidNext / raidNextThem in data.js. SAFE edits:
-      by hand, or pasted into the next cloud session. (The 2026-10-23
-      session's prompt asked for them "as I give them", but none came
-      with it, so they are unchanged.)
+      by hand, or pasted into the next cloud session. (Two 2026-10-23
+      sessions' prompts asked for them "as I give them", but none came
+      with either, so they are unchanged.)
   4b Catch-up and turtling (GDD 12; his answers are decision 17).
     - Two gun sections a side: done 2026-10-23 (data and retune, HISTORY;
       GDD 5.2, 6.1, 12.6).
-    - Toll and hurry (Q3): to do, a rule change by the recipe (RECIPES):
-      a cloud session at high effort writes the spec's steps for PHASE 18
-      (battlePoints: each side also scores RULES.toll for each enemy
-      figure that fell - GDD 12.2 tried 1 a figure; a win also scores
-      RULES.hurry for each round left unused - 5 tried), two new numbers
-      in data.js RULES (a 0 turns either off) with checkRules, GDD 3.9
-      and 3.10, the result screen's lines (SCREEN_WORDS; how the toll and
-      the hurry show beside the points), the reference block, the points
-      probe and its planted bugs, the replay lines (they print points),
-      dev/points.js's "max possible", then a stub commit of PHASE 18 and
-      a plan file. Then the runner on the laptop (PHASE 18 only), then
-      the cloud check. dev/prototypes/toll.js and hurry.js show the
-      numbers it should give. The win rates won't move (the bots don't
-      play for points), so no retune.
+    - Toll and hurry (Q3): step 1 done 2026-10-23 (cloud, Opus 5.5
+      medium, HISTORY): RULES toll / hurry, PHASE 18's steps (tollPoints,
+      hurryPoints, battlePoints adding both), the result screen's lines,
+      probes, replay lines, points.js, GDD v0.10, the reference, and the
+      stub commit with phase-plan-4b.txt.
+      Step 2, the runner (the author, on the laptop, no Claude session),
+      after merging working-claude into working on GitHub. In Git Bash in
+      C:\Git\littlewarstestreal:
+        git checkout working && git pull
+        git branch -r                 no origin/reference in the list
+        node dev/selftest.js          SELF-TEST 39/42 FAIL: points record replay
+        git checkout -b build-4b
+        node run-phases.js phase-plan-4b.txt --dry-run
+        node run-phases.js phase-plan-4b.txt
+      The one line it checks: 18  SELF-TEST 42/42 PASS. Then
+        git checkout working && git merge build-4b && git push
+      A stop: RECIPES, "After a stop".
+      Step 3, the cloud check (the starter prompt above): 42/42 with the
+      reference's replay lines, PHASE 18 read against the spec's steps
+      (tollPoints from the OTHER side's fallen; no hurry for a draw or a
+      loss; Math.max(0, rounds - round); both added in battlePoints), the
+      block in a copy of the reference (the quick test), its Local-Model
+      line, compare.py, dev/disclosure.js; the result screen looked at
+      (as GDD 3.9); phase-plan-4b.txt deleted.
+      The win rates don't move (the bots don't play for points), so no
+      retune.
     - Held places (Q4) wait for the playtests; Q2, Q5 and Q6 change
       nothing.
   5 Human playtests (the author, and anyone he asks): the bots are a
@@ -338,6 +353,8 @@ THE FILES
                      steps, CHECK walks and EXPECTED lines, the FIXER
                      PROMPT, the LINE MAP (python3 dev/linemap.py)
   phase-plan.txt     the runner's plan for a full build of PHASE 2-25
+  phase-plan-4b.txt  the runner's plan for NEXT 4b (PHASE 18 only); the
+                     cloud check deletes it
   phase-runner.json  run-phases.js's settings for this game (the spec's
                      path; the author's limits: builder 20, fixer 60
                      minutes, 2 fixer tries)
@@ -381,6 +398,12 @@ OPEN ITEMS (the author, by hand)
       darks, plus a new light for the gloss); the board's brick #a4553c
       -> #9a6450, brickDark #6f3526 -> #6a4030, river #86a9c2 -> #9db4c2.
       Put back any you liked better - SAFE edits.
+    - data.js SCREEN_WORDS result lines toll ("Toll, {n} a figure the
+      other side lost") and hurry ("Hurry, {n} a round left to the
+      winner"), the result screen's new lines under the totals ("... :
+      +26 / +14", you / them), and TIPS points (now naming the toll and
+      the hurry) are Claude's drafts (2026-10-23). Reword as you like;
+      keep {n}.
     - data.js SCREEN_WORDS battle raidNext ("Raid next turn") and
       raidNextThem ("Their raid next turn"), the side panel's line while a
       raider holds the back line, are Claude's drafts. Reword as you
@@ -616,3 +639,17 @@ HISTORY
               caught; 42/42. No PHASE block, rule or bot change. The hold
               lines' words were not given, so unchanged. Toll and hurry
               left for a high-effort session (NEXT 4b).
+  2026-10-23  NEXT 4b step 1, toll and hurry (cloud, Opus 5.5 medium, at
+              the author's word; the recipe had asked for high): data.js
+              RULES toll 1, hurry 5 and checkRules (0 or more), SCREEN_WORDS
+              result lines toll / hurry and the result screen's two lines
+              (each side's toll and hurry under its total - his request),
+              TIPS points; the spec's PHASE 18 steps (tollPoints,
+              hurryPoints, battlePoints adding both), API, numbers, fixer
+              hints, LINE MAP; the points and record probes, the replay
+              lines; dev/points.js (toll, hurry, the new ceiling); GDD
+              v0.10 (3.9, 3.10, 5.2, 12.6); hand-edits.txt. Reference:
+              game.html's PHASE 18, stub.html, plant.py 75 -> 84; 42/42,
+              25 phase builds OK, 84 of 84 caught. Stub commit of PHASE 18
+              with phase-plan-4b.txt (39/42 FAIL: points record replay).
+              The hold lines' words: none given.

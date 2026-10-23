@@ -38,9 +38,11 @@ THE TABLES, IN FILE ORDER
          (5: only an infantry squad gets through - the author's decision
          14; the bots' cavalry also read raidSize and throughSize to decide
          whether to ride for a back line) and quarter %, and the points
-         (win, draw, a gun, a prisoner). Whole
+         (win, draw, a gun, a prisoner; the toll, for each enemy figure
+         that fell, and the hurry, for each round a win left unused - 0
+         turns either off, and its line leaves the result screen). Whole
          numbers of 1 or more, except cover and quarter (percents, 0-100)
-         and prisonerPts (0 or more).
+         and prisonerPts, toll and hurry (0 or more).
   ON_TARGET  (RULE)  how often a shot lands on the aimed square, by range:
          {upTo, pct}, nearest band first; each upTo bigger than the last.
   ARMS  (RULE)  each arm's figures, move and points per figure. Keep the
@@ -100,6 +102,8 @@ THE TABLES, IN FILE ORDER
          the key itself is in the code, so keep the letter. The title is
          here too ("Little Wars", a working title). The AI disclosure is
          NOT here: it stays in game.html (dev/disclosure.js reads it there).
+         The result screen's lines toll and hurry keep {n} (RULES.toll or
+         RULES.hurry); a missing one just isn't shown.
   TIPS  (SAFE)  Hook's Farm's tips, each shown once when it first matters
          (about 3 lines of 60 letters).
   THEME  (SAFE)  colours ("#rrggbb"), and the shapes that tell the sides
