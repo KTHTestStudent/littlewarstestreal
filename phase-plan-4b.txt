@@ -1,8 +1,0 @@
-# Little Wars - the plan for run-phases.js for NEXT 4b: the rebuild of
-# PHASE 18 after the author's decision 17 Q3 (toll and hurry in the points:
-# tollPoints, hurryPoints, and battlePoints adding both). Built from the
-# stub commit, where every other block is already built, so the stub
-# commit's self-test says SELF-TEST 39/42 FAIL: points record replay.
-#   node run-phases.js phase-plan-4b.txt --dry-run
-#   node run-phases.js phase-plan-4b.txt
-18  SELF-TEST 42/42 PASS

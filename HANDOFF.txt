@@ -3,7 +3,7 @@ KTHTestStudent/littlewarstestreal. For Claude sessions: read START HERE down
 to the HISTORY line, and open HISTORY only for what the task needs. Keep this
 file short: when a NEXT item is done, move it into HISTORY in a line or two.
 
-START HERE (2026-10-22)
+START HERE (2026-10-24)
   The whole game is built and plays: 11 battles, both rule changes of
   decision 14 in, SELF-TEST 42/42 PASS, the AI disclosure check OK. PHASE
   2-25 were written by the local builder and fixer through the runner and
@@ -31,31 +31,36 @@ START HERE (2026-10-22)
   rule change (NEXT 4b): data.js RULES toll 1 and hurry 5, PHASE 18's
   steps, the result screen's two new lines (each side's toll and hurry
   under its total, the author's request), the probes and replay lines,
-  and PHASE 18 back to its stub: working-claude's self-test now says
-  SELF-TEST 39/42 FAIL: points record replay until the runner rebuilds it.
-  Next: the runner on the laptop (PHASE 18 only, phase-plan-4b.txt), then
-  the cloud check (NEXT 4b); the hold lines' words when he gives them
-  (NEXT 4); then playtests.
+  and PHASE 18 back to its stub.
+  2026-10-24: the runner rebuilt PHASE 18 (builder, first try, 4.9 min)
+  and the cloud check passed: SELF-TEST 42/42 PASS, the reference's replay
+  lines, the AI disclosure check OK (HISTORY). Toll and hurry are in.
+  Next: the hold lines' words when he gives them (NEXT 4); the tag
+  v0.2-alpha (NEXT 1, his); then playtests (NEXT 5).
   On reference (cloud sessions only - never on the laptop): dev-reference/
   - Claude's reference game.html (42/42), stub.html (the skeleton with
-  every block a stub), the phase builds, 75 planted bugs, a block-by-block
+  every block a stub), the phase builds, 84 planted bugs, a block-by-block
   compare (dev-reference/README.txt).
 
 STARTER PROMPTS (the author pastes one into a new cloud session, after
 merging working-claude into working; start fresh rather than going on in a
 long conversation - it reads less)
-  For NEXT 4 (small things before the playtests), or changes to the
-  pieces' look after you've judged it:
+  For NEXT 4's hold lines (fill in your words; keep {name}), or changes to
+  the pieces' look after you've judged it:
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
   (Opus 5.5, medium). Start from origin/working-claude (merge origin/working
-  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 4 (the
-  version on the title screen; the hold lines' words as I give them).
-  For NEXT 4b's cloud check, after the runner has rebuilt PHASE 18 and
-  the build branch is merged into working and pushed:
+  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 4: put
+  in the hold lines' words exactly as given here -
+    holdYou: "..."
+    holdThem: "..."
+    raidNext: "..."
+    raidNextThem: "..."
+  For a cloud check after a runner build (a build branch merged into
+  working and pushed):
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
   (Opus 5.5, medium). Start from origin/working-claude (merge origin/working
-  into it first). Read CLAUDE.md and HANDOFF.txt first, then do NEXT 4b's
-  cloud check (PHASE 18, toll and hurry).
+  into it first). Read CLAUDE.md and HANDOFF.txt first, then do the cloud
+  check of PHASE N (RECIPES, "The cloud check").
   For a triage after a runner stop (a block the fixer couldn't fix):
   Continue Little Wars: repo KTHTestStudent/littlewarstestreal, cloud session
   (Sonnet 5.5, medium). Start from origin/working-claude (merge origin/working
@@ -100,38 +105,15 @@ NEXT (to the design freeze)
     - the hold lines' words (OPEN ITEMS, his): still Claude's drafts,
       waiting for his words - LOG_WORDS holdYou / holdThem and
       SCREEN_WORDS battle raidNext / raidNextThem in data.js. SAFE edits:
-      by hand, or pasted into the next cloud session. (Two 2026-10-23
-      sessions' prompts asked for them "as I give them", but none came
-      with either, so they are unchanged.)
+      by hand, or pasted into the next cloud session WITH the prompt
+      (the words themselves, e.g. holdYou: "..."). Three sessions'
+      prompts (2026-10-23 twice, 2026-10-24) asked for them "as I give
+      them", but none came with any words, so they are unchanged. The
+      starter prompt for NEXT 4 now has a place for them.
   4b Catch-up and turtling (GDD 12; his answers are decision 17).
-    - Two gun sections a side: done 2026-10-23 (data and retune, HISTORY;
-      GDD 5.2, 6.1, 12.6).
-    - Toll and hurry (Q3): step 1 done 2026-10-23 (cloud, Opus 5.5
-      medium, HISTORY): RULES toll / hurry, PHASE 18's steps (tollPoints,
-      hurryPoints, battlePoints adding both), the result screen's lines,
-      probes, replay lines, points.js, GDD v0.10, the reference, and the
-      stub commit with phase-plan-4b.txt.
-      Step 2, the runner (the author, on the laptop, no Claude session),
-      after merging working-claude into working on GitHub. In Git Bash in
-      C:\Git\littlewarstestreal:
-        git checkout working && git pull
-        git branch -r                 no origin/reference in the list
-        node dev/selftest.js          SELF-TEST 39/42 FAIL: points record replay
-        git checkout -b build-4b
-        node run-phases.js phase-plan-4b.txt --dry-run
-        node run-phases.js phase-plan-4b.txt
-      The one line it checks: 18  SELF-TEST 42/42 PASS. Then
-        git checkout working && git merge build-4b && git push
-      A stop: RECIPES, "After a stop".
-      Step 3, the cloud check (the starter prompt above): 42/42 with the
-      reference's replay lines, PHASE 18 read against the spec's steps
-      (tollPoints from the OTHER side's fallen; no hurry for a draw or a
-      loss; Math.max(0, rounds - round); both added in battlePoints), the
-      block in a copy of the reference (the quick test), its Local-Model
-      line, compare.py, dev/disclosure.js; the result screen looked at
-      (as GDD 3.9); phase-plan-4b.txt deleted.
-      The win rates don't move (the bots don't play for points), so no
-      retune.
+    - Two gun sections a side: done 2026-10-23 (HISTORY).
+    - Toll and hurry (Q3): done 2026-10-24 - spec and stub 2026-10-23,
+      the runner's PHASE 18, the cloud check (HISTORY).
     - Held places (Q4) wait for the playtests; Q2, Q5 and Q6 change
       nothing.
   5 Human playtests (the author, and anyone he asks): the bots are a
@@ -184,7 +166,7 @@ NUMBERS FOR THE TUNING (2026-10-23, two gun sections a side; 1,000 seeds)
   runs (battle 2's rear_east: 36 or 73 with the same units in two
   orders): keep the order, or rerun the bot runs after moving a line.
   Comebacks (dev/snowball.js): GDD 12.6. Points: GDD 5.2 (toll and hurry
-  not in yet). The bots and rules are unchanged.
+  in since 2026-10-24). The bots and rules are unchanged.
 
 RECIPES
   A rule change (a PHASE block's steps): cloud, Opus 5.5 high - the spec's
@@ -205,7 +187,12 @@ RECIPES
       git checkout -b <build-branch>
       node run-phases.js <plan file> --dry-run
       node run-phases.js <plan file>
-    Then git checkout working, git merge <build-branch>, git push. The
+    Then git checkout working, git merge <build-branch>, git push - with
+    the branch name the runner's "Next:" line prints (any name is fine:
+    it's a throwaway; only that the merge names the same branch you ran
+    on matters). Afterwards git branch -d <build-branch>. A plan file
+    starts with a start line (the stub commit's self-test line) so the
+    runner checks the tree before any model runs. The
     reference branch never reaches this clone (once, if needed: git config
     --add remote.origin.fetch '^refs/heads/reference').
   After a stop (what worked on 2026-10-21):
@@ -225,9 +212,9 @@ RECIPES
       Not whole: git checkout -- game.html, and the plan restarts at N.
     c The limits (phase-runner.json) are the author's; commit a change
       before running.
-    d The rest of the plan: never edit a tracked plan file; a trimmed
-      copy in prompts/ (ignored by Git), e.g. grep -E '^(1[89]|2[0-5]) '
-      phase-plan.txt > prompts/plan.txt.
+    d The rest of the plan: node run-phases.js <plan file> --from N (the
+      runner since localsubagentresults 818a79f; no trimmed copy). Never
+      edit a tracked plan file during a run: the runner stops on it.
     e When the self-test names an EARLIER phase's probe, the fault is in
       that block, not the one just built: don't send the fixer. Check the
       tree at the previous commit and bring it to a cloud session.
@@ -235,6 +222,15 @@ RECIPES
   The quick test of one built block (cloud): put it into a copy of the
     reference game.html in place of Claude's and run the self-test there:
     42/42 = the block is right in itself.
+  The cloud check after a runner build (cloud, Opus 5.5 medium): the
+    self-test 42/42 with the reference's replay lines (run the reference
+    game in a copy of the tree: node dev/selftest.js <copy>); each rebuilt
+    block read against its spec steps; the quick test; skeleton outside
+    the blocks byte for byte the reference's; the Local-Model line's id
+    as disclosure.jsonc's; compare.py (style differences are fine);
+    dev/disclosure.js; the screen the block feeds looked at; the run's
+    plan file deleted. 2026-10-24's check of PHASE 18 is the model
+    (HISTORY).
 
 WHAT TO READ (keep it cheap)
   For tuning or bot work: CLAUDE.md, this file down to HISTORY, GDD.md
@@ -353,8 +349,6 @@ THE FILES
                      steps, CHECK walks and EXPECTED lines, the FIXER
                      PROMPT, the LINE MAP (python3 dev/linemap.py)
   phase-plan.txt     the runner's plan for a full build of PHASE 2-25
-  phase-plan-4b.txt  the runner's plan for NEXT 4b (PHASE 18 only); the
-                     cloud check deletes it
   phase-runner.json  run-phases.js's settings for this game (the spec's
                      path; the author's limits: builder 20, fixer 60
                      minutes, 2 fixer tries)
@@ -378,7 +372,7 @@ THE FILES
   run-local.sh, run-phases.js, LOCAL-SUBAGENTS.md, phase-plan.example.txt
                      the runner's copies: the same files as
                      Auto-Disclosure-Tool's, from localsubagentresults main
-                     bccc45c
+                     818a79f (start lines, --from, early finish; 2026-10-24)
   .gitattributes     LF line endings for run-local.sh on Windows
   .gitignore         the runner's output folders, node_modules and Claude
                      Code's laptop settings
@@ -459,17 +453,6 @@ OPEN ITEMS (the author, by hand)
     Wars is too (PHASE 2-25 of game.html): "Runner-ready today:
     Amontillado (PHASE 2-9 of game.html), Auto-Disclosure-Tool (PHASE 21-22
     of disclosure.js) and Little Wars (PHASE 2-25 of game.html)."
-  * An idea for the runner, your call (a cloud session on
-    localsubagentresults, then copied here): on a timeout, still run the
-    self-test and commit when only that block changed and the line is the
-    plan's (three stops on 2026-10-21 were a limit with the edit whole);
-    before each phase, require the previous phase's plan line (it would
-    have caught phase 18's wrong hand-commit line at once); run the
-    self-test even when an answer misses its DONE PHASE N line; take a
-    hand commit's line from the self-test's output. Small fixes: the
-    report says "no fixer calls" after a fixer run; say plainly when a
-    settings file changes during a run. Reading the stopped runs'
-    .reasoning.txt first shows whether more time helps.
   * In Knotwork, not here: its README.txt has no AI disclosure (the one
     the line points at is in its CREDITS.txt), and its banner still says
     3.7-ALPHA at 3.8-alpha. Its words are yours.
@@ -653,3 +636,22 @@ HISTORY
               25 phase builds OK, 84 of 84 caught. Stub commit of PHASE 18
               with phase-plan-4b.txt (39/42 FAIL: points record replay).
               The hold lines' words: none given.
+  2026-10-24  NEXT 4b steps 2-3. The author copied the runner files from
+              localsubagentresults main 818a79f (11115cb; its subject says
+              a start line went into phase-plan-4b.txt, but the file wasn't
+              in the commit), then ran the runner on a build branch whose
+              name differed from the handoff's build-4b; the merge into
+              working was a fast-forward (no merge commit), the branch was
+              never pushed, and history is straight - no harm. PHASE 18:
+              builder, first try, 4.9 min (bcb3e1e; Local-Model
+              builder:latest 2167ff73fd1a = Qwen 3.6). Cloud check (Opus 5.5
+              medium): SELF-TEST 42/42 PASS, replay lines the same as the
+              reference game's, the quick test 42/42, skeleton identical
+              outside the blocks, the block step for step as the spec
+              (style only differs from the reference: var, one-line ifs),
+              dev/disclosure.js OK; result screens of battles 2, 6 and 10
+              played out by bots - hurry 25 and 30 for wins in round 5 and
+              4 of 10, none for the draw at 18 of 18, toll from the other
+              side's fallen. phase-plan-4b.txt deleted; the runner idea in
+              OPEN ITEMS dropped (818a79f does it). The hold lines' words:
+              none given.
