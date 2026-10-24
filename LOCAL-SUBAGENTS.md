@@ -100,7 +100,7 @@ skeleton work, Claude's part, so they cost no local run.
    first Amontillado laptop commit replaced its whole CLAUDE.md with the
    pointer; it had to be restored).
 
-## Batch runs with run-phases.js (2026-10-18)
+## Batch runs with run-phases.js (2026-10-18; early finish 2026-10-23)
 The loop below, as a script: no Claude session is needed unless it stops.
 `run-phases.js` sits next to run-local.sh (copy both from this repository;
 a new project commits them, FULL-GUIDE.md step 3, while Amontillado keeps
@@ -108,20 +108,56 @@ them untracked).
 1. Make the throwaway branch (Amontillado, a rebuild: from
    `origin/working-claude`, where the cloud session's stub commit is).
 2. Write the plan: `prompts/plan.txt`, one line per phase - the phase number
-   and the spec's expected self-test line (`phase-plan.example.txt` here).
+   and the spec's expected self-test line (`phase-plan.example.txt` here) -
+   plus, best, a `start` line: the stub commit's self-test line.
 3. Check it, then run it, from Git Bash in the project folder:
    `node run-phases.js prompts/plan.txt --dry-run`, then without `--dry-run`.
 For each phase it writes the prompt, calls run-local.sh (builder 10 minutes,
-fixer 30), checks what the loop below checks (HEAD and branch unmoved, only
-the phase file changed and only inside its block, no new files, no git flag,
-DONE PHASE N), runs the self-test, and commits with the subjects
-dev/disclosure.js reads plus `Local-Model:` (what Ollama had loaded) and
-`Committed-By: run-phases.js` trailers. A wrong self-test line: the builder's
-attempt is committed as it is and the fixer gets up to 2 tries, each
-committed. It stops at anything that needs a person, leaves the tree as the
-run left it, prints a report (also saved in `.local-runs/`), and runs the
-project's disclosure check. It never pushes or merges and refuses the shared
+fixer 30, unless phase-runner.json says otherwise), checks what the loop
+below checks (HEAD and branch unmoved, only the phase file changed and only
+inside its block, no new files, no git flag), runs the self-test, and
+commits with the subjects dev/disclosure.js reads plus `Local-Model:` (what
+Ollama had loaded at the end of the run) and `Committed-By: run-phases.js`
+trailers. A wrong self-test line: the builder's attempt is committed as it
+is and the fixer gets up to 2 tries, each committed. It stops at anything
+that needs a person, leaves the tree as the run left it, prints a report
+(also saved in `.local-runs/`), and runs the project's disclosure check
+(with its exit code). It never pushes or merges and refuses the shared
 branches. Settings: `phase-runner.json` (the defaults fit Amontillado).
+Since 2026-10-23 (the stops of Little Wars' and Amontillado's batches):
+- **The previous phase's line first.** Before each phase the tree must give
+  the previous phase's plan line (the first phase: the plan's `start` line,
+  or with `--from N` the plan's line for the phase before N). If not, the
+  batch stops before any model runs: the fault is in an earlier block or a
+  commit's line. A commit whose subject names a SELF-TEST line must also be
+  the tree that prints it, so a hand commit with a typed line (Little Wars
+  18-20, 2026-10-21) stops the next batch at once. The dry run checks this
+  too.
+- **`--from N`** goes on after a stop with the whole plan; no trimmed copy.
+- **Early finish.** While a builder or fixer runs, every `checkSeconds` (15):
+  once the phase file has changed and then stayed the same for
+  `quietSeconds` (120), with only its PHASE N block changed and no other or
+  new file, the self-test runs; if it already gives the plan's line (no red
+  banner, no page errors), the runner ends the model's run and commits it
+  as a normal success, its body saying so. Each state of the file is tested
+  once. The quiet time guards against a block caught between two edits that
+  happens to give the line; the cloud check still reads every block. Off for
+  a batch with `--no-early-finish`, or `"earlyFinish": false`.
+- **At the time limit**, the self-test still runs: when only the block
+  changed and the line is the plan's, it is committed (the body says it
+  stopped at the limit with its edit whole). Otherwise it stops as before,
+  naming the line it got.
+- **No DONE PHASE N line**: the self-test still runs; the plan's line
+  commits it (the body says so), any other line stops the batch.
+- For a run the runner ended, it also does run-local.sh's after-run checks
+  itself (git command text, driver-crash text in the run's files) and writes
+  its runs.csv row (exit `early` or `limit`).
+- **Settings changed during a run** are said plainly: a change git sees
+  (phase-runner.json, a tracked plan, the runner files) stops the batch with
+  the steps to go on; one it doesn't (a plan in prompts/, dsh's
+  settings.yaml) is a note, and the batch keeps what it read at the start.
+- The report counts fixer runs, including ones that didn't fix ("no fixer
+  calls" only when there were none).
 - Started by the human: nothing more to do; the commits carry no Claude line.
 - Started by a Claude Code session: add `--co-author "<its model>"`, and run
   it in the background (a batch outlasts Claude Code's 10-minute limit for
@@ -136,8 +172,14 @@ branches. Settings: `phase-runner.json` (the defaults fit Amontillado).
   commits and game.html as the real one). Then on the laptop, 2026-10-18
   (RUNNER-TEST.md; summary in RESULTS.md): PHASE 7 rebuilt from 7303dcd
   in 7.1 minutes, and PHASE 7, 8 and 9 from 7f44f1e in one batch in 10.2,
-  all first try, no fixer, replay lines the same as the real rebuilds. The
-  time limit's `taskkill /T` hasn't fired on Windows yet.
+  all first try, no fixer, replay lines the same as the real rebuilds. In
+  real use since: Amontillado PHASE 2-6, Auto-Disclosure-Tool PHASE 21-22
+  (the fixer's first real run) and Little Wars PHASE 2-25, where the time
+  limit's `taskkill /T` fired on Windows (HANDOFF.txt).
+- The 2026-10-23 changes, tested in the cloud with stand-in dsh and ollama
+  (RUNNER-TEST.md, test 3): on Auto-Disclosure-Tool's real stub commit
+  (3c42796) and on Little Wars' NEXT 4b stub (PHASE 18, with its browser
+  self-test). Windows re-test: RUNNER-TEST.md, test 3.
 - Needs Playwright where the self-test finds it: on the laptop it is
   installed once in C:\Git (`npm install playwright`, then `npx playwright
   install chromium`), so every project folder under it has it.
@@ -172,7 +214,9 @@ hand, for a single run or when the script stopped.)
    `BASH_MAX_TIMEOUT_MS` raises it, so the fixer's 30 minutes need
    `"env": { "BASH_MAX_TIMEOUT_MS": "1800000" }` in `~/.claude/settings.json`
    on the laptop (ask the human before relying on it). A run cut off at its
-   timeout counts as a failed run: restore the file before the next one.
+   timeout counts as a failed run: restore the file before the next one
+   (run-phases.js instead runs the self-test and keeps a whole edit with the
+   plan's line).
 3. Read the script's short summary only: exit code, minutes, files changed,
    last line. Open the `.answer.txt` only if needed; the `.reasoning.txt`
    only to diagnose a failure (it can be large) or when the summary says
